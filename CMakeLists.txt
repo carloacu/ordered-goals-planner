@@ -109,8 +109,6 @@ set(ORDERED_GOALS_PLANNER_SRCS
     src/types/treeofalreadydonepaths.cpp
     src/types/type.cpp
     src/types/worldstate.cpp
-    src/types/worldstatecache.hpp
-    src/types/worldstatecache.cpp
     src/types/worldstatemodification.cpp
     src/types/worldstatemodificationprivate.hpp
     src/types/worldstatemodificationprivate.cpp

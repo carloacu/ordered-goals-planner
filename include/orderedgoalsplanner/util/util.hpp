@@ -104,6 +104,12 @@ bool hasAnEntyTypeWihTypename(const std::string& pParamtypename,
                              const ogp::SetOfEntities& pConstants,
                              const ogp::SetOfEntities& pObjects);
 
+ORDEREDGOALSPLANNER_API
+std::set<Entity> typenameToEntities(const std::string& pParamtypename,
+                                    const SetOfEntities& pConstants,
+                                    const SetOfEntities& pObjects);
+
+
 template <typename T>
 bool areUPtrEqual(const std::unique_ptr<T>& pPtr1,
                   const std::unique_ptr<T>& pPtr2)

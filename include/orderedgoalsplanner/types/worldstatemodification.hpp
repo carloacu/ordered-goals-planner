@@ -74,9 +74,6 @@ struct ORDEREDGOALSPLANNER_API WorldStateModification
   /// Check if this object contains an optional fact.
   virtual bool hasFactOptional(const ogp::FactOptional& FactOptional) const = 0;
 
-  /// Does this object only represents a set of facts.
-  virtual bool isOnlyASetOfFacts() const = 0;
-
   /**
    * @brief Replace a fact or the negation of the fact by another fact.
    * @param[in] pOldFact Existing fact to replace.
@@ -94,22 +91,6 @@ struct ORDEREDGOALSPLANNER_API WorldStateModification
                       const SetOfFacts& pSetOfFact) const = 0;
 
   virtual ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>& pFactCallback) const = 0;
-
-  /**
-   * @brief Iterate over all the optional facts that can be accessible.
-   * @param[in] pFactCallback Callback called for each optional fact that can be accessible.
-   * @param[in] pSetOfFact Facts to use to extract value of the facts.
-   */
-  virtual void iterateOverAllAccessibleFacts(const std::function<void (const FactOptional&)>& pFactCallback,
-                                             const SetOfFacts& pSetOfFact) const = 0;
-
-  /**
-   * @brief Iterate over all the optional facts with fact value resolution according to the world state until the callback returns true.
-   * @param[in] pFactCallback Callback called for each optional fact of this object.
-   * @param[in] pSetOfFact Facts to use to extract value of the facts.
-   */
-  virtual bool forAllUntilTrue(const std::function<bool (const FactOptional&)>& pFactCallback,
-                               const SetOfFacts& pSetOfFact) const = 0;
 
   /**
    * @brief Iterate over all the optional facts until one can satisfy the objective.

@@ -58,21 +58,6 @@ struct WorldStateModificationNode : public WorldStateModification
         (rightOperand && rightOperand->hasFactOptional(FactOptional));
   }
 
-  bool isOnlyASetOfFacts() const override
-  {
-    if (nodeType == WorldStateModificationNodeType::ASSIGN ||
-        nodeType == WorldStateModificationNodeType::FOR_ALL ||
-        nodeType == WorldStateModificationNodeType::INCREASE ||
-        nodeType == WorldStateModificationNodeType::DECREASE ||
-        nodeType == WorldStateModificationNodeType::MULTIPLY ||
-        nodeType == WorldStateModificationNodeType::PLUS ||
-        nodeType == WorldStateModificationNodeType::MINUS ||
-        nodeType == WorldStateModificationNodeType::WHEN)
-      return false;
-    return (leftOperand && leftOperand->isOnlyASetOfFacts()) &&
-        (rightOperand && rightOperand->isOnlyASetOfFacts());
-  }
-
   void replaceArgument(const Entity& pOldFact,
                        const Entity& pNewFact) override
   {
@@ -87,10 +72,6 @@ struct WorldStateModificationNode : public WorldStateModification
 
   ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>& pFactCallback) const override;
 
-  void iterateOverAllAccessibleFacts(const std::function<void (const FactOptional&)>& pFactCallback,
-                                     const SetOfFacts& pSetOfFact) const;
-  bool forAllUntilTrue(const std::function<bool (const FactOptional&)>& pFactCallback,
-                       const SetOfFacts& pSetOfFact) const override;
   bool canSatisfyObjective(const std::function<bool (const FactOptional&, std::map<Parameter, std::set<Entity>>*, const std::function<bool (const std::map<Parameter, std::set<Entity>>&)>&)>& pFactCallback,
                            std::map<Parameter, std::set<Entity>>& pParameters,
                            const WorldState& pWorldState,
@@ -164,8 +145,6 @@ struct WorldStateModificationFact : public WorldStateModification
     return factOptional == FactOptional;
   }
 
-  bool isOnlyASetOfFacts() const override { return true; }
-
   void replaceArgument(const Entity& pOld,
                        const Entity& pNew) override
   {
@@ -176,15 +155,6 @@ struct WorldStateModificationFact : public WorldStateModification
               const SetOfFacts&) const override { pFactCallback(factOptional); }
 
   ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>& pFactCallback) const override { return pFactCallback(factOptional); }
-
-  void iterateOverAllAccessibleFacts(const std::function<void (const FactOptional&)>& pFactCallback,
-                                     const SetOfFacts&) const override { pFactCallback(factOptional); }
-
-
-  bool forAllUntilTrue(const std::function<bool (const FactOptional&)>& pFactCallback, const SetOfFacts&) const override
-  {
-    return pFactCallback(factOptional);
-  }
 
   bool canSatisfyObjective(const std::function<bool (const FactOptional&, std::map<Parameter, std::set<Entity>>*, const std::function<bool (const std::map<Parameter, std::set<Entity>>&)>&)>& pFactCallback,
                            std::map<Parameter, std::set<Entity>>&,
@@ -271,17 +241,12 @@ struct WorldStateModificationNumber : public WorldStateModification
 
   bool hasFact(const ogp::Fact&) const override { return false; }
   bool hasFactOptional(const ogp::FactOptional&) const override { return false; }
-  bool isOnlyASetOfFacts() const override { return false; }
 
   void replaceArgument(const Entity&,
                        const Entity&) override {}
   void forAll(const std::function<void (const FactOptional&)>&,
               const SetOfFacts&) const override {}
   ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>&) const override { return ContinueOrBreak::CONTINUE; }
-  void iterateOverAllAccessibleFacts(const std::function<void (const FactOptional&)>&,
-                                     const SetOfFacts&) const override {}
-  bool forAllUntilTrue(const std::function<bool (const FactOptional&)>&,
-                       const SetOfFacts&) const override { return false; }
   bool canSatisfyObjective(const std::function<bool (const FactOptional&, std::map<Parameter, std::set<Entity>>*, const std::function<bool (const std::map<Parameter, std::set<Entity>>&)>&)>&,
                            std::map<Parameter, std::set<Entity>>&,
                            const WorldState&,

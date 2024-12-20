@@ -59,6 +59,20 @@ std::unique_ptr<ogp::WorldStateModification> _worldStateModification_fromStr(con
   return ogp::strToWsModification(pStr, pOntology, {}, pParameters);
 }
 
+std::unique_ptr<ogp::Condition> _condition_fromPddl(const std::string& pConditionStr,
+                                                    const ogp::Ontology& pOntology,
+                                                    const std::vector<ogp::Parameter>& pParameters = {}) {
+  std::size_t pos = 0;
+  return ogp::pddlToCondition(pConditionStr, pos, pOntology, {}, pParameters);
+}
+
+std::unique_ptr<ogp::WorldStateModification> _worldStateModification_fromPddl(const std::string& pStr,
+                                                                              const ogp::Ontology& pOntology,
+                                                                              const std::vector<ogp::Parameter>& pParameters = {}) {
+  std::size_t pos = 0;
+  return ogp::pddlToWsModification(pStr, pos, pOntology, {}, pParameters);
+}
+
 void _setGoalsForAPriority(ogp::Problem& pProblem,
                            const std::vector<ogp::Goal>& pGoals,
                            const ogp::SetOfEntities& pConstants,
@@ -77,6 +91,15 @@ void _addFact(ogp::WorldState& pWorldState,
   pWorldState.addFact(_fact(pFactStr, pOntology), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, ogp::SetOfEntities(), pNow);
 }
 
+
+void _removeFact(ogp::WorldState& pWorldState,
+                 const std::string& pFactStr,
+                 ogp::GoalStack& pGoalStack,
+                 const ogp::Ontology& pOntology,
+                 const std::map<ogp::SetOfEventsId, ogp::SetOfEvents>& pSetOfEvents = _emptySetOfEvents,
+                 const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {}) {
+  pWorldState.removeFact(_fact(pFactStr, pOntology), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, ogp::SetOfEntities(), pNow);
+}
 
 bool _hasFact(ogp::WorldState& pWorldState,
               const std::string& pFactStr,
@@ -152,6 +175,41 @@ void _checkSimpleExists()
   _addFact(problem.worldState, _fact_a + "(kitchen)", problem.goalStack, ontology, setOfEventsMap, _now);
   EXPECT_EQ(action1, _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
 }
+
+
+void _existsCondition()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("t1\n"
+                                             "t2");
+  ontology.constants = ogp::SetOfEntities::fromPddl("v1a v1b - t1\n"
+                                                    "v2a - t2\n", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_a(?t - t1)\n"
+                                                      "fact_b", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Action actionObj1(_condition_fromPddl("(exists (?t - t1) (fact_a ?t))", ontology),
+                         _worldStateModification_fromPddl("(fact_b)", ontology));
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_b)", ontology)}, ontology.constants);
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+
+  _addFact(problem.worldState, "fact_a(v1a)", problem.goalStack, ontology, setOfEventsMap, _now);
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_b)", ontology)}, ontology.constants);
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  _removeFact(problem.worldState, "fact_b", problem.goalStack, ontology, setOfEventsMap, _now);
+
+  _addFact(problem.worldState, "fact_a(v1b)", problem.goalStack, ontology, setOfEventsMap, _now);
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_b)", ontology)}, ontology.constants);
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
 
 
 void _checkExistsInGoalThatCanBeSatisfied()
@@ -502,6 +560,33 @@ void _actionToSatisfyANotExists()
   EXPECT_EQ(action2 + "(?loc -> kitchen)", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
 }
 
+void _existsInsideAPath()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("t1");
+  ontology.constants = ogp::SetOfEntities::fromPddl("v1a v1b v1c - t1", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_a(?t - t1)\n"
+                                                      "fact_b", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{_parameter("?v1 - t1", ontology)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(fact_a ?v1)", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  actions.emplace(action2, ogp::Action(_condition_fromPddl("(exists (?t - t1) (fact_a ?t))", ontology),
+                                       _worldStateModification_fromPddl("(fact_b)", ontology)));
+
+  ogp::Domain domain(std::move(actions), ontology);
+  ogp::Problem problem;
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_b)", ontology)}, ontology.constants);
+  EXPECT_EQ("action1(?v1 -> v1a)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("action2", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
 
 }
 
@@ -510,6 +595,7 @@ void _actionToSatisfyANotExists()
 TEST(Planner, test_existentialPreconditionsRequirement)
 {
   _checkSimpleExists();
+  _existsCondition();
   _checkExistsInGoalThatCanBeSatisfied();
   _checkExistsInGoalWithListExpression();
   _checkExistsInGoalThatCannotBeSatisfied();
@@ -520,4 +606,5 @@ TEST(Planner, test_existentialPreconditionsRequirement)
   _existsWithValue();
   _notExists();
   _actionToSatisfyANotExists();
+  _existsInsideAPath();
 }

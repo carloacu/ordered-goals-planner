@@ -10,36 +10,16 @@
 #include <orderedgoalsplanner/util/util.hpp>
 #include <orderedgoalsplanner/util/serializer/deserializefrompddl.hpp>
 #include "expressionParsed.hpp"
-#include "worldstatecache.hpp"
 
 namespace ogp
 {
-
-namespace
-{
-
-bool _isNegatedFactCompatibleWithFacts(
-    const Fact& pNegatedFact,
-    const std::map<Fact, bool>& pFacts)
-{
-  for (const auto& currFact : pFacts)
-    if (currFact.first.areEqualWithoutFluentConsideration(pNegatedFact) &&
-        ((currFact.first.isValueNegated() && currFact.first.fluent() == pNegatedFact.fluent()) ||
-         (!currFact.first.isValueNegated() && currFact.first.fluent() != pNegatedFact.fluent())))
-      return true;
-  return false;
-}
-
-}
-
 
 WorldState::WorldState(const SetOfFacts* pFactsPtr)
   : onFactsChanged(),
     onPunctualFacts(),
     onFactsAdded(),
     onFactsRemoved(),
-    _factsMapping(pFactsPtr != nullptr ? *pFactsPtr : SetOfFacts()),
-    _cache(std::make_unique<WorldStateCache>(*this))
+    _factsMapping(pFactsPtr != nullptr ? *pFactsPtr : SetOfFacts())
 {
 }
 
@@ -49,8 +29,7 @@ WorldState::WorldState(const WorldState& pOther)
     onPunctualFacts(),
     onFactsAdded(),
     onFactsRemoved(),
-    _factsMapping(pOther._factsMapping),
-    _cache(std::make_unique<WorldStateCache>(*this, *pOther._cache))
+    _factsMapping(pOther._factsMapping)
 {
 }
 
@@ -63,7 +42,6 @@ WorldState::~WorldState()
 void WorldState::operator=(const WorldState& pOther)
 {
   _factsMapping = pOther._factsMapping;
-  _cache = std::make_unique<WorldStateCache>(*this, *pOther._cache);
 }
 
 
@@ -278,7 +256,6 @@ void WorldState::_addAFact(WhatChanged& pWhatChanged,
   {
     pWhatChanged.addedFacts.insert(pFact);
     _factsMapping.add(pFact, pCanFactsBeRemoved);
-    _cache->notifyAboutANewFact(pFact);
   }
 }
 
@@ -296,7 +273,6 @@ void WorldState::_removeAFact(WhatChanged& pWhatChanged,
 {
   pWhatChanged.removedFacts.insert(pFact);
   _factsMapping.erase(pFact);
-  _cache->clear();
 }
 
 void WorldState::_modify(WhatChanged& pWhatChanged,
@@ -358,73 +334,11 @@ void WorldState::setFacts(const std::set<Fact>& pFacts,
   _factsMapping.clear();
   for (const auto& currFact : pFacts)
     _factsMapping.add(currFact);
-  _cache->clear();
   WhatChanged whatChanged;
   pGoalStack._removeNoStackableGoalsAndNotifyGoalsChanged(*this, pOntology.constants, pEntities, pNow);
   bool goalChanged = false;
   _notifyWhatChanged(whatChanged, goalChanged, pGoalStack, pSetOfEvents, pCallbacks,
                      pOntology, pEntities, pNow);
-}
-
-
-bool WorldState::canFactOptBecomeTrue(const FactOptional& pFactOptional,
-                                      const std::vector<Parameter>& pParameters) const
-{
-  const auto& accessibleFacts = _cache->accessibleFacts();
-  if (!pFactOptional.isFactNegated)
-    return canFactBecomeTrue(pFactOptional.fact, pParameters);
-
-  if (_isNegatedFactCompatibleWithFacts(pFactOptional.fact, _factsMapping.facts()))
-    return true;
-  if (_isNegatedFactCompatibleWithFacts(pFactOptional.fact, accessibleFacts.facts()))
-    return true;
-
-  const auto& removableFacts = _cache->removableFacts();
-  if (removableFacts.facts().count(pFactOptional.fact) > 0)
-    return true;
-
-  const auto& removableFactsWithAnyValues = _cache->removableFactsWithAnyValues();
-  for (const auto& currRemovableFact : removableFactsWithAnyValues)
-    if (pFactOptional.fact.areEqualExceptAnyValues(currRemovableFact, nullptr, nullptr, &pParameters))
-      return true;
-
-  if (_factsMapping.facts().count(pFactOptional.fact) > 0)
-    return false;
-  return true;
-}
-
-bool WorldState::canFactBecomeTrue(const Fact& pFact,
-                                   const std::vector<Parameter>& pParameters) const
-{
-  const auto& accessibleFacts = _cache->accessibleFacts();
-  if (!pFact.isValueNegated())
-  {
-    if (!_factsMapping.find(pFact).empty() ||
-        !accessibleFacts.find(pFact).empty())
-      return true;
-
-    const auto& accessibleFactsWithAnyValues = _cache->accessibleFactsWithAnyValues();
-    for (const auto& currAccessibleFact : accessibleFactsWithAnyValues)
-      if (pFact.areEqualExceptAnyValues(currAccessibleFact, nullptr, nullptr, &pParameters))
-        return true;
-  }
-  else
-  {
-    if (_isNegatedFactCompatibleWithFacts(pFact, _factsMapping.facts()))
-      return true;
-    if (_isNegatedFactCompatibleWithFacts(pFact, accessibleFacts.facts()))
-      return true;
-
-    const auto& removableFacts = _cache->removableFacts();
-    if (removableFacts.facts().count(pFact) > 0)
-      return true;
-
-    const auto& removableFactsWithAnyValues = _cache->removableFactsWithAnyValues();
-    for (const auto& currRemovableFact : removableFactsWithAnyValues)
-      if (pFact.areEqualExceptAnyValues(currRemovableFact, nullptr, nullptr, &pParameters))
-        return true;
-  }
-  return false;
 }
 
 
@@ -555,18 +469,6 @@ void WorldState::iterateOnMatchingFacts
         break;
 }
 
-
-
-void WorldState::refreshCacheIfNeeded(const Domain& pDomain)
-{
-  _cache->refreshIfNeeded(pDomain, _factsMapping.facts());
-}
-
-
-const SetOfFacts& WorldState::removableFacts() const
-{
-  return _cache->removableFacts();
-}
 
 
 bool WorldState::_tryToApplyEvent(std::set<EventId>& pEventsAlreadyApplied,

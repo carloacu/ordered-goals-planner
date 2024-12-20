@@ -18,6 +18,7 @@ void _test_actionSuccessions()
   const std::string action3 = "action3";
   const std::string action4 = "action4";
   const std::string action5 = "action5";
+  const std::string action6 = "action6";
 
   std::map<std::string, ogp::Action> actions;
 
@@ -32,6 +33,7 @@ void _test_actionSuccessions()
                                                      "fact_d\n"
                                                      "fact_e\n"
                                                      "fact_f\n"
+                                                     "fact_g() - entity\n"
                                                      "fact_h(?e - entity)\n"
                                                      "locked(?r - resource)",
                                                      ontology.types);
@@ -76,6 +78,13 @@ void _test_actionSuccessions()
     actions.emplace(action5, actionObj5);
   }
 
+  {
+    std::vector<ogp::Parameter> parameters6(1, ogp::Parameter::fromStr("?e - entity", ontology.types));
+    ogp::Action actionObj6({}, ogp::strToWsModification("fact_g()=?e", ontology, {}, parameters6));
+    actionObj6.parameters = std::move(parameters6);
+    actions.emplace(action6, actionObj6);
+  }
+
   Domain domain(actions, ontology);
 
   EXPECT_EQ("action: action1\n"
@@ -87,8 +96,6 @@ void _test_actionSuccessions()
             "fact: fact_b(?e)\n"
             "action: action2\n"
             "action: action5\n"
-            "\n"
-            "not action: action1\n"
             "\n"
             "\n"
             "action: action2\n"
@@ -108,7 +115,13 @@ void _test_actionSuccessions()
             "----------------------------------\n"
             "\n"
             "not action: action3\n"
-            "not action: action5\n", domain.printSuccessionCache());
+            "not action: action5\n"
+            "\n"
+            "\n"
+            "action: action6\n"
+            "----------------------------------\n"
+            "\n"
+            "not action: action6\n", domain.printSuccessionCache());
 }
 
 
@@ -150,12 +163,6 @@ void _test_notActionSuccessions()
             "----------------------------------\n"
             "\n"
             "not action: action1\n"
-            "not action: action2\n"
-            "\n"
-            "\n"
-            "action: action2\n"
-            "----------------------------------\n"
-            "\n"
             "not action: action2\n", domain.printSuccessionCache());
 }
 
@@ -216,13 +223,16 @@ void _test_implySuccessions()
   const std::string action1 = "action1";
   const std::string action2 = "action2";
   const std::string action3 = "action3";
+  const std::string action4 = "action4";
+  const std::string action5 = "action5";
 
   std::map<std::string, ogp::Action> actions;
   ogp::Ontology ontology;
   ogp::SetOfConstFacts timelessFacts;
   ontology.predicates = ogp::SetOfPredicates::fromStr("fact_a\n"
                                                       "fact_b\n"
-                                                      "fact_c",
+                                                      "fact_c\n"
+                                                      "fact_d",
                                                       ontology.types);
 
   {
@@ -243,6 +253,12 @@ void _test_implySuccessions()
     actions.emplace(action3, actionObj3);
   }
 
+  actions.emplace(action4, ogp::Action(ogp::strToCondition("fact_a", ontology, {}, {}),
+                                       ogp::strToWsModification("fact_a", ontology, {}, {})));
+
+  actions.emplace(action5, ogp::Action(ogp::strToCondition("fact_a", ontology, {}, {}),
+                                       ogp::strToWsModification("fact_d", ontology, {}, {})));
+
   Domain domain(actions, ontology, {}, {}, timelessFacts);
 
   EXPECT_EQ("action: action1\n"
@@ -251,8 +267,10 @@ void _test_implySuccessions()
             "fact: fact_a\n"
             "action: action2\n"
             "action: action3\n"
+            "action: action5\n"
             "\n"
             "not action: action1\n"
+            "not action: action4\n"
             "\n"
             "\n"
             "action: action2\n"
@@ -266,7 +284,20 @@ void _test_implySuccessions()
             "----------------------------------\n"
             "\n"
             "not action: action2\n"
-            "not action: action3\n", domain.printSuccessionCache());
+            "not action: action3\n"
+            "\n"
+            "\n"
+            "action: action4\n"
+            "----------------------------------\n"
+            "\n"
+            "not action: action1\n"
+            "not action: action4\n"
+            "\n"
+            "\n"
+            "action: action5\n"
+            "----------------------------------\n"
+            "\n"
+            "not action: action5\n", domain.printSuccessionCache());
 }
 
 

@@ -398,8 +398,7 @@ bool Fact::areEqualExceptAnyValues(const Fact& pOther,
 
 bool Fact::areEqualExceptAnyValuesAndFluent(const Fact& pOther,
                                             const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
-                                            const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2,
-                                            const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr) const
+                                            const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2) const
 {
   if (_name != pOther._name || _arguments.size() != pOther._arguments.size())
     return false;
@@ -409,7 +408,6 @@ bool Fact::areEqualExceptAnyValuesAndFluent(const Fact& pOther,
   while (itParam != _arguments.end())
   {
     if (*itParam != *itOtherParam && !itParam->isAnyValue() && !itOtherParam->isAnyValue() &&
-        !(_isInside(*itParam, pThisFactParametersToConsiderAsAnyValuePtr)) &&
         !(_isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr) ||
           _isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr2)))
       return false;
@@ -628,31 +626,6 @@ Fact Fact::fromPddl(const std::string& pStr,
 }
 
 
-bool Fact::replaceSomeArgumentsByAny(const std::vector<Parameter>& pArgumentsToReplace)
-{
-  bool res = false;
-  for (const auto& currParam : pArgumentsToReplace)
-  {
-    for (auto& currFactParam : _arguments)
-    {
-      if (currFactParam.value == currParam.name)
-      {
-        currFactParam.value = Entity::anyEntityValue();
-        res = true;
-      }
-    }
-    if (_fluent && _fluent->value == currParam.name)
-    {
-      _fluent->value = Entity::anyEntityValue();
-      res = true;
-    }
-  }
-
-  _resetFactSignatureCache();
-  return res;
-}
-
-
 bool Fact::isInOtherFacts(const std::set<Fact>& pOtherFacts,
                           bool pParametersAreForTheFact,
                           std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
@@ -663,13 +636,18 @@ bool Fact::isInOtherFacts(const std::set<Fact>& pOtherFacts,
 {
   bool res = false;
   std::map<Parameter, std::set<Entity>> newPotentialParameters;
+  std::map<Parameter, std::set<Entity>> newPotentialParametersInPlace;
   for (const auto& currOtherFact : pOtherFacts)
     if (isInOtherFact(currOtherFact, pParametersAreForTheFact, newPotentialParameters,
-                      pParametersPtr, pParametersToModifyInPlacePtr))
+                      pParametersPtr, newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
       res = true;
 
   if (res)
+  {
+    if (pParametersToModifyInPlacePtr != nullptr)
+      *pParametersToModifyInPlacePtr = std::move(newPotentialParametersInPlace);
     return _updateParameters(pNewParametersPtr, newPotentialParameters, pCheckAllPossibilities, pParametersPtr, pTriedToModifyParametersPtr);
+  }
   return false;
 }
 
@@ -685,13 +663,20 @@ bool Fact::isInOtherFactsMap(const SetOfFacts& pOtherFacts,
   bool res = false;
   auto otherFactsThatMatched = pOtherFacts.find(*this);
   std::map<Parameter, std::set<Entity>> newPotentialParameters;
+  std::map<Parameter, std::set<Entity>> newPotentialParametersInPlace;
+  if (pParametersToModifyInPlacePtr != nullptr)
+    newPotentialParametersInPlace = *pParametersToModifyInPlacePtr;
   for (const auto& currOtherFact : otherFactsThatMatched)
     if (isInOtherFact(currOtherFact, pParametersAreForTheFact, newPotentialParameters,
-                      pParametersPtr, pParametersToModifyInPlacePtr))
+                      pParametersPtr, newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
       res = true;
 
   if (res)
+  {
+    if (pParametersToModifyInPlacePtr != nullptr)
+      *pParametersToModifyInPlacePtr = std::move(newPotentialParametersInPlace);
     return _updateParameters(pNewParametersPtr, newPotentialParameters, pCheckAllPossibilities, pParametersPtr, pTriedToModifyParametersPtr);
+  }
   return false;
 }
 
@@ -732,7 +717,8 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
                          bool pParametersAreForTheFact,
                          std::map<Parameter, std::set<Entity>>& pNewParameters,
                          const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                         std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const
+                         std::map<Parameter, std::set<Entity>>& pNewParametersInPlace,
+                         const std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const
 {
   if (pOtherFact._name != _name ||
       pOtherFact._arguments.size() != _arguments.size())
@@ -828,16 +814,16 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
       }
     }
 
-    if (pParametersToModifyInPlacePtr != nullptr & !newParametersInPlace.empty())
+    if (!newParametersInPlace.empty())
     {
-      if (pParametersToModifyInPlacePtr->empty())
+      if (pNewParametersInPlace.empty())
       {
-        *pParametersToModifyInPlacePtr = std::move(newParametersInPlace);
+        pNewParametersInPlace = std::move(newParametersInPlace);
       }
       else
       {
         for (auto& currNewPotParam : newParametersInPlace)
-          (*pParametersToModifyInPlacePtr)[currNewPotParam.first].insert(currNewPotParam.second.begin(), currNewPotParam.second.end());
+          pNewParametersInPlace[currNewPotParam.first].insert(currNewPotParam.second.begin(), currNewPotParam.second.end());
       }
     }
 

@@ -595,6 +595,15 @@ std::string conditionToPddl(const Condition& pCondition,
     return "(exists (" + condExists.parameter.toStr() + ") " + conditionStr + ")";
   }
 
+  const ConditionForall* condForallPtr = pCondition.fcForallPtr();
+  if (condForallPtr != nullptr)
+  {
+    const auto& condForall = *condForallPtr;
+    std::string conditionStr;
+    if (condForall.condition)
+      conditionStr = conditionToPddl(*condForall.condition, pIdentation);
+    return "(forall (" + condForall.parameter.toStr() + ") " + conditionStr + ")";
+  }
 
   const ConditionNot* condNotPtr = pCondition.fcNotPtr();
   if (condNotPtr != nullptr)

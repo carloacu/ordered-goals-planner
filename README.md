@@ -73,13 +73,13 @@ requirements:
 - [x] `:disjunctive-preconditions`
 - [x] `:equality`
 - [x] `:existential-preconditions`
-- [ ] `:universal-preconditions`
-- [ ] `:quantified-preconditions`
+- [x] `:universal-preconditions`
+- [x] `:quantified-preconditions`
 - [x] `:conditional-effects`
 - [x] `:fluents`
 - [x] `:numeric-fluents`
 - [x] `:object-fluents`
-- [ ] `:adl`
+- [x] `:adl`
 - [x] `:durative-actions`
 - [ ] `:duration-inequalities`
 - [x] `:derived-predicates`

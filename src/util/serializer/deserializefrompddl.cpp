@@ -14,6 +14,7 @@ namespace
 const char* _equalsConditonFunctionName = "equals";
 const char* _equalsCharConditonFunctionName = "=";
 const char* _existsConditonFunctionName = "exists";
+const char* _forallConditonFunctionName = "forall";
 const char* _notConditonFunctionName = "not";
 const char* _superiorConditionFunctionName = ">";
 const char* _superiorOrEqualConditionFunctionName = ">=";
@@ -164,6 +165,23 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
 
     ++itArg;
     res = std::make_unique<ConditionExists>(existsParameter,
+                                            _expressionParsedToCondition(*itArg, pOntology, pEntities, newParameters, false));
+  }
+  else if (pExpressionParsed.name == _forallConditonFunctionName)
+  {
+    if (pExpressionParsed.arguments.size() != 2)
+      throw std::runtime_error("Forall function badly formatted, it should have only 2 parameters");
+
+    auto itArg = pExpressionParsed.arguments.begin();
+    auto& firstArg = *itArg;
+    auto newParameters = pParameters;
+    auto existsParameters = _expressionParsedToParameters(firstArg, newParameters, pOntology.types);
+    if (existsParameters.size() != 1)
+      throw std::runtime_error("Only one parameter is handled for forall function (needs to be improved)");
+    auto& existsParameter = existsParameters.front();
+
+    ++itArg;
+    res = std::make_unique<ConditionForall>(existsParameter,
                                             _expressionParsedToCondition(*itArg, pOntology, pEntities, newParameters, false));
   }
   else if (pExpressionParsed.name == _notConditonFunctionName &&

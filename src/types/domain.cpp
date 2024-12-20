@@ -9,15 +9,15 @@ namespace ogp
 {
 namespace
 {
-static const SetOfFacts _emptySetOfFact;
 static const std::map<Parameter, std::set<Entity>> _emptyParametersWithValues;
 static const std::vector<Parameter> _emptyParameters;
 
 
 std::set<std::string> _requirementsManaged = {
   ":strips", ":typing", ":negative-preconditions", ":equality",
-  ":existential-preconditions", ":conditional-effects", ":fluents",
-  ":numeric-fluents", ":object-fluents", ":durative-actions",
+  ":existential-preconditions", ":universal-preconditions", ":quantified-preconditions",
+  ":conditional-effects", ":fluents", ":numeric-fluents", ":object-fluents",
+  ":adl", ":durative-actions",
   ":derived-predicates", ":domain-axioms"
 };
 
@@ -50,16 +50,7 @@ struct ActionWithConditionAndFactFacts
     for (auto& effectOptFact : factsFromEffect)
     {
       if (effectOptFact.fact.hasAParameter(true))
-      {
-        if (actionId != pOther.actionId)
-          return true;
-
-        for (auto& otherCondOptFact : pOther.factsFromCondition)
-          if (effectOptFact.isFactNegated == otherCondOptFact.isFactNegated &&
-              effectOptFact.fact.areEqualExceptAnyValuesAndFluent(otherCondOptFact.fact, nullptr, nullptr, &action.parameters))
-            return true;
-        continue;
-      }
+        return true;
 
       if (effectOptFact.fact.fluent() && effectOptFact.fact.fluent()->isAnyValue())
         for (auto& otherCondOptFact : pOther.factsFromCondition)
@@ -159,38 +150,6 @@ void _updateActionsPredecessors(
   }
 }
 
-
-
-
-/**
- * @brief Check if a world state modification can do some modification if we assume the world already satisfies a condition.
- * @param[in] pWorldStateModification World state modification to check.
- * @param[in] pSatisfiedConditionPtr Condition that is already satisfied.
- * @return True if the world state modification can do some modification in the world.
- */
-bool _canWmDoSomething(const std::unique_ptr<ogp::WorldStateModification>& pWorldStateModification,
-                       const std::unique_ptr<Condition>& pSatisfiedConditionPtr)
-{
-  if (!pWorldStateModification)
-    return false;
-  if (!pWorldStateModification->isOnlyASetOfFacts())
-    return true;
-
-  if (pWorldStateModification->forAllUntilTrue(
-        [&](const FactOptional& pFactOptional)
-  {
-        return !pSatisfiedConditionPtr ||
-        !pSatisfiedConditionPtr->containsFactOpt(pFactOptional,
-                                                 _emptyParametersWithValues, nullptr,
-                                                 _emptyParameters);
-}, _emptySetOfFact))
-  {
-    return true;
-  }
-
-  return false;
-}
-
 }
 
 Domain::Domain()
@@ -252,15 +211,14 @@ void Domain::_addAction(const ActionId& pActionId,
   if (clonedAction.canThisActionBeUsedByThePlanner)
   {
     const auto& constFacts = _timelessFacts.setOfFacts();
-    if (!constFacts.empty() &&
-        clonedAction.precondition &&
-        !clonedAction.precondition->untilFalse([&](const FactOptional& pFactOptional) {
-          return !(pFactOptional.isFactNegated &&
-                 !constFacts.find(pFactOptional.fact).empty());
-       }, constFacts))
+    if (!clonedAction.effect.worldStateModification &&
+             !clonedAction.effect.potentialWorldStateModification)
       clonedAction.canThisActionBeUsedByThePlanner = false;
-    else if (!_canWmDoSomething(clonedAction.effect.worldStateModification, clonedAction.precondition) &&
-             !_canWmDoSomething(clonedAction.effect.potentialWorldStateModification, clonedAction.precondition))
+    else if (!constFacts.empty() &&
+             clonedAction.precondition &&
+             !clonedAction.precondition->untilFalse([&](const FactOptional& pFactOptional) {
+               return !(pFactOptional.isFactNegated && !constFacts.find(pFactOptional.fact).empty());
+             }, constFacts))
       clonedAction.canThisActionBeUsedByThePlanner = false;
   }
 

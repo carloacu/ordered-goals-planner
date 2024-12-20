@@ -31,6 +31,7 @@ add_executable(
   src/test_pddl_serialization.cpp
   src/test_setoffacts.cpp
   src/test_successionscache.cpp
+  src/test_universal_preconditions_requirement.cpp
   src/test_worldstate.cpp
   src/docexamples/test_planningDummyExample.hpp
   src/docexamples/test_planningDummyExample.cpp

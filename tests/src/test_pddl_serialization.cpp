@@ -78,6 +78,14 @@ void _test_pddlSerializationParts()
 
   {
     std::size_t pos = 0;
+    std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(forall (?e - entity) (= (pred_d ?e) undefined))", pos, ontology, {}, {});
+    if (!cond)
+      ASSERT_TRUE(false);
+    EXPECT_EQ("forall(?e - entity, !pred_d(?e)=*)", cond->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
     std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(decrease (battery-amount toto) 4)", pos, ontology, {}, {});
     if (!ws)
       ASSERT_TRUE(false);
@@ -207,6 +215,12 @@ void _test_loadPddlDomain()
             (not (held ?b))
             (<= (distance-to-floor ?b) 0)
             (> (velocity ?b) 0)
+            (forall (?b - ball)
+                (and
+                    (= (velocity ?b) 7)
+                    (= (size ?b) 10)
+                )
+            )
         )
         :effect (
             (assign (velocity ?b) (* -0.8 (velocity ?b)))
@@ -301,6 +315,10 @@ void _test_loadPddlDomain()
                 (not (held ?b))
                 (<= (distance-to-floor ?b) 0)
                 (> (velocity ?b) 0)
+                (forall (?b - ball) (and
+                    (= (velocity ?b) 7)
+                    (= (size ?b) 10)
+                ))
             )
 
         :effect

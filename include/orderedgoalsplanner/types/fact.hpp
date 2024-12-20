@@ -102,13 +102,11 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @param[in] pOther Other fact to compare.
    * @param[in] pOtherFactArgumentsToConsiderAsAnyValuePtr Arguments to consider as "any value".
    * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr2 Another set of arguments to consider as "any value".
-   * @param[in] pThisArgumentsToConsiderAsAnyValuePtr Arguments of the this fact to consider as "any value".
    * @return True if the 2 facts match, false otherwise.
    */
   bool areEqualExceptAnyValuesAndFluent(const Fact& pOther,
                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
-                                        const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr,
-                                        const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr = nullptr) const;
+                                        const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
 
   bool doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const Fact& pFact) const;
 
@@ -190,13 +188,6 @@ struct ORDEREDGOALSPLANNER_API Fact
                        bool pIsOkIfFluentIsMissing = false);
 
   /**
-   * @brief Set "any value" to all of the specified arguments.
-   * @param pArgumentsToReplace[in] Arguments to replace by "any value".
-   * @return True if at least one "any value" has been set, false otherwise.
-   */
-  bool replaceSomeArgumentsByAny(const std::vector<Parameter>& pArgumentsToReplace);
-
-  /**
    * @brief Does the fact matches any of the other facts.
    * @param[in] pOtherFacts Set of other facts.
    * @param[in] pParametersAreForTheFact If true, get the parameters from the fact else get the parameters from the set of other facts.
@@ -245,7 +236,8 @@ struct ORDEREDGOALSPLANNER_API Fact
                      bool pParametersAreForTheFact,
                      std::map<Parameter, std::set<Entity>>& pNewParameters,
                      const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                     std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const;
+                     std::map<Parameter, std::set<Entity>>& pNewParametersInPlace,
+                     const std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const;
 
   /**
    * @brief Replace, in the arguments of this fact, a fact by another fact.
@@ -300,6 +292,7 @@ private:
                          bool pCheckAllPossibilities,
                          const std::map<Parameter, std::set<Entity>>* pParametersPtr,
                          bool* pTriedToModifyParametersPtr) const;
+
   void _resetFactSignatureCache();
 
   void _finalizeInisilizationAndValidityChecks(const Ontology& pOntology,

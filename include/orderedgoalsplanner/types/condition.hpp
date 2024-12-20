@@ -16,6 +16,7 @@ namespace ogp
 struct WorldState;
 struct ConditionNode;
 struct ConditionExists;
+struct ConditionForall;
 struct ConditionNot;
 struct ConditionFact;
 struct ConditionNumber;
@@ -44,21 +45,6 @@ struct ORDEREDGOALSPLANNER_API Condition
 
   /// Check if this condition contains a fact or the negation of the fact.
   virtual bool hasFact(const Fact& pFact) const = 0;
-
-  /**
-   * @brief Check if this condition contains an optional fact with parameters compatibility.
-   * @param[in] pFactOptional Optional fact to consider.
-   * @param[in] pFactParameters Optional fact parameters to possible values. The possible value will not be considered here.
-   * @param[in] pOtherFactParametersPtr Another map of fact parameters to possible values.
-   * @param[in] pConditionParameters Parameters of the condition.
-   * @param[in] pIsWrappingExpressionNegated Is the expression wrapping this call is negated.
-   * @return True if this condition contains an optional fact with parameters compatibility.
-   */
-  virtual bool containsFactOpt(const FactOptional& pFactOptional,
-                               const std::map<Parameter, std::set<Entity>>& pFactParameters,
-                               const std::map<Parameter, std::set<Entity>>* pOtherFactParametersPtr,
-                               const std::vector<Parameter>& pConditionParameters,
-                               bool pIsWrappingExpressionNegated = false) const = 0;
 
   /**
    * @brief Iterate over all the optional facts.
@@ -124,17 +110,6 @@ struct ORDEREDGOALSPLANNER_API Condition
                       bool* pCanBecomeTruePtr = nullptr,
                       bool pIsWrappingExpressionNegated = false) const = 0;
 
-  /**
-   * @brief Check if the condition can become true according to the facts that can become true in a world state.
-   * @param[in] pWorldState World state to consider.
-   * @param[in] pParameters Parameter of the condition.
-   * @param[in] pIsWrappingExpressionNegated Is the expression wrapping this call is negated.
-   * @return True if this condition can be satisfied.
-   */
-  virtual bool canBecomeTrue(const WorldState& pWorldState,
-                             const std::vector<Parameter>& pParameters,
-                             bool pIsWrappingExpressionNegated = false) const = 0;
-
   /// Equality operators.
   virtual bool operator==(const Condition& pOther) const = 0;
   virtual bool operator!=(const Condition& pOther) const { return !operator==(pOther); }
@@ -169,6 +144,10 @@ struct ORDEREDGOALSPLANNER_API Condition
   /// Cast to ConditionExists* is possible.
   virtual const ConditionExists* fcExistsPtr() const = 0;
   virtual ConditionExists* fcExistsPtr() = 0;
+
+  /// Cast to ConditionForall* is possible.
+  virtual const ConditionForall* fcForallPtr() const = 0;
+  virtual ConditionForall* fcForallPtr() = 0;
 
   /// Cast to ConditionNot* is possible.
   virtual const ConditionNot* fcNotPtr() const = 0;
@@ -221,11 +200,6 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
                 std::unique_ptr<Condition> pRightOperand);
 
   bool hasFact(const Fact& pFact) const override;
-  bool containsFactOpt(const FactOptional& pFactOptional,
-                       const std::map<Parameter, std::set<Entity>>& pFactParameters,
-                       const std::map<Parameter, std::set<Entity>>* pOtherFactParametersPtr,
-                       const std::vector<Parameter>& pConditionParameters,
-                       bool pIsWrappingExpressionNegated) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreFluent,
@@ -249,9 +223,6 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
               std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
               bool* pCanBecomeTruePtr,
               bool pIsWrappingExpressionNegated) const override;
-  bool canBecomeTrue(const WorldState& pWorldState,
-                     const std::vector<Parameter>& pParameters,
-                     bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
   std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const override;
@@ -268,6 +239,8 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
   ConditionNode* fcNodePtr() override { return this; }
   const ConditionExists* fcExistsPtr() const override { return nullptr; }
   ConditionExists* fcExistsPtr() override { return nullptr; }
+  const ConditionForall* fcForallPtr() const override { return nullptr; }
+  ConditionForall* fcForallPtr() override { return nullptr; }
   const ConditionNot* fcNotPtr() const override { return nullptr; }
   ConditionNot* fcNotPtr() override { return nullptr; }
   const ConditionFact* fcFactPtr() const override { return nullptr; }
@@ -291,11 +264,6 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
                     bool pPrintAnyFluent) const override;
 
   bool hasFact(const Fact& pFact) const override;
-  bool containsFactOpt(const FactOptional& pFactOptional,
-                       const std::map<Parameter, std::set<Entity>>& pFactParameters,
-                       const std::map<Parameter, std::set<Entity>>* pOtherFactParametersPtr,
-                       const std::vector<Parameter>& pConditionParameters,
-                       bool pIsWrappingExpressionNegated) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreFluent,
@@ -322,9 +290,6 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
               std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
               bool* pCanBecomeTruePtr,
               bool pIsWrappingExpressionNegated) const override;
-  bool canBecomeTrue(const WorldState& pWorldState,
-                     const std::vector<Parameter>& pParameters,
-                     bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
   std::optional<Entity> getFluent(const SetOfFacts&) const override { return {}; }
@@ -340,6 +305,8 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
   ConditionNode* fcNodePtr() override { return nullptr; }
   const ConditionExists* fcExistsPtr() const override { return this; }
   ConditionExists* fcExistsPtr() override { return this; }
+  const ConditionForall* fcForallPtr() const override { return nullptr; }
+  ConditionForall* fcForallPtr() override { return nullptr; }
   const ConditionNot* fcNotPtr() const override { return nullptr; }
   ConditionNot* fcNotPtr() override { return nullptr; }
   const ConditionFact* fcFactPtr() const override { return nullptr; }
@@ -348,6 +315,73 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
   ConditionNumber* fcNbPtr() override { return nullptr; }
 
   /// Variable to check the existance in the condition
+  Parameter parameter;
+  /// Expression to check
+  std::unique_ptr<Condition> condition;
+};
+
+
+/// Condition tree to manage forall operator.
+struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
+{
+  ConditionForall(const Parameter& pParameter,
+                  std::unique_ptr<Condition> pCondition);
+
+  std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr,
+                    bool pPrintAnyFluent) const override;
+
+  bool hasFact(const Fact& pFact) const override;
+  ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
+                         bool pIsWrappingExpressionNegated,
+                         bool pIgnoreFluent,
+                         bool pOnlyMandatoryFacts) const override;
+
+  bool findConditionCandidateFromFactFromEffect(
+      const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+      const WorldState& pWorldState,
+      const SetOfEntities& pConstants,
+      const SetOfEntities& pObjects,
+      const Fact& pFactFromEffect,
+      const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
+      const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
+      const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+      bool pIsWrappingExpressionNegated) const override;
+
+  bool untilFalse(const std::function<bool (const FactOptional&)>&,
+                  const SetOfFacts&) const override { return true; } // TODO
+  bool isTrue(const WorldState& pWorldState,
+              const SetOfEntities& pConstants,
+              const SetOfEntities& pObjects,
+              const std::set<Fact>& pPunctualFacts,
+              const std::set<Fact>& pRemovedFacts,
+              std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+              bool* pCanBecomeTruePtr,
+              bool pIsWrappingExpressionNegated) const override;
+  bool operator==(const Condition& pOther) const override;
+
+  std::optional<Entity> getFluent(const SetOfFacts&) const override { return {}; }
+
+  std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
+                                   bool pInvert,
+                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr) const override;
+  bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
+                             bool pIsWrappingExpressionNegated,
+                             std::list<Parameter>* pParametersPtr) const override;
+
+  const ConditionNode* fcNodePtr() const override { return nullptr; }
+  ConditionNode* fcNodePtr() override { return nullptr; }
+  const ConditionExists* fcExistsPtr() const override { return nullptr; }
+  ConditionExists* fcExistsPtr() override { return nullptr; }
+  const ConditionForall* fcForallPtr() const override { return this; }
+  ConditionForall* fcForallPtr() override { return this; }
+  const ConditionNot* fcNotPtr() const override { return nullptr; }
+  ConditionNot* fcNotPtr() override { return nullptr; }
+  const ConditionFact* fcFactPtr() const override { return nullptr; }
+  ConditionFact* fcFactPtr() override { return nullptr; }
+  const ConditionNumber* fcNbPtr() const override { return nullptr; }
+  ConditionNumber* fcNbPtr() override { return nullptr; }
+
+  /// Variable to check the forall in the condition
   Parameter parameter;
   /// Expression to check
   std::unique_ptr<Condition> condition;
@@ -363,11 +397,6 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
                     bool pPrintAnyFluent) const override;
 
   bool hasFact(const Fact& pFact) const override;
-  bool containsFactOpt(const FactOptional& pFactOptional,
-                       const std::map<Parameter, std::set<Entity>>& pFactParameters,
-                       const std::map<Parameter, std::set<Entity>>* pOtherFactParametersPtr,
-                       const std::vector<Parameter>& pConditionParameters,
-                       bool pIsWrappingExpressionNegated) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreFluent,
@@ -394,9 +423,6 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
               std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
               bool* pCanBecomeTruePtr,
               bool pIsWrappingExpressionNegated) const override;
-  bool canBecomeTrue(const WorldState& pWorldState,
-                     const std::vector<Parameter>& pParameters,
-                     bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
   std::optional<Entity> getFluent(const SetOfFacts&) const override { return {}; }
@@ -412,6 +438,8 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
   ConditionNode* fcNodePtr() override { return nullptr; }
   const ConditionExists* fcExistsPtr() const override { return nullptr; }
   ConditionExists* fcExistsPtr() override { return nullptr; }
+  const ConditionForall* fcForallPtr() const override { return nullptr; }
+  ConditionForall* fcForallPtr() override { return nullptr; }
   const ConditionNot* fcNotPtr() const override { return this; }
   ConditionNot* fcNotPtr() override { return this; }
   const ConditionFact* fcFactPtr() const override { return nullptr; }
@@ -433,11 +461,6 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
                     bool pPrintAnyFluent) const override { return factOptional.toStr(pFactWriterPtr, pPrintAnyFluent); }
 
   bool hasFact(const Fact& pFact) const override;
-  bool containsFactOpt(const FactOptional& pFactOptional,
-                       const std::map<Parameter, std::set<Entity>>& pFactParameters,
-                       const std::map<Parameter, std::set<Entity>>* pOtherFactParametersPtr,
-                       const std::vector<Parameter>& pConditionParameters,
-                       bool pIsWrappingExpressionNegated) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreFluent,
@@ -462,9 +485,6 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
               std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
               bool* pCanBecomeTruePtr,
               bool pIsWrappingExpressionNegated) const override;
-  bool canBecomeTrue(const WorldState& pWorldState,
-                     const std::vector<Parameter>& pParameters,
-                     bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
   std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const override;
@@ -480,6 +500,8 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
   ConditionNode* fcNodePtr() override { return nullptr; }
   const ConditionExists* fcExistsPtr() const override { return nullptr; }
   ConditionExists* fcExistsPtr() override { return nullptr; }
+  const ConditionForall* fcForallPtr() const override { return nullptr; }
+  ConditionForall* fcForallPtr() override { return nullptr; }
   const ConditionNot* fcNotPtr() const override { return nullptr; }
   ConditionNot* fcNotPtr() override { return nullptr; }
   const ConditionFact* fcFactPtr() const override { return this; }
@@ -501,11 +523,6 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
                     bool pPrintAnyFluent) const override;
 
   bool hasFact(const Fact&) const override  { return false; }
-  bool containsFactOpt(const FactOptional&,
-                       const std::map<Parameter, std::set<Entity>>&,
-                       const std::map<Parameter, std::set<Entity>>*,
-                       const std::vector<Parameter>&,
-                       bool) const override { return false; }
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>&, bool, bool, bool) const override { return ContinueOrBreak::CONTINUE; }
   bool findConditionCandidateFromFactFromEffect(
       const std::function<bool (const FactOptional&)>&,
@@ -527,9 +544,6 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
               std::map<Parameter, std::set<Entity>>*,
               bool*,
               bool pIsWrappingExpressionNegated) const override { return !pIsWrappingExpressionNegated; }
-  bool canBecomeTrue(const WorldState&,
-                     const std::vector<Parameter>&,
-                     bool) const override  { return true; }
   bool operator==(const Condition& pOther) const override;
 
   std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const override;
@@ -543,6 +557,8 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
   ConditionNode* fcNodePtr() override { return nullptr; }
   const ConditionExists* fcExistsPtr() const override { return nullptr; }
   ConditionExists* fcExistsPtr() override { return nullptr; }
+  const ConditionForall* fcForallPtr() const override { return nullptr; }
+  ConditionForall* fcForallPtr() override { return nullptr; }
   const ConditionNot* fcNotPtr() const override { return nullptr; }
   ConditionNot* fcNotPtr() override { return nullptr; }
   const ConditionFact* fcFactPtr() const override { return nullptr; }

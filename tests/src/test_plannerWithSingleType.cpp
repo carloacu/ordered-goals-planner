@@ -3917,6 +3917,57 @@ void _assignAFactTwoTimesInTheSamePlan()
 }
 
 
+void _assignAFactTwoTimesInTheSamePlan2()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+  const std::string action3 = "action3";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("entity\n"
+                                             "param");
+  ontology.constants = ogp::SetOfEntities::fromPddl("aVal anotherVal valGoal v1 v2 v3 kitchen - entity\n"
+                                                    "p1 p2 p3 pc1 pc2 pc3 - param", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr(_fact_a + " - entity\n" +
+                                                      _fact_b + "(?p - param) - entity\n" +
+                                                      _fact_c + "(?p - param) - entity\n" +
+                                                      _fact_d + "(?p - param) - entity\n" +
+                                                      _fact_e, ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> action1Parameters{_parameter("?p - param", ontology)};
+  ogp::Action action1Obj({}, _worldStateModification_fromStr("assign(" + _fact_a + ", " + _fact_b + "(?p))", ontology, action1Parameters));
+  action1Obj.parameters = std::move(action1Parameters);
+  actions.emplace(action1, action1Obj);
+
+  std::vector<ogp::Parameter> action2Parameters{_parameter("?pc - param", ontology)};
+  ogp::Action action2Obj(_condition_fromStr("=(" + _fact_a + ", " + _fact_c + "(?pc))", ontology, action2Parameters),
+                         _worldStateModification_fromStr("assign(" + _fact_a + ", " + _fact_d + "(?pc))", ontology, action2Parameters));
+  action2Obj.parameters = std::move(action2Parameters);
+  actions.emplace(action2, action2Obj);
+
+  ogp::Action action3Obj(_condition_fromStr(_fact_a + "=kitchen", ontology, action2Parameters),
+                         _worldStateModification_fromStr(_fact_e, ontology, action2Parameters));
+  actions.emplace(action3, action3Obj);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _setGoalsForAPriority(problem, {_goal(_fact_e, ontology)}, ontology.constants);
+  _addFact(problem.worldState, _fact_b + "(p1)=aVal", problem.goalStack, ontology, setOfEventsMap, _now);
+  _addFact(problem.worldState, _fact_b + "(p2)=valGoal", problem.goalStack, ontology, setOfEventsMap, _now);
+  _addFact(problem.worldState, _fact_b + "(p3)=anotherVal", problem.goalStack, ontology, setOfEventsMap, _now);
+  _addFact(problem.worldState, _fact_c + "(pc1)=v1", problem.goalStack, ontology, setOfEventsMap, _now);
+  _addFact(problem.worldState, _fact_c + "(pc2)=valGoal", problem.goalStack, ontology, setOfEventsMap, _now);
+  _addFact(problem.worldState, _fact_c + "(pc3)=v3", problem.goalStack, ontology, setOfEventsMap, _now);
+  _addFact(problem.worldState, _fact_d + "(pc2)=kitchen", problem.goalStack, ontology, setOfEventsMap, _now);
+
+  EXPECT_EQ(action1 + "(?p -> p2)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action2 + "(?pc -> pc2)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action3, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
 void _checkTwoTimesTheEqualityOfAFact()
 {
   const std::string action1 = "action1";
@@ -4140,6 +4191,7 @@ TEST(Planner, test_planWithSingleType)
   _fixEventWithFluentInParameter();
   _derivedPredicates();
   _assignAFactTwoTimesInTheSamePlan();
+  _assignAFactTwoTimesInTheSamePlan2();
   _checkTwoTimesTheEqualityOfAFact();
   _eventToRemoveAFactWithoutFluent();
 }

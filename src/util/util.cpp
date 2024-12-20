@@ -337,4 +337,25 @@ bool hasAnEntyTypeWihTypename(const std::string& pParamtypename,
 }
 
 
+std::set<Entity> typenameToEntities(const std::string& pParamtypename,
+                                    const SetOfEntities& pConstants,
+                                    const SetOfEntities& pObjects)
+{
+  std::set<Entity> res;
+  auto* constantsPtr = pConstants.typeNameToEntities(pParamtypename);
+  if (constantsPtr != nullptr)
+    res = *constantsPtr;
+
+  auto* entitiesPtr = pObjects.typeNameToEntities(pParamtypename);
+  if (entitiesPtr != nullptr)
+  {
+    if (res.empty())
+      res = *entitiesPtr;
+    else
+      res.insert(entitiesPtr->begin(), entitiesPtr->end());
+  }
+  return res;
+}
+
+
 }
