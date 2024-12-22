@@ -11,7 +11,7 @@ namespace ogp
 {
 namespace
 {
-const std::string _anyValue = "*";
+const std::string _anyEntity = "*";
 }
 
 Entity::Entity(const std::string& pValue,
@@ -54,13 +54,13 @@ bool Entity::operator==(const Entity& pOther) const {
 
 const std::string& Entity::anyEntityValue()
 {
-  return _anyValue;
+  return _anyEntity;
 }
 
 
 Entity Entity::createAnyEntity()
 {
-  return Entity(_anyValue, {});
+  return Entity(_anyEntity, {});
 }
 
 
@@ -132,14 +132,14 @@ std::string Entity::toStr() const
   return value + " - " + type->name;
 }
 
-bool Entity::isAnyValue() const
+bool Entity::isAnyEntity() const
 {
-  return value == _anyValue;
+  return value == _anyEntity;
 }
 
 bool Entity::isAParameterToFill() const
 {
-  return !value.empty() && (value[0] == '?' || isAnyValue());
+  return !value.empty() && (value[0] == '?' || isAnyEntity());
 }
 
 Parameter Entity::toParameter() const

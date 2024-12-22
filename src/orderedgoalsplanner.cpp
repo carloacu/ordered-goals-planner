@@ -297,7 +297,7 @@ bool _fillParameter(const Parameter& pParameter,
                     const ResearchContext& pContext)
 {
   if (pParameterValues.empty() &&
-      pFact.hasParameterOrFluent(pParameter))
+      pFact.hasParameterOrValue(pParameter))
   {
     const auto& ontology = pContext.domain.getOntology();
     auto& newParamValues = pNewParentParameters[pParameter];
@@ -315,7 +315,7 @@ bool _fillParameter(const Parameter& pParameter,
       auto itParam = pHoldingActionParameters.find(parentParamValue->toParameter());
       if (itParam != pHoldingActionParameters.end())
         newParamValues = itParam->second;
-      else if (!parentParamValue->isAParameterToFill() || parentParamValue->isAnyValue())
+      else if (!parentParamValue->isAParameterToFill() || parentParamValue->isAnyEntity())
         newParamValues.insert(*parentParamValue);
       return !newParamValues.empty();
     }, pContext.problem.worldState, ontology.constants, pContext.problem.entities, pFact, pParentParameters, pTmpParentParametersPtr, pHoldingActionParameters);
@@ -341,35 +341,32 @@ bool _fillParameter(const Parameter& pParameter,
 }
 
 
-PossibleEffect _checkConditionAndFillParameters(const std::unique_ptr<Condition>& pCondition,
+PossibleEffect _checkConditionAndFillParameters(const Condition& pCondition,
                                                 const FactOptional& pFactOptional,
                                                 std::map<Parameter, std::set<Entity>>& pParentParameters,
                                                 std::map<Parameter, std::set<Entity>>* pTmpParentParametersPtr,
                                                 const ResearchContext& pContext,
                                                 const std::map<Parameter, std::set<Entity>>& pHoldingActionParameters)
 {
-  if (pCondition)
+  // fill parent parameters
+  std::map<Parameter, std::set<Entity>> newParentParameters;
+  for (auto& currParentParam : pParentParameters)
+    if (!_fillParameter(currParentParam.first, currParentParam.second, newParentParameters,
+                        pHoldingActionParameters, pCondition, pFactOptional.fact,
+                        pParentParameters, pTmpParentParametersPtr, pContext))
+      return PossibleEffect::NOT_SATISFIED;
+
+  if (pTmpParentParametersPtr != nullptr)
   {
-    // fill parent parameters
-    std::map<Parameter, std::set<Entity>> newParentParameters;
-    for (auto& currParentParam : pParentParameters)
-      if (!_fillParameter(currParentParam.first, currParentParam.second, newParentParameters,
-                          pHoldingActionParameters, *pCondition, pFactOptional.fact,
+    std::map<Parameter, std::set<Entity>> newTmpParentParameters;
+    for (auto& currParentParam : *pTmpParentParametersPtr)
+      if (!_fillParameter(currParentParam.first, currParentParam.second, newTmpParentParameters,
+                          pHoldingActionParameters, pCondition, pFactOptional.fact,
                           pParentParameters, pTmpParentParametersPtr, pContext))
         return PossibleEffect::NOT_SATISFIED;
-
-    if (pTmpParentParametersPtr != nullptr)
-    {
-      std::map<Parameter, std::set<Entity>> newTmpParentParameters;
-      for (auto& currParentParam : *pTmpParentParametersPtr)
-        if (!_fillParameter(currParentParam.first, currParentParam.second, newTmpParentParameters,
-                            pHoldingActionParameters, *pCondition, pFactOptional.fact,
-                            pParentParameters, pTmpParentParametersPtr, pContext))
-          return PossibleEffect::NOT_SATISFIED;
-      applyNewParams(*pTmpParentParametersPtr, newTmpParentParameters);
-    }
-    applyNewParams(pParentParameters, newParentParameters);
+    applyNewParams(*pTmpParentParametersPtr, newTmpParentParameters);
   }
+  applyNewParams(pParentParameters, newParentParameters);
 
   // Check that the new fact pattern is not already satisfied
   if (pContext.problem.worldState.isOptionalFactSatisfiedInASpecificContext(pFactOptional, {}, {}, true, &pParentParameters,
@@ -381,7 +378,7 @@ PossibleEffect _checkConditionAndFillParameters(const std::unique_ptr<Condition>
 
 PossibleEffect _lookForAPossibleDeduction(TreeOfAlreadyDonePath& pTreeOfAlreadyDonePath,
                                           const std::vector<Parameter>& pParameters,
-                                          const std::unique_ptr<Condition>& pCondition,
+                                          const Condition& pCondition,
                                           const std::unique_ptr<ogp::WorldStateModification>& pWorldStateModificationPtr1,
                                           const std::unique_ptr<ogp::WorldStateModification>& pWorldStateModificationPtr2,
                                           const FactOptional& pFactOptional,
@@ -484,9 +481,10 @@ void _lookForAPossibleExistingOrNotFactFromActionsAndEvents(
       auto& action = itAction->second;
       auto* newTreePtr = pTreeOfAlreadyDonePath.getNextActionTreeIfNotAnExistingLeaf(currActionId);
       auto newRes = PossibleEffect::NOT_SATISFIED;
-      if (newTreePtr != nullptr)
+      if (newTreePtr != nullptr && action.precondition)
       {
-        newRes = _lookForAPossibleDeduction(*newTreePtr, action.parameters, action.precondition,
+        const auto& precondition = *action.precondition;
+        newRes = _lookForAPossibleDeduction(*newTreePtr, action.parameters, precondition,
                                             action.effect.worldStateModification,
                                             action.effect.potentialWorldStateModification,
                                             pFactOptional, cpParentParameters, &cpTmpParameters,
@@ -527,9 +525,10 @@ void _lookForAPossibleExistingOrNotFactFromActionsAndEvents(
 
             auto* newTreePtr = pTreeOfAlreadyDonePath.getNextInflectionTreeIfNotAnExistingLeaf(currEventIdSucc);
             auto newRes = PossibleEffect::NOT_SATISFIED;
-            if (newTreePtr != nullptr)
+            if (newTreePtr != nullptr && event.precondition)
             {
-              newRes = _lookForAPossibleDeduction(*newTreePtr, event.parameters, event.precondition,
+              const auto& precondition = *event.precondition;
+              newRes = _lookForAPossibleDeduction(*newTreePtr, event.parameters, precondition,
                                                   event.factsToModify, {}, pFactOptional,
                                                   cpParentParameters, &cpTmpParameters,
                                                   pContext, pFactsAlreadychecked, fullEventId);
@@ -566,7 +565,7 @@ bool _doesConditionMatchAnOptionalFact(const std::map<Parameter, std::set<Entity
       return false;
 
     if (pConditionFactOptional.isFactNegated != pFactOptional.isFactNegated)
-      return pConditionFactOptional.fact.areEqualWithoutFluentConsideration(pFactOptional.fact) && pConditionFactOptional.fact.fluent() != pFactOptional.fact.fluent();
+      return pConditionFactOptional.fact.areEqualWithoutValueConsideration(pFactOptional.fact) && pConditionFactOptional.fact.value() != pFactOptional.fact.value();
 
     bool pIsWrappingExpressionNegated = false; // TODO: replace by real value
     if ((!pIsWrappingExpressionNegated && pFactOptional.isFactNegated == pConditionFactOptional.isFactNegated) ||
@@ -592,8 +591,8 @@ bool _doesStatisfyTheGoal(std::map<Parameter, std::set<Entity>>& pParameters,
       if (pParameters.empty() && pParametersToModifyInPlacePtr == nullptr)
         return true;
 
-      const auto& objectivePtr = pContext.goal.objectivePtr();
-      if (_checkConditionAndFillParameters(objectivePtr, pFactOptional, pParameters, pParametersToModifyInPlacePtr,
+      const auto& objective = pContext.goal.objective();
+      if (_checkConditionAndFillParameters(objective, pFactOptional, pParameters, pParametersToModifyInPlacePtr,
                                            pContext, _emptyParameters) == PossibleEffect::SATISFIED)
       {
         if (pParametersToModifyInPlacePtr != nullptr &&  !pCheckValidity(*pParametersToModifyInPlacePtr))
@@ -659,8 +658,8 @@ bool _lookForAPossibleEffect(PotentialNextActionParametersWithTmpData& pParamete
       if (pParametersToModifyInPlacePtr != nullptr)
         cpTmpParameters = *pParametersToModifyInPlacePtr;
 
-      const auto& objectivePtr = pContext.goal.objectivePtr();
-      possibleEffect = _checkConditionAndFillParameters(objectivePtr, pFactOptional, cpParentParameters, &cpTmpParameters,
+      const auto& objective = pContext.goal.objective();
+      possibleEffect = _checkConditionAndFillParameters(objective, pFactOptional, cpParentParameters, &cpTmpParameters,
                                                         pContext, _emptyParameters);
       if (possibleEffect == PossibleEffect::SATISFIED &&
           _updatePossibleParameters(newPossibleParentParameters, newPossibleTmpParentParameters,

@@ -97,7 +97,7 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
                                                         const Ontology& pOntology,
                                                         const SetOfEntities& pEntities,
                                                         const std::vector<Parameter>& pParameters,
-                                                        bool pIsOkIfFluentIsMissing)
+                                                        bool pIsOkIfValueIsMissing)
 {
   std::unique_ptr<Condition> res;
 
@@ -128,16 +128,16 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
         rightOperandExp.arguments.empty() &&
         !rightOperandExp.followingExpression && rightOperandExp.value == "")
     {
-      if (rightOperandExp.name == Fact::getUndefinedValue().value)
+      if (rightOperandExp.name == Fact::getUndefinedEntity().value)
       {
         leftFactPtr->factOptional.isFactNegated = true;
-        leftFactPtr->factOptional.fact.setFluentValue(Entity::anyEntityValue());
+        leftFactPtr->factOptional.fact.setValueFromStr(Entity::anyEntityValue());
         res = std::make_unique<ConditionFact>(std::move(*leftFactPtr));
       }
       else if (pExpressionParsed.name == _equalsCharConditonFunctionName && !rightOperandExp.isAFunction &&
                rightOperandExp.name != "")
       {
-        leftFactPtr->factOptional.fact.setFluent(
+        leftFactPtr->factOptional.fact.setValue(
               Entity::fromUsage(rightOperandExp.name, pOntology, pEntities, pParameters));
         res = std::make_unique<ConditionFact>(std::move(*leftFactPtr));
       }
@@ -189,7 +189,7 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
   {
     auto& expNegationned = pExpressionParsed.arguments.front();
 
-    res = _expressionParsedToCondition(expNegationned, pOntology, pEntities, pParameters, pIsOkIfFluentIsMissing);
+    res = _expressionParsedToCondition(expNegationned, pOntology, pEntities, pParameters, pIsOkIfValueIsMissing);
     if (res)
     {
        auto* factPtr = res->fcFactPtr();
@@ -262,10 +262,10 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
 
     if (!res)
     {
-      bool isOkIfFluentIsMissing = pIsOkIfFluentIsMissing ||
+      bool isOkIfValueIsMissing = pIsOkIfValueIsMissing ||
           nodeType == ConditionNodeType::SUPERIOR || nodeType == ConditionNodeType::SUPERIOR_OR_EQUAL ||
           nodeType == ConditionNodeType::INFERIOR || nodeType == ConditionNodeType::INFERIOR_OR_EQUAL;
-      res = std::make_unique<ConditionFact>(pExpressionParsed.toFact(pOntology, pEntities, pParameters, isOkIfFluentIsMissing));
+      res = std::make_unique<ConditionFact>(pExpressionParsed.toFact(pOntology, pEntities, pParameters, isOkIfValueIsMissing));
     }
   }
 
@@ -312,7 +312,7 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
                                                                           const Ontology& pOntology,
                                                                           const SetOfEntities& pEntities,
                                                                           const std::vector<Parameter>& pParameters,
-                                                                          bool pIsOkIfFluentIsMissing)
+                                                                          bool pIsOkIfValueIsMissing)
 {
   std::unique_ptr<WorldStateModification> res;
 
@@ -327,16 +327,16 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
         rightOperandExp.arguments.empty() &&
         !rightOperandExp.followingExpression && rightOperandExp.value == "")
     {
-      if (rightOperandExp.name == Fact::getUndefinedValue().value)
+      if (rightOperandExp.name == Fact::getUndefinedEntity().value)
       {
         leftFactPtr->factOptional.isFactNegated = true;
-        leftFactPtr->factOptional.fact.setFluentValue(Entity::anyEntityValue());
+        leftFactPtr->factOptional.fact.setValueFromStr(Entity::anyEntityValue());
         res = std::make_unique<WorldStateModificationFact>(std::move(*leftFactPtr));
       }
       else if (pExpressionParsed.name == _assignWsFunctionName && !rightOperandExp.isAFunction &&
                rightOperandExp.name != "")
       {
-        leftFactPtr->factOptional.fact.setFluent(Entity::fromUsage(rightOperandExp.name, pOntology, pEntities, pParameters));
+        leftFactPtr->factOptional.fact.setValue(Entity::fromUsage(rightOperandExp.name, pOntology, pEntities, pParameters));
         res = std::make_unique<WorldStateModificationFact>(std::move(*leftFactPtr));
       }
     }
@@ -509,7 +509,7 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
     }
 
     if (!res)
-      res = std::make_unique<WorldStateModificationFact>(pExpressionParsed.toFact(pOntology, pEntities, pParameters, pIsOkIfFluentIsMissing));
+      res = std::make_unique<WorldStateModificationFact>(pExpressionParsed.toFact(pOntology, pEntities, pParameters, pIsOkIfValueIsMissing));
   }
 
   if (pExpressionParsed.followingExpression)

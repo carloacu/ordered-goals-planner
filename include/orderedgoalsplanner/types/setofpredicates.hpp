@@ -27,7 +27,7 @@ struct ORDEREDGOALSPLANNER_API SetOfPredicates
   static SetOfPredicates fromPddl(const std::string& pStr,
                                   std::size_t& pPos,
                                   const SetOfTypes& pSetOfTypes,
-                                  const std::shared_ptr<Type>& pDefaultFluent = {});
+                                  const std::shared_ptr<Type>& pDefaultValue = {});
 
   void addAll(const SetOfPredicates& pOther);
   void addPredicate(const Predicate& pPredicate);

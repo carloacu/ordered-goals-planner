@@ -29,8 +29,8 @@ struct ORDEREDGOALSPLANNER_API Predicate
   std::string name;
   /// Argument types of the predicate.
   std::vector<Parameter> parameters;
-  /// Fluent type of the predicate.
-  std::shared_ptr<Type> fluent;
+  /// Value type of the predicate.
+  std::shared_ptr<Type> value;
 };
 
 } // !ogp

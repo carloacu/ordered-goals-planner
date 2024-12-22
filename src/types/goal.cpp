@@ -171,7 +171,7 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
     if (!factsToValue.find(pFactOptional.fact).empty())
       return ContinueOrBreak::BREAK;
 
-    if (pFactOptional.fact.fluent())
+    if (pFactOptional.fact.value())
     {
       const FactsToValue& invertedFactsToValue = pFactOptional.isFactNegated ?
             conditionsToValue.factsToValue() : conditionsToValue.notFactsToValue();

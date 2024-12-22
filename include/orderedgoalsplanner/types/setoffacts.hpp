@@ -84,7 +84,7 @@ struct ORDEREDGOALSPLANNER_API SetOfFacts
 
 
   SetOfFactIterator find(const Fact& pFact,
-                         bool pIgnoreFluent = false) const;
+                         bool pIgnoreValue = false) const;
 
   const std::map<Fact, bool>& facts() const { return _facts; }
 
@@ -93,7 +93,7 @@ struct ORDEREDGOALSPLANNER_API SetOfFacts
    * @param[in] pFact Fact to extract the value.
    * @return The value of the fact in the world state, an empty string if the fact is not in the world state.
    */
-  std::optional<Entity> getFactFluent(const Fact& pFact) const;
+  std::optional<Entity> getFluentValue(const Fact& pFact) const;
 
   /**
    * @brief Extract the potential arguments of a fact parameter.
@@ -113,7 +113,7 @@ private:
   /// Fact to bool True if the fact is timeless
   std::map<Fact, bool> _facts;
   std::optional<std::map<std::string, std::list<Fact>>> _exactCallToListsOpt;
-  std::optional<std::map<std::string, std::list<Fact>>> _exactCallWithoutFluentToListsOpt;
+  std::optional<std::map<std::string, std::list<Fact>>> _exactCallWithoutValueToListsOpt;
   struct ParameterToValues
   {
     ParameterToValues(std::size_t pNbOfArgs)

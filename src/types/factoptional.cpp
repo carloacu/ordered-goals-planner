@@ -14,14 +14,14 @@ FactOptional::FactOptional(const Fact& pFact,
 FactOptional::FactOptional(bool pIsFactNegated,
                            const std::string& pName,
                            const std::vector<std::string>& pArgumentStrs,
-                           const std::string& pFluentStr,
-                           bool pIsFluentNegated,
+                           const std::string& pValueStr,
+                           bool pIsValueNegated,
                            const Ontology& pOntology,
                            const SetOfEntities& pEntities,
                            const std::vector<Parameter>& pParameters,
-                           bool pIsOkIfFluentIsMissing)
+                           bool pIsOkIfValueIsMissing)
   : isFactNegated(pIsFactNegated),
-    fact(pName, pArgumentStrs, pFluentStr, pIsFluentNegated, pOntology, pEntities, pParameters, pIsOkIfFluentIsMissing)
+    fact(pName, pArgumentStrs, pValueStr, pIsValueNegated, pOntology, pEntities, pParameters, pIsOkIfValueIsMissing)
 {
   _simplify();
 }
@@ -69,21 +69,21 @@ bool FactOptional::operator==(const FactOptional& pOther) const
 }
 
 std::string FactOptional::toStr(const std::function<std::string (const Fact&)>* pFactWriterPtr,
-                                bool pPrintAnyFluent) const
+                                bool pPrintAnyValue) const
 {
   auto polarityStr = isFactNegated ? "!" : "";
   if (pFactWriterPtr)
     return polarityStr + (*pFactWriterPtr)(fact);
-  return polarityStr + fact.toStr(pPrintAnyFluent);
+  return polarityStr + fact.toStr(pPrintAnyValue);
 }
 
 std::string FactOptional::toPddl(bool pInEffectContext,
-                                 bool pPrintAnyFluent) const
+                                 bool pPrintAnyValue) const
 {
-  auto res = fact.toPddl(pInEffectContext, pPrintAnyFluent);
+  auto res = fact.toPddl(pInEffectContext, pPrintAnyValue);
   if (isFactNegated)
   {
-    if (fact.fluent() && fact.fluent()->isAnyValue())
+    if (fact.value() && fact.value()->isAnyEntity())
       return (pInEffectContext ? "(assign " : "(= ") + res + " undefined)";
     return "(not " + res + ")";
   }
@@ -104,7 +104,7 @@ bool FactOptional::hasAContradictionWith(const std::set<FactOptional>& pFactsOpt
 {
   for (auto& currFactOpt : pFactsOpt)
   {
-    if (fact.areEqualWithoutArgsAndFluentConsideration(currFactOpt.fact, pParametersPtr))
+    if (fact.areEqualWithoutArgsAndValueConsideration(currFactOpt.fact, pParametersPtr))
     {
       if (!pIsWrappingExpressionNegated)
       {

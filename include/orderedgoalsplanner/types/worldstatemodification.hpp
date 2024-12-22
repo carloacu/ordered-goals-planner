@@ -66,7 +66,7 @@ struct ORDEREDGOALSPLANNER_API WorldStateModification
    * @brief Convert the world state modification to a string.
    * @return World state modification converted to a string.
    */
-  virtual std::string toStr(bool pPrintAnyFluent = true) const = 0;
+  virtual std::string toStr(bool pPrintAnyValue = true) const = 0;
 
   /// Check if this object contains a fact or the negation of the fact.
   virtual bool hasFact(const ogp::Fact& pFact) const = 0;
@@ -126,7 +126,7 @@ struct ORDEREDGOALSPLANNER_API WorldStateModification
    * @param[in] pWorldState World state use to extract value of the facts.
    * @return The world state modification converted to a string value.
    */
-  virtual std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const = 0;
+  virtual std::optional<Entity> getValue(const SetOfFacts& pSetOfFact) const = 0;
 
   /// Convert this world state modification to an optional fact if possible.
   virtual const FactOptional* getOptionalFact() const = 0;

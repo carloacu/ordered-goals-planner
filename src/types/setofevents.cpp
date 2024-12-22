@@ -27,12 +27,12 @@ EventId SetOfEvents::add(const Event& pEvent,
   {
     pEvent.precondition->forAll(
           [&](const FactOptional& pFactOptional,
-          bool pIgnoreFluent)
+          bool pIgnoreValue)
     {
       if (pFactOptional.isFactNegated)
-        _reachableEventLinks.notConditionToEvents.add(pFactOptional.fact, newId, pIgnoreFluent);
+        _reachableEventLinks.notConditionToEvents.add(pFactOptional.fact, newId, pIgnoreValue);
       else
-        _reachableEventLinks.conditionToEvents.add(pFactOptional.fact, newId, pIgnoreFluent);
+        _reachableEventLinks.conditionToEvents.add(pFactOptional.fact, newId, pIgnoreValue);
       return ContinueOrBreak::CONTINUE;
     }
     );

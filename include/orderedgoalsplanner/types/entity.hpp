@@ -41,7 +41,7 @@ struct ORDEREDGOALSPLANNER_API Entity
                           const std::vector<Parameter>& pParameters);
 
   std::string toStr() const;
-  bool isAnyValue() const;
+  bool isAnyEntity() const;
   bool isAParameterToFill() const;
   Parameter toParameter() const;
   bool match(const Parameter& pParameter) const;

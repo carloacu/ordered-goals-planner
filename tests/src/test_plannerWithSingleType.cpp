@@ -2345,7 +2345,7 @@ void _actionNavigationAndGrabObjectWithParameters()
   _addFact(problem.worldState, "location(me)=corridor", problem.goalStack, ontology);
   _addFact(problem.worldState, "location(sweets)=kitchen", problem.goalStack, ontology);
   const auto& setOfFacts = problem.worldState.factsMapping();
-  EXPECT_EQ("kitchen", setOfFacts.getFactFluent(_fact("location(sweets)=*", ontology))->value);
+  EXPECT_EQ("kitchen", setOfFacts.getFluentValue(_fact("location(sweets)=*", ontology))->value);
   _setGoalsForAPriority(problem, {_goal("grab(me, sweets)", ontology)}, ontology.constants);
   EXPECT_EQ(_action_navigate + "(?targetLocation -> kitchen), " + _action_grab + "(?object -> sweets)",
             _solveStr(problem, actions, ontology));
@@ -2378,7 +2378,7 @@ void _actionNavigationAndGrabObjectWithParameters2()
   _addFact(problem.worldState, "location(me)=corridor", problem.goalStack, ontology);
   _addFact(problem.worldState, "location(sweets)=kitchen", problem.goalStack, ontology);
   const auto& setOfFacts = problem.worldState.factsMapping();
-  EXPECT_EQ("kitchen", setOfFacts.getFactFluent(_fact("location(sweets)=*", ontology))->value);
+  EXPECT_EQ("kitchen", setOfFacts.getFluentValue(_fact("location(sweets)=*", ontology))->value);
   _setGoalsForAPriority(problem, {_goal("grab(me, sweets)", ontology)}, ontology.constants);
   EXPECT_EQ(_action_navigate + "(?targetLocation -> kitchen), " + _action_grab + "(?object -> sweets)",
             _solveStr(problem, actions, ontology));
@@ -3750,7 +3750,7 @@ void _existWithEqualityInEvent_withEqualityInverted()
 
 
 
-void _fixEventWithFluentInParameter()
+void _fixEventWithValueInParameter()
 {
   const std::string action1 = "action1";
   const std::string action2 = "action2";
@@ -4025,7 +4025,7 @@ void _checkTwoTimesTheEqualityOfAFact()
 
 
 
-void _eventToRemoveAFactWithoutFluent()
+void _eventToRemoveAFactWithoutValue()
 {
   ogp::Ontology ontology;
   ontology.types = ogp::SetOfTypes::fromPddl("loc_type\n"
@@ -4188,10 +4188,10 @@ TEST(Planner, test_planWithSingleType)
   _assignAFactThenCheckExistWithAnotherFact();
   _existWithEqualityInEvent();
   _existWithEqualityInEvent_withEqualityInverted();
-  _fixEventWithFluentInParameter();
+  _fixEventWithValueInParameter();
   _derivedPredicates();
   _assignAFactTwoTimesInTheSamePlan();
   _assignAFactTwoTimesInTheSamePlan2();
   _checkTwoTimesTheEqualityOfAFact();
-  _eventToRemoveAFactWithoutFluent();
+  _eventToRemoveAFactWithoutValue();
 }

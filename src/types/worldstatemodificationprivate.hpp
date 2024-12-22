@@ -44,7 +44,7 @@ struct WorldStateModificationNode : public WorldStateModification
   {
   }
 
-  std::string toStr(bool pPrintAnyFluent) const override;
+  std::string toStr(bool pPrintAnyValue) const override;
 
   bool hasFact(const Fact& pFact) const override
   {
@@ -90,7 +90,7 @@ struct WorldStateModificationNode : public WorldStateModification
 
   bool operator==(const WorldStateModification& pOther) const override;
 
-  std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const override;
+  std::optional<Entity> getValue(const SetOfFacts& pSetOfFact) const override;
 
   const FactOptional* getOptionalFact() const override
   {
@@ -133,7 +133,7 @@ struct WorldStateModificationFact : public WorldStateModification
   {
   }
 
-  std::string toStr(bool pPrintAnyFluent) const override { return factOptional.toStr(nullptr, pPrintAnyFluent); }
+  std::string toStr(bool pPrintAnyValue) const override { return factOptional.toStr(nullptr, pPrintAnyValue); }
 
   bool hasFact(const ogp::Fact& pFact) const override
   {
@@ -200,7 +200,7 @@ struct WorldStateModificationFact : public WorldStateModification
 
   bool operator==(const WorldStateModification& pOther) const override;
 
-  std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const override;
+  std::optional<Entity> getValue(const SetOfFacts& pSetOfFact) const override;
 
   const FactOptional* getOptionalFact() const override
   {
@@ -265,7 +265,7 @@ struct WorldStateModificationNumber : public WorldStateModification
 
   bool operator==(const WorldStateModification& pOther) const override;
 
-  std::optional<Entity> getFluent(const SetOfFacts&) const override
+  std::optional<Entity> getValue(const SetOfFacts&) const override
   {
     return Entity::createNumberEntity(toStr(true));
   }

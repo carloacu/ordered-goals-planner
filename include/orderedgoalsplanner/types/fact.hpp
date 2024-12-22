@@ -36,16 +36,16 @@ struct ORDEREDGOALSPLANNER_API Fact
        bool* pIsFactNegatedPtr = nullptr,
        std::size_t pBeginPos = 0,
        std::size_t* pResPos = nullptr,
-       bool pIsOkIfFluentIsMissing = false);
+       bool pIsOkIfValueIsMissing = false);
 
   Fact(const std::string& pName,
        const std::vector<std::string>& pArgumentStrs,
-       const std::string& pFluentStr,
-       bool pIsFluentNegated,
+       const std::string& pValueStr,
+       bool pIsValueNegated,
        const Ontology& pOntology,
        const SetOfEntities& pEntities,
        const std::vector<Parameter>& pParameters,
-       bool pIsOkIfFluentIsMissing = false);
+       bool pIsOkIfValueIsMissing = false);
 
   /// Destruct the fact.
   ~Fact();
@@ -68,11 +68,11 @@ struct ORDEREDGOALSPLANNER_API Fact
   /**
    * @brief Check equality with another fact without considering the values.
    * @param[in] pFact Other fact to compare.
-   * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr Other fact arguments to consider as "any value".
-   * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr2 Another set of other fact rguments to consider as "any value".
+   * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr Other fact arguments to consider as "any entity".
+   * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr2 Another set of other fact rguments to consider as "any entity".
    * @return True if the equality check succeeded.
    */
-  bool areEqualWithoutFluentConsideration(const Fact& pFact,
+  bool areEqualWithoutValueConsideration(const Fact& pFact,
                                           const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
                                           const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
 
@@ -80,16 +80,16 @@ struct ORDEREDGOALSPLANNER_API Fact
   bool areEqualWithoutAnArgConsideration(const Fact& pFact,
                                          const std::string& pArgToIgnore) const;
 
-  bool areEqualWithoutArgsAndFluentConsideration(const Fact& pFact,
-                                                 const std::list<Parameter>* pParametersToIgnorePtr) const;
+  bool areEqualWithoutArgsAndValueConsideration(const Fact& pFact,
+                                                const std::list<Parameter>* pParametersToIgnorePtr) const;
 
 
   /**
-   * @brief Is equal to another Fact or if any of the 2 Facts have an "any value" that can match.
+   * @brief Is equal to another Fact or if any of the 2 Facts have an "any entity" that can match.
    * @param[in] pOther Other fact to compare.
-   * @param[in] pOtherFactArgumentsToConsiderAsAnyValuePtr Arguments to consider as "any value".
-   * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr2 Another set of arguments to consider as "any value".
-   * @param[in] pThisArgumentsToConsiderAsAnyValuePtr Arguments of the this fact to consider as "any value".
+   * @param[in] pOtherFactArgumentsToConsiderAsAnyValuePtr Arguments to consider as "any entity".
+   * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr2 Another set of arguments to consider as "any entity".
+   * @param[in] pThisArgumentsToConsiderAsAnyValuePtr Arguments of the this fact to consider as "any entity".
    * @return True if the 2 facts match, false otherwise.
    */
   bool areEqualExceptAnyValues(const Fact& pOther,
@@ -98,13 +98,13 @@ struct ORDEREDGOALSPLANNER_API Fact
                                const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr = nullptr) const;
 
   /**
-   * @brief Is equal to another Fact or if any of the 2 Facts have an "any value" that can match and without looking at the fluents.
+   * @brief Is equal to another Fact or if any of the 2 Facts have an "any entity" that can match and without looking at the value.
    * @param[in] pOther Other fact to compare.
-   * @param[in] pOtherFactArgumentsToConsiderAsAnyValuePtr Arguments to consider as "any value".
-   * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr2 Another set of arguments to consider as "any value".
+   * @param[in] pOtherFactArgumentsToConsiderAsAnyValuePtr Arguments to consider as "any entity".
+   * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr2 Another set of arguments to consider as "any entity".
    * @return True if the 2 facts match, false otherwise.
    */
-  bool areEqualExceptAnyValuesAndFluent(const Fact& pOther,
+  bool areEqualExceptAnyValuesAndValue(const Fact& pOther,
                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
 
@@ -118,13 +118,13 @@ struct ORDEREDGOALSPLANNER_API Fact
   bool isPunctual() const;
 
   /**
-   * @brief hasParameterOrFluent Does this fact contains a specific string in his arguments or in his value.
+   * @brief hasParameterOrValue Does this fact contains a specific string in his arguments or in his value.
    * @param pParameter[in] String that can match in the arguments or in the value of this fact.
    * @return True if the string matches in the arguments or in the value of this fact, false otherwise.
    */
-  bool hasParameterOrFluent(const Parameter& pParameter) const;
+  bool hasParameterOrValue(const Parameter& pParameter) const;
 
-  bool hasAParameter(bool pIgnoreFluent = false) const;
+  bool hasAParameter(bool pIgnoreValue = false) const;
 
   /**
    * @brief Extract an argument from another instance of this fact.<br/>
@@ -139,13 +139,13 @@ struct ORDEREDGOALSPLANNER_API Fact
   /**
    * @brief Extract an argument from another instance of this fact.<br/>
    * Another instance of this fact means that the 2 facts have the same name, the same number of arguments and the same polarity (= negationed or not).<br/>
-   * This function ignores the fluents.
+   * This function ignores the values.
    * @param pParameter[in] Parameter of this fact.
    * @param pExampleFact[in] Example Fact.
    * @return Argument of the other fact corresponding to the Parameter of this fact.
    */
-  std::optional<Entity> tryToExtractArgumentFromExampleWithoutFluentConsideration(const Parameter& pParameter,
-                                                                                  const Fact& pExampleFact) const;
+  std::optional<Entity> tryToExtractArgumentFromExampleWithoutValueConsideration(const Parameter& pParameter,
+                                                                                 const Fact& pExampleFact) const;
 
 
   /**
@@ -162,10 +162,10 @@ struct ORDEREDGOALSPLANNER_API Fact
   void replaceArguments(const std::map<Parameter, std::set<Entity>>& pCurrentArgumentsToNewArgument);
 
   std::string toPddl(bool pInEffectContext,
-                     bool pPrintAnyFluent = true) const;
+                     bool pPrintAnyValue = true) const;
 
   /// Serialize this fact to a string.
-  std::string toStr(bool pPrintAnyFluent = true) const;
+  std::string toStr(bool pPrintAnyValue = true) const;
 
   /**
    * @brief Construct a fact from a string.
@@ -185,7 +185,7 @@ struct ORDEREDGOALSPLANNER_API Fact
                        const std::vector<Parameter>& pParameters,
                        std::size_t pBeginPos = 0,
                        std::size_t* pResPos = nullptr,
-                       bool pIsOkIfFluentIsMissing = false);
+                       bool pIsOkIfValueIsMissing = false);
 
   /**
    * @brief Does the fact matches any of the other facts.
@@ -251,9 +251,9 @@ struct ORDEREDGOALSPLANNER_API Fact
 
   const std::string& name() const { return _name; }
   const std::vector<Entity>& arguments() const { return _arguments; }
-  const std::optional<Entity>& fluent() const { return _fluent; }
-  bool isValueNegated() const { return _isFluentNegated; }
-  void setValueNegated(bool pIsFluentNegated) { _isFluentNegated = pIsFluentNegated; }
+  const std::optional<Entity>& value() const { return _value; }
+  bool isValueNegated() const { return _isValueNegated; }
+  void setValueNegated(bool pIsValueNegated) { _isValueNegated = pIsValueNegated; }
 
   std::string factSignature() const;
   std::string generateFactSignature() const;
@@ -262,17 +262,17 @@ struct ORDEREDGOALSPLANNER_API Fact
   void generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) const;
 
   void setArgumentType(std::size_t pIndex, const std::shared_ptr<Type>& pType);
-  void setFluentType(const std::shared_ptr<Type>& pType);
-  void setFluent(const std::optional<Entity>& pFluent);
-  void setFluentValue(const std::string& pFluentStr);
+  void setValueType(const std::shared_ptr<Type>& pType);
+  void setValue(const std::optional<Entity>& pValue);
+  void setValueFromStr(const std::string& pValueStr);
 
-  bool isCompleteWithAnyValueFluent() const;
+  bool isCompleteWithAnyEntityValue() const;
 
 
   Predicate predicate;
 
   /// Constant defining the "undefined" special value.
-  static const Entity& getUndefinedValue();
+  static const Entity& getUndefinedEntity();
   /// Prefix to detect a punctual fact. (= fact that is considered punctually but not stored in the world)
   static const std::string& getPunctualPrefix();
 
@@ -281,10 +281,10 @@ private:
   std::string _name;
   /// Arguments of the fact.
   std::vector<Entity> _arguments;
-  /// Fluent of the fact.
-  std::optional<Entity> _fluent;
+  /// Value of the fact.
+  std::optional<Entity> _value;
   /// Is the value of the fact negated.
-  bool _isFluentNegated;
+  bool _isValueNegated;
   std::string _factSignature;
 
   bool _updateParameters(std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
@@ -295,9 +295,7 @@ private:
 
   void _resetFactSignatureCache();
 
-  void _finalizeInisilizationAndValidityChecks(const Ontology& pOntology,
-                                               const SetOfEntities& pEntities,
-                                               bool pIsOkIfFluentIsMissing);
+  void _finalizeInisilizationAndValidityChecks(bool pIsOkIfValueIsMissing);
 };
 
 

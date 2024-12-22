@@ -41,7 +41,7 @@ struct ORDEREDGOALSPLANNER_API Condition
    * @return Condition converted to a string.
    */
   virtual std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr = nullptr,
-                            bool pPrintAnyFluent = true) const = 0;
+                            bool pPrintAnyValue = true) const = 0;
 
   /// Check if this condition contains a fact or the negation of the fact.
   virtual bool hasFact(const Fact& pFact) const = 0;
@@ -53,11 +53,11 @@ struct ORDEREDGOALSPLANNER_API Condition
    */
   virtual ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                  bool pIsWrappingExpressionNegated = false,
-                                 bool pIgnoreFluent = false,
+                                 bool pIgnoreValue = false,
                                  bool pOnlyMandatoryFacts = false) const = 0;
 
   bool isOptFactMandatory(const FactOptional& pFactOptional,
-                          bool pIgnoreFluent = false) const;
+                          bool pIgnoreValue = false) const;
 
   /**
    * @brief Find a condition fact candidate a fact that is in the effect of the preceding action.
@@ -117,9 +117,9 @@ struct ORDEREDGOALSPLANNER_API Condition
   /**
    * @brief Convert this condition to a value.
    * @param[in] pSetOfFact Facts use to extract value of the facts.
-   * @return The condition converted to a string value.
+   * @return The condition converted to an Entity value.
    */
-  virtual std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const = 0;
+  virtual std::optional<Entity> getValue(const SetOfFacts& pSetOfFact) const = 0;
 
   /**
    * @brief Create a copy of this condition with arguments filling (or not if pConditionParametersToArgumentPtr is nullptr).
@@ -193,7 +193,7 @@ static bool canBeEqual(ConditionNodeType pConditionNodeType) {
 struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
 {
   std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr,
-                    bool pPrintAnyFluent) const override;
+                    bool pPrintAnyValue) const override;
 
   ConditionNode(ConditionNodeType pNodeType,
                 std::unique_ptr<Condition> pLeftOperand,
@@ -202,7 +202,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
   bool hasFact(const Fact& pFact) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
-                         bool pIgnoreFluent,
+                         bool pIgnoreValue,
                          bool pOnlyMandatoryFacts) const override;
   bool findConditionCandidateFromFactFromEffect(const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
                                                 const WorldState& pWorldState,
@@ -225,7 +225,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
-  std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const override;
+  std::optional<Entity> getValue(const SetOfFacts& pSetOfFact) const override;
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
@@ -261,12 +261,12 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
                   std::unique_ptr<Condition> pCondition);
 
   std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr,
-                    bool pPrintAnyFluent) const override;
+                    bool pPrintAnyValue) const override;
 
   bool hasFact(const Fact& pFact) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
-                         bool pIgnoreFluent,
+                         bool pIgnoreValue,
                          bool pOnlyMandatoryFacts) const override;
 
   bool findConditionCandidateFromFactFromEffect(
@@ -292,7 +292,7 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
-  std::optional<Entity> getFluent(const SetOfFacts&) const override { return {}; }
+  std::optional<Entity> getValue(const SetOfFacts&) const override { return {}; }
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
@@ -328,12 +328,12 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
                   std::unique_ptr<Condition> pCondition);
 
   std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr,
-                    bool pPrintAnyFluent) const override;
+                    bool pPrintAnyValue) const override;
 
   bool hasFact(const Fact& pFact) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
-                         bool pIgnoreFluent,
+                         bool pIgnoreValue,
                          bool pOnlyMandatoryFacts) const override;
 
   bool findConditionCandidateFromFactFromEffect(
@@ -359,7 +359,7 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
-  std::optional<Entity> getFluent(const SetOfFacts&) const override { return {}; }
+  std::optional<Entity> getValue(const SetOfFacts&) const override { return {}; }
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
@@ -394,12 +394,12 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
   ConditionNot(std::unique_ptr<Condition> pCondition);
 
   std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr,
-                    bool pPrintAnyFluent) const override;
+                    bool pPrintAnyValue) const override;
 
   bool hasFact(const Fact& pFact) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
-                         bool pIgnoreFluent,
+                         bool pIgnoreValue,
                          bool pOnlyMandatoryFacts) const override;
 
   bool findConditionCandidateFromFactFromEffect(
@@ -425,7 +425,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
-  std::optional<Entity> getFluent(const SetOfFacts&) const override { return {}; }
+  std::optional<Entity> getValue(const SetOfFacts&) const override { return {}; }
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
@@ -458,12 +458,12 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
   ConditionFact(const FactOptional& pFactOptional);
 
   std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr,
-                    bool pPrintAnyFluent) const override { return factOptional.toStr(pFactWriterPtr, pPrintAnyFluent); }
+                    bool pPrintAnyValue) const override { return factOptional.toStr(pFactWriterPtr, pPrintAnyValue); }
 
   bool hasFact(const Fact& pFact) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
-                         bool pIgnoreFluent,
+                         bool pIgnoreValue,
                          bool pOnlyMandatoryFacts) const override;
   bool findConditionCandidateFromFactFromEffect(
       const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
@@ -487,7 +487,7 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
-  std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const override;
+  std::optional<Entity> getValue(const SetOfFacts& pSetOfFact) const override;
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
@@ -520,7 +520,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
   ConditionNumber(const Number& pNb);
 
   std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr,
-                    bool pPrintAnyFluent) const override;
+                    bool pPrintAnyValue) const override;
 
   bool hasFact(const Fact&) const override  { return false; }
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>&, bool, bool, bool) const override { return ContinueOrBreak::CONTINUE; }
@@ -546,7 +546,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
               bool pIsWrappingExpressionNegated) const override { return !pIsWrappingExpressionNegated; }
   bool operator==(const Condition& pOther) const override;
 
-  std::optional<Entity> getFluent(const SetOfFacts& pSetOfFact) const override;
+  std::optional<Entity> getValue(const SetOfFacts& pSetOfFact) const override;
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,

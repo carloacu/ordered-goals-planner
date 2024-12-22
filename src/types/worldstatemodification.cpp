@@ -21,7 +21,7 @@ void Successions::addSuccesionsOptFact(const FactOptional& pFactOptional,
                                        const WorldStateModificationContainerId& pContainerId,
                                        const std::set<FactOptional>& pOptionalFactsToIgnore)
 {
-  if ((pFactOptional.fact.fluent() && pFactOptional.fact.fluent()->isAnyValue()) ||
+  if ((pFactOptional.fact.value() && pFactOptional.fact.value()->isAnyEntity()) ||
       pOptionalFactsToIgnore.count(pFactOptional) == 0)
   {
     auto& preconditionToActions = !pFactOptional.isFactNegated ? pDomain.preconditionToActions() : pDomain.notPreconditionToActions();

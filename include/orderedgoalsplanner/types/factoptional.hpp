@@ -25,12 +25,12 @@ struct ORDEREDGOALSPLANNER_API FactOptional
   FactOptional(bool pIsFactNegated,
                const std::string& pName,
                const std::vector<std::string>& pArgumentStrs,
-               const std::string& pFluentStr,
-               bool pIsFluentNegated,
+               const std::string& pValueStr,
+               bool pIsValueNegated,
                const Ontology& pOntology,
                const SetOfEntities& pEntities,
                const std::vector<Parameter>& pParameters,
-               bool pIsOkIfFluentIsMissing = false);
+               bool pIsOkIfValueIsMissing = false);
 
   /**
    * @brief Construct an optional fact from another one.
@@ -66,10 +66,10 @@ struct ORDEREDGOALSPLANNER_API FactOptional
 
   /// Serialize this optional fact to a string.
   std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr = nullptr,
-                    bool pPrintAnyFluent = true) const;
+                    bool pPrintAnyValue = true) const;
 
   std::string toPddl(bool pInEffectContext,
-                     bool pPrintAnyFluent = true) const;
+                     bool pPrintAnyValue = true) const;
 
   bool doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const FactOptional& pOptFact) const;
 

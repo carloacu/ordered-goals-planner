@@ -12,15 +12,15 @@ bool ConditionsToValue::add(const Condition& pCondition,
   bool hasAddedAFact = false;
   pCondition.forAll(
         [&](const FactOptional& pFactOptional,
-        bool pIgnoreFluent)
+        bool pIgnoreValue)
   {
     if (pFactOptional.isFactNegated)
     {
-      _notFactsToValue.add(pFactOptional.fact, pValue, pIgnoreFluent);
+      _notFactsToValue.add(pFactOptional.fact, pValue, pIgnoreValue);
     }
     else
     {
-      _factsToValue.add(pFactOptional.fact, pValue, pIgnoreFluent);
+      _factsToValue.add(pFactOptional.fact, pValue, pIgnoreValue);
       hasAddedAFact = true;
     }
     return ContinueOrBreak::CONTINUE;

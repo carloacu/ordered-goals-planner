@@ -58,7 +58,13 @@ void _test_pddlSerializationParts()
 
   {
     std::size_t pos = 0;
-    EXPECT_THROW(ogp::Fact::fromPddl("(battery-amount toto)", ontology, {}, {}, pos, &pos), std::runtime_error);
+    try {
+        ogp::Fact::fromPddl("(battery-amount toto)", ontology, {}, {}, pos, &pos);
+        FAIL() << "Expected std::runtime_error";
+    } catch (const std::runtime_error& e) {
+        EXPECT_EQ("The value of this fluent \"(battery-amount toto)\" is missing. The associated function is \"(battery-amount ?t - type1) - number\". The exception was thrown while parsing fact: \"(battery-amount toto)\"",
+                  std::string(e.what()));
+    }
   }
 
   {
@@ -67,6 +73,16 @@ void _test_pddlSerializationParts()
     EXPECT_EQ("(battery-amount toto)", fact.toPddl(false));
   }
 
+  {
+    std::size_t pos = 0;
+    try {
+      ogp::Fact::fromPddl("(= (pred_b) toto)", ontology, {}, {}, pos, &pos);
+      FAIL() << "Expected std::runtime_error";
+    } catch (const std::runtime_error& e) {
+      EXPECT_EQ("This fact \"(= (pred_b) toto)\" should not have a value. The associated predicate is \"(pred_b)\". The exception was thrown while parsing fact: \"(= (pred_b) toto)\"",
+                std::string(e.what()));
+    }
+  }
 
   {
     std::size_t pos = 0;
@@ -527,7 +543,6 @@ void _test_loadPddlDomain()
 }
 
 }
-
 
 
 TEST(Tool, test_pddlSerialization)

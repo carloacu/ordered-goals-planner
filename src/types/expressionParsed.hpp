@@ -36,7 +36,7 @@ struct ExpressionParsed
   FactOptional toFact(const Ontology& pOntology,
                       const SetOfEntities& pEntities,
                       const std::vector<Parameter>& pParameters,
-                      bool pIsOkIfFluentIsMissing) const;
+                      bool pIsOkIfValueIsMissing) const;
 
   static ExpressionParsed fromStr(const std::string& pStr,
                                   std::size_t& pPos);

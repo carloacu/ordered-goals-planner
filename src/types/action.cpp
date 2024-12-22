@@ -121,8 +121,8 @@ void Action::_throwIfNotValidForAFact(const Fact& pFact)
     if (currArgument.isAParameterToFill() && !currArgument.isValidParameterAccordingToPossiblities(parameters))
       throw std::runtime_error("\"" + currArgument.value + "\" is missing in action parameters");
 
-  if (pFact.fluent() && pFact.fluent()->isAParameterToFill() && !pFact.fluent()->isValidParameterAccordingToPossiblities(parameters))
-    throw std::runtime_error("\"" + pFact.fluent()->value + "\" fluent is missing in action parameters");
+  if (pFact.value() && pFact.value()->isAParameterToFill() && !pFact.value()->isValidParameterAccordingToPossiblities(parameters))
+    throw std::runtime_error("\"" + pFact.value()->value + "\" value is missing in action parameters");
 }
 
 

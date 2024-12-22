@@ -81,12 +81,12 @@ Fact::Fact(const std::string& pStr,
            bool* pIsFactNegatedPtr,
            std::size_t pBeginPos,
            std::size_t* pResPos,
-           bool pIsOkIfFluentIsMissing)
+           bool pIsOkIfValueIsMissing)
   : predicate("_not_set", pStrPddlFormated, pOntology.types),
     _name(),
     _arguments(),
-    _fluent(),
-    _isFluentNegated(false),
+    _value(),
+    _isValueNegated(false),
     _factSignature()
 {
   std::size_t pos = pBeginPos;
@@ -119,27 +119,27 @@ Fact::Fact(const std::string& pStr,
       _name = expressionParsed.name;
     }
 
-    _isFluentNegated = expressionParsed.isValueNegated;
+    _isValueNegated = expressionParsed.isValueNegated;
     auto* expressionParsedForArgumentsPtr = &expressionParsed;
     if (_name == "=" && expressionParsed.arguments.size() == 2)
     {
-      auto fluentStr = expressionParsed.arguments.back().name;
-      if (fluentStr == getUndefinedValue().value)
+      auto valueStr = expressionParsed.arguments.back().name;
+      if (valueStr == getUndefinedEntity().value)
       {
         if (pIsFactNegatedPtr != nullptr)
            *pIsFactNegatedPtr = true;
-        _fluent.emplace(Entity::createAnyEntity());
+        _value.emplace(Entity::createAnyEntity());
       }
       else
       {
-        _fluent.emplace(Entity::fromUsage(fluentStr, pOntology, pEntities, pParameters));
+        _value.emplace(Entity::fromUsage(valueStr, pOntology, pEntities, pParameters));
       }
       expressionParsedForArgumentsPtr = &expressionParsed.arguments.front();
       _name = expressionParsedForArgumentsPtr->name;
     }
     else if (expressionParsed.value != "")
     {
-      _fluent.emplace(Entity::fromUsage(expressionParsed.value, pOntology, pEntities, pParameters));
+      _value.emplace(Entity::fromUsage(expressionParsed.value, pOntology, pEntities, pParameters));
     }
 
     for (auto& currArgument : expressionParsedForArgumentsPtr->arguments)
@@ -147,7 +147,7 @@ Fact::Fact(const std::string& pStr,
 
 
     predicate = pOntology.predicates.nameToPredicate(_name);
-    _finalizeInisilizationAndValidityChecks(pOntology, pEntities, pIsOkIfFluentIsMissing);
+    _finalizeInisilizationAndValidityChecks(pIsOkIfValueIsMissing);
     _resetFactSignatureCache();
     if (pResPos != nullptr)
     {
@@ -165,17 +165,17 @@ Fact::Fact(const std::string& pStr,
 
 Fact::Fact(const std::string& pName,
            const std::vector<std::string>& pArgumentStrs,
-           const std::string& pFluentStr,
-           bool pIsFluentNegated,
+           const std::string& pValueStr,
+           bool pIsValueNegated,
            const Ontology& pOntology,
            const SetOfEntities& pEntities,
            const std::vector<Parameter>& pParameters,
-           bool pIsOkIfFluentIsMissing)
+           bool pIsOkIfValueIsMissing)
   : predicate("_not_set", true, pOntology.types),
     _name(pName),
     _arguments(),
-    _fluent(),
-    _isFluentNegated(pIsFluentNegated),
+    _value(),
+    _isValueNegated(pIsValueNegated),
     _factSignature()
 {
   auto* predicatePtr = pOntology.predicates.nameToPredicatePtr(_name);
@@ -188,11 +188,11 @@ Fact::Fact(const std::string& pName,
   for (auto& currParam : pArgumentStrs)
     if (!currParam.empty())
       _arguments.push_back(Entity::fromUsage(currParam, pOntology, pEntities, pParameters));
-  if (!pFluentStr.empty())
-    _fluent = Entity::fromUsage(pFluentStr, pOntology, pEntities, pParameters);
-  else if (pIsOkIfFluentIsMissing && predicate.fluent)
-    _fluent = Entity(Entity::anyEntityValue(), predicate.fluent);
-  _finalizeInisilizationAndValidityChecks(pOntology, pEntities, pIsOkIfFluentIsMissing);
+  if (!pValueStr.empty())
+    _value = Entity::fromUsage(pValueStr, pOntology, pEntities, pParameters);
+  else if (pIsOkIfValueIsMissing && predicate.value)
+    _value = Entity(Entity::anyEntityValue(), predicate.value);
+  _finalizeInisilizationAndValidityChecks(pIsOkIfValueIsMissing);
   _resetFactSignatureCache();
 }
 
@@ -205,8 +205,8 @@ Fact::Fact(const Fact& pOther)
   : predicate(pOther.predicate),
     _name(pOther._name),
     _arguments(pOther._arguments),
-    _fluent(pOther._fluent),
-    _isFluentNegated(pOther._isFluentNegated),
+    _value(pOther._value),
+    _isValueNegated(pOther._isValueNegated),
     _factSignature(pOther._factSignature)
 {
 }
@@ -215,8 +215,8 @@ Fact::Fact(Fact&& pOther) noexcept
   : predicate(std::move(pOther.predicate)),
     _name(std::move(pOther._name)),
     _arguments(std::move(pOther._arguments)),
-    _fluent(std::move(pOther._fluent)),
-    _isFluentNegated(std::move(pOther._isFluentNegated)),
+    _value(std::move(pOther._value)),
+    _isValueNegated(std::move(pOther._isValueNegated)),
     _factSignature(std::move(pOther._factSignature))
 {
 }
@@ -225,8 +225,8 @@ Fact& Fact::operator=(const Fact& pOther) {
   predicate = pOther.predicate;
   _name = pOther._name;
   _arguments = pOther._arguments;
-  _fluent = pOther._fluent;
-  _isFluentNegated = pOther._isFluentNegated;
+  _value = pOther._value;
+  _isValueNegated = pOther._isValueNegated;
   _factSignature = pOther._factSignature;
   return *this;
 }
@@ -235,8 +235,8 @@ Fact& Fact::operator=(Fact&& pOther) noexcept {
     predicate = std::move(pOther.predicate);
     _name = std::move(pOther._name);
     _arguments = std::move(pOther._arguments);
-    _fluent = std::move(pOther._fluent);
-    _isFluentNegated = std::move(pOther._isFluentNegated);
+    _value = std::move(pOther._value);
+    _isValueNegated = std::move(pOther._isValueNegated);
     _factSignature = std::move(pOther._factSignature);
     return *this;
 }
@@ -246,10 +246,10 @@ bool Fact::operator<(const Fact& pOther) const
 {
   if (_name != pOther._name)
     return _name < pOther._name;
-  if (_fluent != pOther._fluent)
-    return _fluent < pOther._fluent;
-  if (_isFluentNegated != pOther._isFluentNegated)
-    return _isFluentNegated < pOther._isFluentNegated;
+  if (_value != pOther._value)
+    return _value < pOther._value;
+  if (_isValueNegated != pOther._isValueNegated)
+    return _isValueNegated < pOther._isValueNegated;
   std::string paramStr;
   _entitiesToStr(paramStr, _arguments);
   std::string otherParamStr;
@@ -260,7 +260,7 @@ bool Fact::operator<(const Fact& pOther) const
 bool Fact::operator==(const Fact& pOther) const
 {
   return _name == pOther._name && _arguments == pOther._arguments &&
-      _fluent == pOther._fluent && _isFluentNegated == pOther._isFluentNegated &&
+      _value == pOther._value && _isValueNegated == pOther._isValueNegated &&
       predicate == pOther.predicate;
 }
 
@@ -271,7 +271,7 @@ std::ostream& operator<<(std::ostream& os, const Fact& pFact) {
     return os;  // Return the stream so it can be chained
 }
 
-bool Fact::areEqualWithoutFluentConsideration(const Fact& pFact,
+bool Fact::areEqualWithoutValueConsideration(const Fact& pFact,
                                               const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
                                               const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2) const
 {
@@ -283,7 +283,7 @@ bool Fact::areEqualWithoutFluentConsideration(const Fact& pFact,
   auto itOtherParam = pFact._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (*itParam != *itOtherParam && !itParam->isAnyValue() && !itOtherParam->isAnyValue() &&
+    if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity() &&
         !(_isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr) ||
           _isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr2)))
       return false;
@@ -299,14 +299,14 @@ bool Fact::areEqualWithoutAnArgConsideration(const Fact& pFact,
 {
   if (pFact._name != _name ||
       pFact._arguments.size() != _arguments.size() ||
-      pFact._fluent != _fluent)
+      pFact._value != _value)
     return false;
 
   auto itParam = _arguments.begin();
   auto itOtherParam = pFact._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (*itParam != *itOtherParam && !itParam->isAnyValue() && !itOtherParam->isAnyValue() &&
+    if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity() &&
         itParam->value != pArgToIgnore)
       return false;
     ++itParam;
@@ -317,7 +317,7 @@ bool Fact::areEqualWithoutAnArgConsideration(const Fact& pFact,
 }
 
 
-bool Fact::areEqualWithoutArgsAndFluentConsideration(const Fact& pFact,
+bool Fact::areEqualWithoutArgsAndValueConsideration(const Fact& pFact,
                                                      const std::list<Parameter>* pParametersToIgnorePtr) const
 {
   if (pFact._name != _name ||
@@ -328,7 +328,7 @@ bool Fact::areEqualWithoutArgsAndFluentConsideration(const Fact& pFact,
   auto itOtherParam = pFact._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (*itParam != *itOtherParam && !itParam->isAnyValue() && !itOtherParam->isAnyValue())
+    if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity())
     {
       if (pParametersToIgnorePtr != nullptr)
       {
@@ -368,7 +368,7 @@ bool Fact::areEqualExceptAnyValues(const Fact& pOther,
   auto itOtherParam = pOther._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (*itParam != *itOtherParam && !itParam->isAnyValue() && !itOtherParam->isAnyValue() &&
+    if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity() &&
         !(_isInside(*itParam, pThisFactParametersToConsiderAsAnyValuePtr)) &&
         !(_isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr) ||
           _isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr2)))
@@ -377,26 +377,26 @@ bool Fact::areEqualExceptAnyValues(const Fact& pOther,
     ++itOtherParam;
   }
 
-  if (!_fluent && !pOther._fluent)
-    return _isFluentNegated == pOther._isFluentNegated;
-  if (_fluent &&
-      (_fluent->isAnyValue() ||
-       _isInside(*_fluent, pThisFactParametersToConsiderAsAnyValuePtr)))
-    return _isFluentNegated == pOther._isFluentNegated;
-  if (pOther._fluent &&
-      (pOther._fluent->isAnyValue() ||
-       _isInside(*pOther._fluent, pOtherFactParametersToConsiderAsAnyValuePtr) ||
-       _isInside(*pOther._fluent, pOtherFactParametersToConsiderAsAnyValuePtr2)))
-    return _isFluentNegated == pOther._isFluentNegated;
+  if (!_value && !pOther._value)
+    return _isValueNegated == pOther._isValueNegated;
+  if (_value &&
+      (_value->isAnyEntity() ||
+       _isInside(*_value, pThisFactParametersToConsiderAsAnyValuePtr)))
+    return _isValueNegated == pOther._isValueNegated;
+  if (pOther._value &&
+      (pOther._value->isAnyEntity() ||
+       _isInside(*pOther._value, pOtherFactParametersToConsiderAsAnyValuePtr) ||
+       _isInside(*pOther._value, pOtherFactParametersToConsiderAsAnyValuePtr2)))
+    return _isValueNegated == pOther._isValueNegated;
 
-  if ((_fluent && !pOther._fluent) || (!_fluent && pOther._fluent) || *_fluent != *pOther._fluent)
-    return _isFluentNegated != pOther._isFluentNegated;
+  if ((_value && !pOther._value) || (!_value && pOther._value) || *_value != *pOther._value)
+    return _isValueNegated != pOther._isValueNegated;
 
-  return _isFluentNegated == pOther._isFluentNegated;
+  return _isValueNegated == pOther._isValueNegated;
 }
 
 
-bool Fact::areEqualExceptAnyValuesAndFluent(const Fact& pOther,
+bool Fact::areEqualExceptAnyValuesAndValue(const Fact& pOther,
                                             const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
                                             const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2) const
 {
@@ -407,7 +407,7 @@ bool Fact::areEqualExceptAnyValuesAndFluent(const Fact& pOther,
   auto itOtherParam = pOther._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (*itParam != *itOtherParam && !itParam->isAnyValue() && !itOtherParam->isAnyValue() &&
+    if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity() &&
         !(_isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr) ||
           _isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr2)))
       return false;
@@ -415,7 +415,7 @@ bool Fact::areEqualExceptAnyValuesAndFluent(const Fact& pOther,
     ++itOtherParam;
   }
 
-  return _isFluentNegated == pOther._isFluentNegated;
+  return _isValueNegated == pOther._isValueNegated;
 }
 
 
@@ -423,22 +423,22 @@ bool Fact::doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const Fact& pFact
 {
   if (pFact._name != _name ||
       pFact._arguments.size() != _arguments.size() &&
-      pFact._fluent.has_value() == _fluent.has_value())
+      pFact._value.has_value() == _value.has_value())
     return true;
 
   auto itParam = _arguments.begin();
   auto itOtherParam = pFact._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (!(itParam->isAnyValue() && itOtherParam->isAnyValue()) &&
+    if (!(itParam->isAnyEntity() && itOtherParam->isAnyEntity()) &&
         (itParam->isAParameterToFill() || itOtherParam->isAParameterToFill() || *itParam != *itOtherParam))
       return true;
     ++itParam;
     ++itOtherParam;
   }
 
-  if (pFact._fluent.has_value() && _fluent.has_value())
-    return *pFact._fluent != *_fluent && !(pFact._fluent->isAParameterToFill() && _fluent->isAParameterToFill());
+  if (pFact._value.has_value() && _value.has_value())
+    return *pFact._value != *_value && !(pFact._value->isAParameterToFill() && _value->isAParameterToFill());
   return false;
 }
 
@@ -449,9 +449,9 @@ bool Fact::isPunctual() const
 }
 
 
-bool Fact::hasParameterOrFluent(const Parameter& pParameter) const
+bool Fact::hasParameterOrValue(const Parameter& pParameter) const
 {
-  if (_fluent && _fluent->match(pParameter))
+  if (_value && _value->match(pParameter))
     return true;
 
   auto itParam = _arguments.begin();
@@ -465,12 +465,12 @@ bool Fact::hasParameterOrFluent(const Parameter& pParameter) const
 }
 
 
-bool Fact::hasAParameter(bool pIgnoreFluent) const
+bool Fact::hasAParameter(bool pIgnoreValue) const
 {
   for (const auto& currArg : _arguments)
     if (currArg.isAParameterToFill())
       return true;
-  return !pIgnoreFluent && _fluent && _fluent->isAParameterToFill();
+  return !pIgnoreValue && _value && _value->isAParameterToFill();
 }
 
 
@@ -478,13 +478,13 @@ std::optional<Entity> Fact::tryToExtractArgumentFromExample(const Parameter& pPa
                                                             const Fact& pExampleFact) const
 {
   if (_name != pExampleFact._name ||
-      _isFluentNegated != pExampleFact._isFluentNegated ||
+      _isValueNegated != pExampleFact._isValueNegated ||
       _arguments.size() != pExampleFact._arguments.size())
     return {};
 
   std::optional<Entity> res;
-  if (_fluent && pExampleFact._fluent && _fluent->match(pParameter))
-    res = *pExampleFact._fluent;
+  if (_value && pExampleFact._value && _value->match(pParameter))
+    res = *pExampleFact._value;
 
   auto itParam = _arguments.begin();
   auto itOtherParam = pExampleFact._arguments.begin();
@@ -498,12 +498,12 @@ std::optional<Entity> Fact::tryToExtractArgumentFromExample(const Parameter& pPa
   return res;
 }
 
-std::optional<Entity> Fact::tryToExtractArgumentFromExampleWithoutFluentConsideration(
+std::optional<Entity> Fact::tryToExtractArgumentFromExampleWithoutValueConsideration(
     const Parameter& pParameter,
     const Fact& pExampleFact) const
 {
   if (_name != pExampleFact._name ||
-      _isFluentNegated != pExampleFact._isFluentNegated ||
+      _isValueNegated != pExampleFact._isValueNegated ||
       _arguments.size() != pExampleFact._arguments.size())
     return {};
 
@@ -523,11 +523,11 @@ std::optional<Entity> Fact::tryToExtractArgumentFromExampleWithoutFluentConsider
 
 void Fact::replaceArguments(const std::map<Parameter, Entity>& pCurrentArgumentsToNewArgument)
 {
-  if (_fluent)
+  if (_value)
   {
-    auto itValueParam = pCurrentArgumentsToNewArgument.find(_fluent->toParameter());
+    auto itValueParam = pCurrentArgumentsToNewArgument.find(_value->toParameter());
     if (itValueParam != pCurrentArgumentsToNewArgument.end())
-      _fluent = itValueParam->second;
+      _value = itValueParam->second;
   }
 
   for (auto& currParam : _arguments)
@@ -541,11 +541,11 @@ void Fact::replaceArguments(const std::map<Parameter, Entity>& pCurrentArguments
 
 void Fact::replaceArguments(const std::map<Parameter, std::set<Entity>>& pCurrentArgumentsToNewArgument)
 {
-  if (_fluent)
+  if (_value)
   {
-    auto itValueParam = pCurrentArgumentsToNewArgument.find(_fluent->toParameter());
+    auto itValueParam = pCurrentArgumentsToNewArgument.find(_value->toParameter());
     if (itValueParam != pCurrentArgumentsToNewArgument.end() && !itValueParam->second.empty())
-      _fluent = *itValueParam->second.begin();
+      _value = *itValueParam->second.begin();
   }
 
   for (auto& currParam : _arguments)
@@ -558,7 +558,7 @@ void Fact::replaceArguments(const std::map<Parameter, std::set<Entity>>& pCurren
 }
 
 std::string Fact::toPddl(bool pInEffectContext,
-                         bool pPrintAnyFluent) const
+                         bool pPrintAnyValue) const
 {
   std::string res = "(" + _name;
   if (!_arguments.empty())
@@ -567,22 +567,22 @@ std::string Fact::toPddl(bool pInEffectContext,
     _entitiesToValueStr(res, _arguments, " ");
   }
   res += ")";
-  if (_fluent)
+  if (_value)
   {
-    if (!pPrintAnyFluent && _fluent->isAnyValue())
+    if (!pPrintAnyValue && _value->isAnyEntity())
       return res;
-    res = (pInEffectContext ? "(assign " : "(= ") + res + " " + _fluent->value + ")";
-    if (_isFluentNegated)
+    res = (pInEffectContext ? "(assign " : "(= ") + res + " " + _value->value + ")";
+    if (_isValueNegated)
     {
       if (pInEffectContext)
-        throw std::runtime_error("Fluent should not be negated in effect: " + toStr(pPrintAnyFluent));
+        throw std::runtime_error("Value should not be negated in effect: " + toStr(pPrintAnyValue));
       res += "(not " + res + ")";
     }
   }
   return res;
 }
 
-std::string Fact::toStr(bool pPrintAnyFluent) const
+std::string Fact::toStr(bool pPrintAnyValue) const
 {
   std::string res = _name;
   if (!_arguments.empty())
@@ -591,14 +591,14 @@ std::string Fact::toStr(bool pPrintAnyFluent) const
     _entitiesToValueStr(res, _arguments, ", ");
     res += ")";
   }
-  if (_fluent)
+  if (_value)
   {
-    if (!pPrintAnyFluent && _fluent->isAnyValue())
+    if (!pPrintAnyValue && _value->isAnyEntity())
       return res;
-    if (_isFluentNegated)
-      res += "!=" + _fluent->value;
+    if (_isValueNegated)
+      res += "!=" + _value->value;
     else
-      res += "=" + _fluent->value;
+      res += "=" + _value->value;
   }
   return res;
 }
@@ -620,9 +620,9 @@ Fact Fact::fromPddl(const std::string& pStr,
                     const std::vector<Parameter>& pParameters,
                     std::size_t pBeginPos,
                     std::size_t* pResPos,
-                    bool pIsOkIfFluentIsMissing)
+                    bool pIsOkIfValueIsMissing)
 {
-  return Fact(pStr, true, pOntology, pEntities, pParameters, nullptr, pBeginPos, pResPos, pIsOkIfFluentIsMissing);
+  return Fact(pStr, true, pOntology, pEntities, pParameters, nullptr, pBeginPos, pResPos, pIsOkIfValueIsMissing);
 }
 
 
@@ -728,7 +728,7 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
   std::map<Parameter, std::set<Entity>> newParametersInPlace;
   auto doesItMatch = [&](const Entity& pFactValue, const Entity& pValueToLookFor) {
     if (pFactValue == pValueToLookFor ||
-        pFactValue.isAnyValue())
+        pFactValue.isAnyEntity())
       return true;
 
     if (pParametersPtr != nullptr)
@@ -778,26 +778,26 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
   }
 
   std::optional<bool> resOpt;
-  if (!_fluent && !pOtherFact._fluent)
+  if (!_value && !pOtherFact._value)
   {
-    resOpt.emplace(pOtherFact._isFluentNegated == _isFluentNegated);
+    resOpt.emplace(pOtherFact._isValueNegated == _isValueNegated);
   }
-  else if (_fluent && pOtherFact._fluent)
+  else if (_value && pOtherFact._value)
   {
     if (pParametersAreForTheFact)
     {
-      if (doesItMatch(*_fluent, *pOtherFact._fluent))
-        resOpt.emplace(pOtherFact._isFluentNegated == _isFluentNegated);
+      if (doesItMatch(*_value, *pOtherFact._value))
+        resOpt.emplace(pOtherFact._isValueNegated == _isValueNegated);
     }
     else
     {
-      if (doesItMatch(*pOtherFact._fluent, *_fluent))
-        resOpt.emplace(pOtherFact._isFluentNegated == _isFluentNegated);
+      if (doesItMatch(*pOtherFact._value, *_value))
+        resOpt.emplace(pOtherFact._isValueNegated == _isValueNegated);
     }
   }
 
   if (!resOpt)
-    resOpt.emplace(pOtherFact._isFluentNegated != _isFluentNegated);
+    resOpt.emplace(pOtherFact._isValueNegated != _isValueNegated);
 
   if (*resOpt)
   {
@@ -850,14 +850,14 @@ std::map<Parameter, Entity> Fact::extratParameterToArguments() const
     for (auto i = 0; i < _arguments.size(); ++i)
       res.emplace(predicate.parameters[i], _arguments[i]);
 
-    if (_fluent && predicate.fluent)
+    if (_value && predicate.value)
     {
-      res.emplace(Parameter::fromType(predicate.fluent), *_fluent);
+      res.emplace(Parameter::fromType(predicate.value), *_value);
       return res;
     }
-    if (!_fluent && !predicate.fluent)
+    if (!_value && !predicate.value)
       return res;
-    throw std::runtime_error("Fluent difference between fact and predicate: " + toStr());
+    throw std::runtime_error("Value difference between fact and predicate: " + toStr());
   }
   throw std::runtime_error("No same number of arguments vs predicate parameters: " + toStr());
 }
@@ -891,10 +891,10 @@ std::string Fact::generateFactSignature() const
   }
   res += ")";
 
-  if (_fluent)
+  if (_value)
   {
-    if (_fluent->type)
-      res += "=" + _fluent->type->name;
+    if (_value->type)
+      res += "=" + _value->type->name;
   }
   return res;
 }
@@ -919,13 +919,13 @@ void Fact::generateSignatureForAllSubTypes(std::list<std::string>& pRes) const
     }
   }
 
-  // Generate fluent sub-types
-  if (_fluent && _fluent->type && _fluent->isAParameterToFill())
+  // Generate value sub-types
+  if (_value && _value->type && _value->isAParameterToFill())
   {
-    for (const auto& currSubType : _fluent->type->subTypes)
+    for (const auto& currSubType : _value->type->subTypes)
     {
       auto fact = *this;
-      fact.setFluentType(currSubType);
+      fact.setValueType(currSubType);
       fact.generateSignatureForAllSubTypes(pRes);
     }
   }
@@ -953,14 +953,14 @@ void Fact::generateSignatureForAllUpperTypes(std::list<std::string>& pRes) const
     }
   }
 
-  // Generate fluent upper-types
-  if (_fluent && _fluent->type)
+  // Generate value upper-types
+  if (_value && _value->type)
   {
-    auto parentType = _fluent->type->parent;
+    auto parentType = _value->type->parent;
     while (parentType)
     {
       auto fact = *this;
-      fact.setFluentType(parentType);
+      fact.setValueType(parentType);
       pRes.emplace_back(fact.factSignature());
       parentType = parentType->parent;
     }
@@ -999,24 +999,24 @@ void Fact::generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) co
     }
   }
 
-  // Generate fluent sub and upper types
-  if (_fluent && _fluent->type)
+  // Generate value sub and upper types
+  if (_value && _value->type)
   {
-    if (_fluent->isAParameterToFill())
+    if (_value->isAParameterToFill())
     {
-      for (const auto& currSubType : _fluent->type->subTypes)
+      for (const auto& currSubType : _value->type->subTypes)
       {
         auto fact = *this;
-        fact.setFluentType(currSubType);
+        fact.setValueType(currSubType);
         fact.generateSignatureForAllSubTypes(pRes);
       }
     }
 
-    auto parentType = _fluent->type->parent;
+    auto parentType = _value->type->parent;
     while (parentType)
     {
       auto fact = *this;
-      fact.setFluentType(parentType);
+      fact.setValueType(parentType);
       pRes.emplace_back(fact.factSignature());
       parentType = parentType->parent;
     }
@@ -1032,34 +1032,34 @@ void Fact::setArgumentType(std::size_t pIndex, const std::shared_ptr<Type>& pTyp
   _resetFactSignatureCache();
 }
 
-void Fact::setFluentType(const std::shared_ptr<Type>& pType)
+void Fact::setValueType(const std::shared_ptr<Type>& pType)
 {
-  if (_fluent)
+  if (_value)
   {
-    _fluent->type = pType;
+    _value->type = pType;
     _resetFactSignatureCache();
   }
 }
 
 
-void Fact::setFluent(const std::optional<Entity>& pFluent)
+void Fact::setValue(const std::optional<Entity>& pValue)
 {
-  _fluent = pFluent;
+  _value = pValue;
   _resetFactSignatureCache();
 }
 
-void Fact::setFluentValue(const std::string& pFluentStr)
+void Fact::setValueFromStr(const std::string& pValueStr)
 {
-  if (_fluent)
-    _fluent->value = pFluentStr;
+  if (_value)
+    _value->value = pValueStr;
   else
-    _fluent = Entity(pFluentStr, predicate.fluent);
+    _value = Entity(pValueStr, predicate.value);
   _resetFactSignatureCache();
 }
 
-bool Fact::isCompleteWithAnyValueFluent() const
+bool Fact::isCompleteWithAnyEntityValue() const
 {
-  if (_fluent && _fluent->isAnyValue())
+  if (_value && _value->isAnyEntity())
   {
     for (const auto& currArg : _arguments)
       if (currArg.isAParameterToFill())
@@ -1069,7 +1069,7 @@ bool Fact::isCompleteWithAnyValueFluent() const
   return false;
 }
 
-const Entity& Fact::getUndefinedValue()
+const Entity& Fact::getUndefinedEntity()
 {
   static const auto undefinedValue = Entity("undefined", {});
   return undefinedValue;
@@ -1088,17 +1088,16 @@ void Fact::_resetFactSignatureCache()
 }
 
 
-void Fact::_finalizeInisilizationAndValidityChecks(const Ontology& pOntology,
-                                                   const SetOfEntities& pEntities,
-                                                   bool pIsOkIfFluentIsMissing)
+void Fact::_finalizeInisilizationAndValidityChecks(bool pIsOkIfValueIsMissing)
 {
+  static const bool inEffectContext = false;
   if (predicate.parameters.size() != _arguments.size())
-    throw std::runtime_error("The fact \"" + toStr() + "\" does not have the same number of parameters than the associated predicate \"" + predicate.toStr() + "\"");
+    throw std::runtime_error("The fact \"" + toPddl(inEffectContext) + "\" does not have the same number of parameters than the associated predicate \"" + predicate.toPddl() + "\"");
   for (auto i = 0; i < _arguments.size(); ++i)
   {
     if (!predicate.parameters[i].type)
-      throw std::runtime_error("\"" + predicate.parameters[i].name + "\" does not have a type, in fact predicate \"" + predicate.toStr() + "\"");
-    if (!_arguments[i].type && !_arguments[i].isAnyValue())
+      throw std::runtime_error("\"" + predicate.parameters[i].name + "\" does not have a type, in fact predicate \"" + predicate.toPddl() + "\"");
+    if (!_arguments[i].type && !_arguments[i].isAnyEntity())
       throw std::runtime_error("\"" + _arguments[i].value + "\" does not have a type");
     if (_arguments[i].isAParameterToFill())
     {
@@ -1107,36 +1106,36 @@ void Fact::_finalizeInisilizationAndValidityChecks(const Ontology& pOntology,
       continue;
     }
     if (!_arguments[i].type->isA(*predicate.parameters[i].type))
-      throw std::runtime_error("\"" + _arguments[i].toStr() + "\" is not a \"" + predicate.parameters[i].type->name + "\" for predicate: \"" + predicate.toStr() + "\"");
+      throw std::runtime_error("\"" + _arguments[i].toStr() + "\" is not a \"" + predicate.parameters[i].type->name + "\" for predicate: \"" + predicate.toPddl() + "\"");
   }
 
-  if (predicate.fluent)
+  if (predicate.value)
   {
-    if (_fluent)
+    if (_value)
     {
-      if (!_fluent->type && !_fluent->isAnyValue())
-        throw std::runtime_error("\"" + _fluent->toStr() + "\" does not have type");
+      if (!_value->type && !_value->isAnyEntity())
+        throw std::runtime_error("\"" + _value->toStr() + "\" does not have type");
 
-      if (_fluent->isAParameterToFill())
+      if (_value->isAParameterToFill())
       {
-        predicate.fluent = Type::getSmallerType(_fluent->type, predicate.fluent);
-        _fluent->type = predicate.fluent;
+        predicate.value = Type::getSmallerType(_value->type, predicate.value);
+        _value->type = predicate.value;
       }
       else
       {
-        if (!_fluent->type->isA(*predicate.fluent))
-          throw std::runtime_error("\"" + _fluent->toStr() + "\" is not a \"" + predicate.fluent->name + "\" for predicate: \"" + predicate.toStr() + "\"");
+        if (!_value->type->isA(*predicate.value))
+          throw std::runtime_error("\"" + _value->toStr() + "\" is not a \"" + predicate.value->name + "\" for predicate: \"" + predicate.toPddl() + "\"");
       }
     }
-    else if (!pIsOkIfFluentIsMissing)
+    else if (!pIsOkIfValueIsMissing)
     {
-      throw std::runtime_error("The fact \"" + toStr() + "\" does not have fluent but the associated predicate: \"" + predicate.toStr() + "\" has a fluent");
+      throw std::runtime_error("The value of this fluent \"" + toPddl(inEffectContext) + "\" is missing. The associated function is \"" + predicate.toPddl() + "\"");
     }
 
   }
-  else if (_fluent)
+  else if (_value)
   {
-    throw std::runtime_error("The fact \"" + toStr() + "\" has a fluent but the associated predicate: \"" + predicate.toStr() + "\" does not have a fluent");
+    throw std::runtime_error("This fact \"" + toPddl(inEffectContext) + "\" should not have a value. The associated predicate is \"" + predicate.toPddl() + "\"");
   }
 }
 

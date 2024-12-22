@@ -225,12 +225,12 @@ void WorldState::_addAFact(WhatChanged& pWhatChanged,
     {
       const auto& currExistingFact = *itExistingFact;
 
-      if (pFact.isValueNegated() && !currExistingFact.isValueNegated() && pFact.fluent() != currExistingFact.fluent())
+      if (pFact.isValueNegated() && !currExistingFact.isValueNegated() && pFact.value() != currExistingFact.value())
         skipThisFact = true;
 
       if (pFact.arguments() == currExistingFact.arguments() &&
-          ((!pFact.isValueNegated() && !currExistingFact.isValueNegated() && pFact.fluent() != currExistingFact.fluent()) ||
-           (pFact.isValueNegated() && !currExistingFact.isValueNegated() && pFact.fluent() == currExistingFact.fluent()) ||
+          ((!pFact.isValueNegated() && !currExistingFact.isValueNegated() && pFact.value() != currExistingFact.value()) ||
+           (pFact.isValueNegated() && !currExistingFact.isValueNegated() && pFact.value() == currExistingFact.value()) ||
            (!pFact.isValueNegated() && currExistingFact.isValueNegated())))
       {
         WhatChanged subWhatChanged;
@@ -384,16 +384,16 @@ bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& p
         {
           auto factToCompare = pFactOptional.fact;
           factToCompare.replaceArguments(currParamPoss);
-          if (factToCompare.fluent() && factToCompare.fluent()->isAnyValue())
+          if (factToCompare.value() && factToCompare.value()->isAnyEntity())
           {
             for (const auto& currFact : factMatchingInWs)
             {
               if (currFact.areEqualExceptAnyValues(factToCompare))
               {
-                if (!pFactOptional.fact.fluent() || !pFactOptional.fact.fluent()->isAnyValue())
+                if (!pFactOptional.fact.value() || !pFactOptional.fact.value()->isAnyEntity())
                 {
-                  if (pFactOptional.fact.fluent() && currFact.fluent())
-                    newParameters = {{pFactOptional.fact.fluent()->toParameter(), {*currFact.fluent()}}};
+                  if (pFactOptional.fact.value() && currFact.value())
+                    newParameters = {{pFactOptional.fact.value()->toParameter(), {*currFact.value()}}};
                   applyNewParams(*pParametersToPossibleArgumentsPtr, newParameters);
                 }
                 return false;
@@ -402,11 +402,11 @@ bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& p
             return true;
           }
         }
-        if (pFactOptional.fact.fluent() && pFactOptional.fact.fluent()->isAnyValue())
+        if (pFactOptional.fact.value() && pFactOptional.fact.value()->isAnyEntity())
           return false;
       }
 
-      if (pFactOptional.fact.fluent() && pFactOptional.fact.fluent()->isAnyValue())
+      if (pFactOptional.fact.value() && pFactOptional.fact.value()->isAnyEntity())
       {
         for (const auto& currFact : factMatchingInWs)
           if (currFact.areEqualExceptAnyValues(pFactOptional.fact))
@@ -442,7 +442,7 @@ bool WorldState::isGoalSatisfied(const Goal& pGoal,
 }
 
 
-void WorldState::iterateOnMatchingFactsWithoutFluentConsideration
+void WorldState::iterateOnMatchingFactsWithoutValueConsideration
 (const std::function<bool (const Fact&)>& pValueCallback,
  const Fact& pFact,
  const std::map<Parameter, std::set<Entity>>& pParametersToConsiderAsAnyValue,
@@ -450,7 +450,7 @@ void WorldState::iterateOnMatchingFactsWithoutFluentConsideration
 {
   auto factMatchInWs = _factsMapping.find(pFact, true);
   for (const auto& currFact : factMatchInWs)
-    if (currFact.areEqualExceptAnyValuesAndFluent(pFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr))
+    if (currFact.areEqualExceptAnyValuesAndValue(pFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr))
       if (pValueCallback(currFact))
         break;
 }

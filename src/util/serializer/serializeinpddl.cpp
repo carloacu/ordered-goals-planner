@@ -136,7 +136,7 @@ std::string _effectToPddl(
     {
       const auto* rightOperandFactPtr = toWmFact(*wsmNode.rightOperand);
       if (rightOperandFactPtr != nullptr && rightOperandFactPtr->factOptional.fact.arguments().empty() &&
-          !rightOperandFactPtr->factOptional.fact.fluent())
+          !rightOperandFactPtr->factOptional.fact.value())
         isRightOperandAFactWithoutParameter = true;
       rightOperandStr = _effectToPddl(*wsmNode.rightOperand, pIdentation);
     }

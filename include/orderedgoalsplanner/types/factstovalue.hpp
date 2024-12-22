@@ -21,7 +21,7 @@ struct ORDEREDGOALSPLANNER_API FactsToValue
 
   void add(const Fact& pFact,
            const std::string& pValue,
-           bool pIgnoreFluent = false);
+           bool pIgnoreValue = false);
 
   void addValueWithoutFact(const std::string& pValue);
 
@@ -106,7 +106,7 @@ struct ORDEREDGOALSPLANNER_API FactsToValue
 
 
   ConstMapOfFactIterator find(const Fact& pFact,
-                              bool pIgnoreFluent = false) const;
+                              bool pIgnoreValue = false) const;
 
   ConstMapOfFactIterator valuesWithoutFact() const;
 
@@ -115,7 +115,7 @@ private:
   std::set<std::string> _values;
   std::map<std::string, std::list<Fact>> _valueToFacts;
   std::optional<std::map<std::string, std::list<std::string>>> _exactCallToListsOpt;
-  std::optional<std::map<std::string, std::list<std::string>>> _exactCallWithoutFluentToListsOpt;
+  std::optional<std::map<std::string, std::list<std::string>>> _exactCallWithoutValueToListsOpt;
   struct ParameterToValues
   {
     ParameterToValues(std::size_t pNbOfArgs)

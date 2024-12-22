@@ -19,12 +19,12 @@ CallbackId SetOfCallbacks::add(const ConditionToCallback& pConditionToCallback,
   {
     pConditionToCallback.condition->forAll(
           [&](const FactOptional& pFactOptional,
-          bool pIgnoreFluent)
+          bool pIgnoreValue)
     {
       if (pFactOptional.isFactNegated)
-        _reachableCallbackLinks.notConditionToCallbacks.add(pFactOptional.fact, newId, pIgnoreFluent);
+        _reachableCallbackLinks.notConditionToCallbacks.add(pFactOptional.fact, newId, pIgnoreValue);
       else
-        _reachableCallbackLinks.conditionToCallbacks.add(pFactOptional.fact, newId, pIgnoreFluent);
+        _reachableCallbackLinks.conditionToCallbacks.add(pFactOptional.fact, newId, pIgnoreValue);
       return ContinueOrBreak::CONTINUE;
     }
     );

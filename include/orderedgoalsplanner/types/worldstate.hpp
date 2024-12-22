@@ -230,13 +230,13 @@ struct ORDEREDGOALSPLANNER_API WorldState
                        const SetOfEntities& pObjects) const;
 
   /**
-   * @brief Iterate over all matching facts without fluent consideration.
+   * @brief Iterate over all matching facts without value consideration.
    * @param[in] pCallback Callback of each matching facts. If it returns true we break the iteration.
    * @param[in] pFact Fact to consider.
-   * @param[in] pParametersToConsiderAsAnyValue Parameters to consider as "any value" if there possible values (set of string) is empty.
-   * @param[in] pParametersToConsiderAsAnyValuePtr Other parameters to consider as "any value" if there possible values (set of string) is empty.
+   * @param[in] pParametersToConsiderAsAnyValue Parameters to consider as "any entity" if there possible values (set of string) is empty.
+   * @param[in] pParametersToConsiderAsAnyValuePtr Other parameters to consider as "any entity" if there possible values (set of string) is empty.
    */
-  void iterateOnMatchingFactsWithoutFluentConsideration(const std::function<bool (const Fact&)>& pCallback,
+  void iterateOnMatchingFactsWithoutValueConsideration(const std::function<bool (const Fact&)>& pCallback,
                                                         const Fact& pFact,
                                                         const std::map<Parameter, std::set<Entity>>& pParametersToConsiderAsAnyValue,
                                                         const std::map<Parameter, std::set<Entity>>* pParametersToConsiderAsAnyValuePtr = nullptr) const;
@@ -245,8 +245,8 @@ struct ORDEREDGOALSPLANNER_API WorldState
    * @brief Iterate over all matching facts.
    * @param[in] pCallback Callback of each matching facts. If it returns true we break the iteration.
    * @param[in] pFact Fact to consider.
-   * @param[in] pParametersToConsiderAsAnyValue Parameters to consider as "any value" if there possible values (set of string) is empty.
-   * @param[in] pParametersToConsiderAsAnyValuePtr Other parameters to consider as "any value" if there possible values (set of string) is empty.
+   * @param[in] pParametersToConsiderAsAnyValue Parameters to consider as "any entity" if there possible values (set of string) is empty.
+   * @param[in] pParametersToConsiderAsAnyValuePtr Other parameters to consider as "any entity" if there possible values (set of string) is empty.
    */
   void iterateOnMatchingFacts(const std::function<bool (const Fact&)>& pValueCallback,
                               const Fact& pFact,

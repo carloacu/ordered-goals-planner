@@ -58,7 +58,7 @@ std::string ExpressionParsed::toStr() const
 FactOptional ExpressionParsed::toFact(const Ontology& pOntology,
                                       const SetOfEntities& pEntities,
                                       const std::vector<Parameter>& pParameters,
-                                      bool pIsOkIfFluentIsMissing) const
+                                      bool pIsOkIfValueIsMissing) const
 {
   std::vector<std::string> argumentStrs;
   for (auto& currArg : arguments)
@@ -76,7 +76,7 @@ FactOptional ExpressionParsed::toFact(const Ontology& pOntology,
     factName = name;
   }
 
-  return FactOptional(isFactNegated, factName, argumentStrs, value, isValueNegated, pOntology, pEntities, pParameters, pIsOkIfFluentIsMissing);
+  return FactOptional(isFactNegated, factName, argumentStrs, value, isValueNegated, pOntology, pEntities, pParameters, pIsOkIfValueIsMissing);
 }
 
 

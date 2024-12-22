@@ -31,15 +31,15 @@ std::string _getExactCall(const Fact& pFact)
 }
 
 
-void _addFluentToExactCall(std::string& pRes,
-                           const Fact& pFact)
+void _addValueToExactCall(std::string& pRes,
+                          const Fact& pFact)
 {
-  if (pFact.fluent())
+  if (pFact.value())
   {
     pRes += "=";
     if (pFact.isValueNegated())
       pRes = "!";
-    pRes += pFact.fluent()->value;
+    pRes += pFact.value()->value;
   }
 }
 }
@@ -50,7 +50,7 @@ FactsToValue::FactsToValue()
  : _values(),
    _valueToFacts(),
    _exactCallToListsOpt(),
-   _exactCallWithoutFluentToListsOpt(),
+   _exactCallWithoutValueToListsOpt(),
    _signatureToLists(),
    _valuesWithoutFact()
 {
@@ -59,7 +59,7 @@ FactsToValue::FactsToValue()
 
 void FactsToValue::add(const Fact& pFact,
                        const std::string& pValue,
-                       bool pIgnoreFluent)
+                       bool pIgnoreValue)
 {
   auto insertionResult = _values.insert(pValue);
   _valueToFacts[pValue].emplace_back(pFact);
@@ -67,13 +67,13 @@ void FactsToValue::add(const Fact& pFact,
   if (!pFact.hasAParameter())
   {
     auto exactCallStr = _getExactCall(pFact);
-    if (!_exactCallWithoutFluentToListsOpt)
-      _exactCallWithoutFluentToListsOpt.emplace();
-    (*_exactCallWithoutFluentToListsOpt)[exactCallStr].emplace_back(pValue);
+    if (!_exactCallWithoutValueToListsOpt)
+      _exactCallWithoutValueToListsOpt.emplace();
+    (*_exactCallWithoutValueToListsOpt)[exactCallStr].emplace_back(pValue);
 
-    if (!pIgnoreFluent && pFact.fluent())
+    if (!pIgnoreValue && pFact.value())
     {
-      _addFluentToExactCall(exactCallStr, pFact);
+      _addValueToExactCall(exactCallStr, pFact);
       if (!_exactCallToListsOpt)
         _exactCallToListsOpt.emplace();
       (*_exactCallToListsOpt)[exactCallStr].emplace_back(pValue);
@@ -96,10 +96,10 @@ void FactsToValue::add(const Fact& pFact,
       else
         parameterToValues.argIdToArgValueToValues[i][""].emplace_back(pValue);
     }
-    if (pIgnoreFluent || pFact.fluent())
+    if (pIgnoreValue || pFact.value())
     {
-      if (!pIgnoreFluent && !pFact.fluent()->isAParameterToFill() && !pFact.isValueNegated())
-        parameterToValues.fluentValueToValues[pFact.fluent()->value].emplace_back(pValue);
+      if (!pIgnoreValue && !pFact.value()->isAParameterToFill() && !pFact.isValueNegated())
+        parameterToValues.fluentValueToValues[pFact.value()->value].emplace_back(pValue);
       else
         parameterToValues.fluentValueToValues[""].emplace_back(pValue);
     }
@@ -127,20 +127,20 @@ void FactsToValue::_erase(const Fact& pFact,
     if (!pFact.hasAParameter())
     {
       auto exactCallStr = _getExactCall(pFact);
-      if (_exactCallWithoutFluentToListsOpt)
+      if (_exactCallWithoutValueToListsOpt)
       {
-        std::list<std::string>& listOfTypes = (*_exactCallWithoutFluentToListsOpt)[exactCallStr];
+        std::list<std::string>& listOfTypes = (*_exactCallWithoutValueToListsOpt)[exactCallStr];
         _removeAValueForList(listOfTypes, pValue);
         if (listOfTypes.empty())
-          _exactCallWithoutFluentToListsOpt->erase(exactCallStr);
+          _exactCallWithoutValueToListsOpt->erase(exactCallStr);
       }
 
-      if (_exactCallToListsOpt && pFact.fluent())
+      if (_exactCallToListsOpt && pFact.value())
       {
-        _addFluentToExactCall(exactCallStr, pFact);
-        std::list<std::string>& listWithFluentOfTypes = (*_exactCallToListsOpt)[exactCallStr];
-        _removeAValueForList(listWithFluentOfTypes, pValue);
-        if (listWithFluentOfTypes.empty())
+        _addValueToExactCall(exactCallStr, pFact);
+        std::list<std::string>& listWithValueOfTypes = (*_exactCallToListsOpt)[exactCallStr];
+        _removeAValueForList(listWithValueOfTypes, pValue);
+        if (listWithValueOfTypes.empty())
           _exactCallToListsOpt->erase(exactCallStr);
       }
     }
@@ -170,9 +170,9 @@ void FactsToValue::_erase(const Fact& pFact,
             if (listOfValues.empty())
                parameterToValues.argIdToArgValueToValues[i].erase(argKey);
           }
-          if (pFact.fluent())
+          if (pFact.value())
           {
-            const std::string& fluentKey = !pFact.fluent()->isAParameterToFill() ? pFact.fluent()->value : _emptyString;
+            const std::string& fluentKey = !pFact.value()->isAParameterToFill() ? pFact.value()->value : _emptyString;
             std::list<std::string>& listOfValues = parameterToValues.fluentValueToValues[fluentKey];
             _removeAValueForList(listOfValues, pValue);
             if (listOfValues.empty())
@@ -216,8 +216,8 @@ void FactsToValue::clear()
   _valueToFacts.clear();
   if (_exactCallToListsOpt)
     _exactCallToListsOpt.reset();
-  if (_exactCallWithoutFluentToListsOpt)
-    _exactCallWithoutFluentToListsOpt.reset();
+  if (_exactCallWithoutValueToListsOpt)
+    _exactCallWithoutValueToListsOpt.reset();
   _signatureToLists.clear();
 }
 
@@ -229,21 +229,21 @@ bool FactsToValue::empty() const
 
 
 typename FactsToValue::ConstMapOfFactIterator FactsToValue::find(const Fact& pFact,
-                                                                 bool pIgnoreFluent) const
+                                                                 bool pIgnoreValue) const
 {
   const std::list<std::string>* exactMatchPtr = nullptr;
 
-  if (!pFact.hasAParameter(pIgnoreFluent) && !pFact.isValueNegated())
+  if (!pFact.hasAParameter(pIgnoreValue) && !pFact.isValueNegated())
   {
     auto exactCallStr = _getExactCall(pFact);
-    if (!pIgnoreFluent && pFact.fluent())
+    if (!pIgnoreValue && pFact.value())
     {
-      _addFluentToExactCall(exactCallStr, pFact);
+      _addValueToExactCall(exactCallStr, pFact);
       exactMatchPtr = _findAnExactCall(_exactCallToListsOpt, exactCallStr);
     }
     else
     {
-      exactMatchPtr = _findAnExactCall(_exactCallWithoutFluentToListsOpt, exactCallStr);
+      exactMatchPtr = _findAnExactCall(_exactCallWithoutValueToListsOpt, exactCallStr);
     }
   }
 
@@ -302,13 +302,13 @@ typename FactsToValue::ConstMapOfFactIterator FactsToValue::find(const Fact& pFa
       }
     }
 
-    const auto& factFluent = pFact.fluent();
-    if (!pIgnoreFluent && factFluent)
+    const auto& fluentValue = pFact.value();
+    if (!pIgnoreValue && fluentValue)
     {
-      if (!factFluent->isAParameterToFill() && !pFact.isValueNegated())
+      if (!fluentValue->isAParameterToFill() && !pFact.isValueNegated())
       {
         hasOnlyParameters = false;
-        auto subRes = _matchArg(parameterToValues.fluentValueToValues, factFluent->value);
+        auto subRes = _matchArg(parameterToValues.fluentValueToValues, fluentValue->value);
         if (subRes)
           return *subRes;
       }

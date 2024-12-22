@@ -32,7 +32,7 @@ Predicate::Predicate(const std::string& pStr,
                      std::size_t* pResPos)
   : name(),
     parameters(),
-    fluent()
+    value()
 {
   std::size_t pos = pBeginPos;
   auto expressionParsed = pStrPddlFormated ?
@@ -47,7 +47,7 @@ Predicate::Predicate(const std::string& pStr,
       parameters.emplace_back(Parameter(currArg.name, type));
     }
   if (expressionParsed.followingExpression) {
-    fluent = pSetOfTypes.nameToType(expressionParsed.followingExpression->name);
+    value = pSetOfTypes.nameToType(expressionParsed.followingExpression->name);
   }
 
   if (pResPos != nullptr)
@@ -68,8 +68,8 @@ std::string Predicate::toPddl() const
     _parametersToStr(res, parameters, " ");
   }
   res += ")";
-  if (fluent)
-    res += " - " + fluent->name;
+  if (value)
+    res += " - " + value->name;
   return res;
 }
 
@@ -78,8 +78,8 @@ std::string Predicate::toStr() const
    auto res = name + "(";
    _parametersToStr(res, parameters, ", ");
    res += ")";
-   if (fluent)
-     res += " - " + fluent->name;
+   if (value)
+     res += " - " + value->name;
    return res;
  }
 
@@ -88,9 +88,9 @@ std::string Predicate::toStr() const
  {
    if (name == pOther.name && parameters == pOther.parameters)
    {
-     if (!fluent && !pOther.fluent)
+     if (!value && !pOther.value)
        return true;
-     if (fluent && pOther.fluent && fluent->name == pOther.fluent->name)
+     if (value && pOther.value && value->name == pOther.value->name)
        return true;
    }
    return false;

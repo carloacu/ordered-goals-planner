@@ -29,7 +29,7 @@ SetOfPredicates SetOfPredicates::fromStr(const std::string& pStr,
 SetOfPredicates SetOfPredicates::fromPddl(const std::string& pStr,
                                           std::size_t& pPos,
                                           const SetOfTypes& pSetOfTypes,
-                                          const std::shared_ptr<Type>& pDefaultFluent)
+                                          const std::shared_ptr<Type>& pDefaultValue)
 {
   auto strSize = pStr.size();
   ExpressionParsed::skipSpaces(pStr, pPos);
@@ -38,8 +38,8 @@ SetOfPredicates SetOfPredicates::fromPddl(const std::string& pStr,
   while (pPos < strSize && pStr[pPos] != ')')
   {
     Predicate predicate(pStr, true, pSetOfTypes, pPos, &pPos);
-    if (pDefaultFluent && !predicate.fluent)
-      predicate.fluent = pDefaultFluent;
+    if (pDefaultValue && !predicate.value)
+      predicate.value = pDefaultValue;
     res.addPredicate(std::move(predicate));
   }
   return res;
@@ -83,9 +83,9 @@ std::string SetOfPredicates::toPddl(PredicatePddlType pTypeFilter,
   bool firstIteration = true;
   for (auto& currNameToPredicate : _nameToPredicate)
   {
-    if (pTypeFilter == PredicatePddlType::PDDL_PREDICATE && currNameToPredicate.second.fluent)
+    if (pTypeFilter == PredicatePddlType::PDDL_PREDICATE && currNameToPredicate.second.value)
       continue;
-    if (pTypeFilter == PredicatePddlType::PDDL_FUNCTION && !currNameToPredicate.second.fluent)
+    if (pTypeFilter == PredicatePddlType::PDDL_FUNCTION && !currNameToPredicate.second.value)
       continue;
 
     if (firstIteration)
@@ -116,9 +116,9 @@ bool SetOfPredicates::hasPredicateOfPddlType(PredicatePddlType pTypeFilter) cons
 {
   for (auto& currNameToPredicate : _nameToPredicate)
   {
-    if (pTypeFilter == PredicatePddlType::PDDL_PREDICATE && currNameToPredicate.second.fluent)
+    if (pTypeFilter == PredicatePddlType::PDDL_PREDICATE && currNameToPredicate.second.value)
       continue;
-    if (pTypeFilter == PredicatePddlType::PDDL_FUNCTION && !currNameToPredicate.second.fluent)
+    if (pTypeFilter == PredicatePddlType::PDDL_FUNCTION && !currNameToPredicate.second.value)
       continue;
     return true;
   }

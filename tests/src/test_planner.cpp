@@ -148,14 +148,14 @@ void _number_type()
   EXPECT_EQ("", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
   problem.worldState.addFact(ogp::Fact("pred_a(toto)=10", false, ontology, entities, {}), problem.goalStack, setOfEventsMap,
                              _emptyCallbacks, ontology, entities, _now);
-  EXPECT_EQ("10", problem.worldState.factsMapping().getFactFluent(ogp::Fact::fromPddl("(pred_a toto)", ontology, entities, {}, 0, nullptr, true))->value);
+  EXPECT_EQ("10", problem.worldState.factsMapping().getFluentValue(ogp::Fact::fromPddl("(pred_a toto)", ontology, entities, {}, 0, nullptr, true))->value);
 
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("pred_b", ontology, entities)}, ontology.constants);
   EXPECT_EQ(action1, _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
 }
 
 
-void _planWithActionThenEventWithFluentParameter()
+void _planWithActionThenEventWithValue()
 {
   const std::string action1 = "action1";
   std::map<std::string, ogp::Action> actions;
@@ -226,7 +226,7 @@ void _planWithActionThenEventWithAssign()
 }
 
 
-void _fluentEqualityInPrecoditionOfAnAction()
+void _valueEqualityInPrecoditionOfAnAction()
 {
   std::map<std::string, ogp::Action> actions;
 
@@ -682,9 +682,9 @@ TEST(Planner, test_planner)
   _simplest_plan_possible();
   _wrong_condition_type();
   _number_type();
-  _planWithActionThenEventWithFluentParameter();
+  _planWithActionThenEventWithValue();
   _planWithActionThenEventWithAssign();
-  _fluentEqualityInPrecoditionOfAnAction();
+  _valueEqualityInPrecoditionOfAnAction();
   _testIncrementOfVariables();
   _actionWithParametersInPreconditionsAndEffects();
   _testQuiz();

@@ -21,9 +21,9 @@ bool _forEachValueUntil(const std::function<bool (const Entity&)>& pValueCallbac
   const auto& setOfFacts = pWorldState.factsMapping();
   if (pParametersPtr == nullptr || pParametersPtr->empty())
   {
-    auto fluentOpt = pCondition.getFluent(setOfFacts);
-    if (fluentOpt)
-      return pValueCallback(*fluentOpt);
+    auto valueOpt = pCondition.getValue(setOfFacts);
+    if (valueOpt)
+      return pValueCallback(*valueOpt);
   }
 
   std::list<std::map<Parameter, Entity>> paramPossibilities;
@@ -31,19 +31,19 @@ bool _forEachValueUntil(const std::function<bool (const Entity&)>& pValueCallbac
   for (auto& currParamPoss : paramPossibilities)
   {
     auto condToExtractValue = pCondition.clone(&currParamPoss);
-    auto fluentOpt = condToExtractValue->getFluent(setOfFacts);
-    if (fluentOpt && pValueCallback(*fluentOpt) == pUntilValue)
+    auto valueOpt = condToExtractValue->getValue(setOfFacts);
+    if (valueOpt && pValueCallback(*valueOpt) == pUntilValue)
       return pUntilValue;
   }
 
   auto* factCondPtr = pCondition.fcFactPtr();
   if (factCondPtr != nullptr &&
-      (!factCondPtr->factOptional.fact.fluent() || factCondPtr->factOptional.fact.fluent()->isAnyValue()))
+      (!factCondPtr->factOptional.fact.value() || factCondPtr->factOptional.fact.value()->isAnyEntity()))
   {
-    pWorldState.iterateOnMatchingFactsWithoutFluentConsideration(
+    pWorldState.iterateOnMatchingFactsWithoutValueConsideration(
           [&pValueCallback](const Fact& pFact) {
-      if (pFact.fluent())
-        pValueCallback(*pFact.fluent());
+      if (pFact.value())
+        pValueCallback(*pFact.value());
       return false;
     },
     factCondPtr->factOptional.fact, // pFact
@@ -62,9 +62,9 @@ void _forEach(const std::function<void (const Entity&, const Fact*)>& pValueCall
   const auto& setOfFacts = pWorldState.factsMapping();
   if (pParametersPtr == nullptr || pParametersPtr->empty())
   {
-    auto fluentOpt = pCondition.getFluent(setOfFacts);
-    if (fluentOpt)
-      pValueCallback(*fluentOpt, nullptr);
+    auto valueOpt = pCondition.getValue(setOfFacts);
+    if (valueOpt)
+      pValueCallback(*valueOpt, nullptr);
     return;
   }
 
@@ -73,20 +73,20 @@ void _forEach(const std::function<void (const Entity&, const Fact*)>& pValueCall
   for (auto& currParamPoss : paramPossibilities)
   {
     auto factToExtractValue = pCondition.clone(&currParamPoss);
-    auto fluentOpt = factToExtractValue->getFluent(setOfFacts);
-    if (fluentOpt)
-      pValueCallback(*fluentOpt, nullptr);
+    auto valueOpt = factToExtractValue->getValue(setOfFacts);
+    if (valueOpt)
+      pValueCallback(*valueOpt, nullptr);
   }
 
   auto* factCondPtr = pCondition.fcFactPtr();
   if (factCondPtr != nullptr &&
-      factCondPtr->factOptional.fact.fluent() &&
-      factCondPtr->factOptional.fact.fluent()->isAnyValue())
+      factCondPtr->factOptional.fact.value() &&
+      factCondPtr->factOptional.fact.value()->isAnyEntity())
   {
-    pWorldState.iterateOnMatchingFactsWithoutFluentConsideration(
+    pWorldState.iterateOnMatchingFactsWithoutValueConsideration(
           [&pValueCallback](const Fact& pFact) {
-      if (pFact.fluent())
-        pValueCallback(*pFact.fluent(), &pFact);
+      if (pFact.value())
+        pValueCallback(*pFact.value(), &pFact);
       return false;
     },
     factCondPtr->factOptional.fact, // pFact
@@ -151,15 +151,15 @@ bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
       {
         auto& leftOpFact = *leftOpFactPtr;
 
-        pWorldState.iterateOnMatchingFactsWithoutFluentConsideration([&](const Fact& pFact){
-          if (pFact.fluent())
+        pWorldState.iterateOnMatchingFactsWithoutValueConsideration([&](const Fact& pFact){
+          if (pFact.value())
           {
-            auto& newParams = leftOpPossibleValuesToParams[*pFact.fluent()];
+            auto& newParams = leftOpPossibleValuesToParams[*pFact.value()];
             if (pConditionParametersToPossibleArguments != nullptr)
             {
               for (auto& currArg : *pConditionParametersToPossibleArguments)
               {
-                auto argValue = leftOpFact.factOptional.fact.tryToExtractArgumentFromExampleWithoutFluentConsideration(currArg.first, pFact);
+                auto argValue = leftOpFact.factOptional.fact.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
                 if (argValue)
                   newParams[currArg.first].insert(*argValue);
               }
@@ -176,10 +176,10 @@ bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
         auto& rightOpFact = *rightOpFactPtr;
 
         std::map<Parameter, std::set<Entity>> newParameters;
-        pWorldState.iterateOnMatchingFactsWithoutFluentConsideration([&](const Fact& pFact){
-          if (pFact.fluent())
+        pWorldState.iterateOnMatchingFactsWithoutValueConsideration([&](const Fact& pFact){
+          if (pFact.value())
           {
-            auto itToLeftPoss = leftOpPossibleValuesToParams.find(*pFact.fluent());
+            auto itToLeftPoss = leftOpPossibleValuesToParams.find(*pFact.value());
             if (itToLeftPoss != leftOpPossibleValuesToParams.end())
             {
               if (pConditionParametersToPossibleArguments != nullptr)
@@ -193,7 +193,7 @@ bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
                 {
                   for (auto& currArg : *pConditionParametersToPossibleArguments)
                   {
-                    auto argValue = rightOpFact.factOptional.fact.tryToExtractArgumentFromExampleWithoutFluentConsideration(currArg.first, pFact);
+                    auto argValue = rightOpFact.factOptional.fact.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
                     if (argValue)
                       newParameters[currArg.first].insert(*argValue);
                   }
@@ -253,13 +253,13 @@ void _existsExtractPossRec(std::map<Parameter, std::set<Entity>>& pLocalParamToV
 
 
 bool Condition::isOptFactMandatory(const FactOptional& pFactOptional,
-                                   bool pIgnoreFluent) const
+                                   bool pIgnoreValue) const
 {
   bool res;
-  forAll([&](const FactOptional& pFactOptionalFromCond, bool pIgnoreFluentFromCond) {
+  forAll([&](const FactOptional& pFactOptionalFromCond, bool pIgnoreValueFromCond) {
     if (pFactOptional.isFactNegated == pFactOptionalFromCond.isFactNegated)
     {
-      if (pIgnoreFluent || pIgnoreFluentFromCond)
+      if (pIgnoreValue || pIgnoreValueFromCond)
         return ContinueOrBreak::CONTINUE;
       if (pFactOptional.fact == pFactOptionalFromCond.fact)
       {
@@ -285,19 +285,19 @@ std::set<FactOptional> Condition::getAllOptFacts() const
 
 
 std::string ConditionNode::toStr(const std::function<std::string (const Fact&)>* pFactWriterPtr,
-                                 bool pPrintAnyFluent) const
+                                 bool pPrintAnyValue) const
 {
-  bool printAnyFluent = pPrintAnyFluent && nodeType != ConditionNodeType::EQUALITY &&
+  bool printAnyValue = pPrintAnyValue && nodeType != ConditionNodeType::EQUALITY &&
       nodeType != ConditionNodeType::SUPERIOR &&  nodeType != ConditionNodeType::SUPERIOR_OR_EQUAL &&
       nodeType != ConditionNodeType::INFERIOR &&  nodeType != ConditionNodeType::INFERIOR_OR_EQUAL;
 
   std::string leftOperandStr;
   if (leftOperand)
-    leftOperandStr = leftOperand->toStr(pFactWriterPtr, printAnyFluent);
+    leftOperandStr = leftOperand->toStr(pFactWriterPtr, printAnyValue);
 
   std::string rightOperandStr;
   if (rightOperand)
-    rightOperandStr = rightOperand->toStr(pFactWriterPtr, printAnyFluent);
+    rightOperandStr = rightOperand->toStr(pFactWriterPtr, printAnyValue);
 
   switch (nodeType)
   {
@@ -346,18 +346,18 @@ bool ConditionNode::hasFact(const Fact& pFact) const
 
 ContinueOrBreak ConditionNode::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                       bool pIsWrappingExpressionNegated,
-                                      bool pIgnoreFluent,
+                                      bool pIgnoreValue,
                                       bool pOnlyMandatoryFacts) const
 {
   if (pOnlyMandatoryFacts && nodeType == ConditionNodeType::OR)
     return ContinueOrBreak::CONTINUE;
-  bool ignoreFluent = pIgnoreFluent || (nodeType != ConditionNodeType::AND &&
+  bool ignoreValue = pIgnoreValue || (nodeType != ConditionNodeType::AND &&
       nodeType != ConditionNodeType::OR && nodeType != ConditionNodeType::IMPLY);
   auto res = ContinueOrBreak::CONTINUE;
   if (leftOperand)
-    res = leftOperand->forAll(pFactCallback, pIsWrappingExpressionNegated, ignoreFluent, pOnlyMandatoryFacts);
+    res = leftOperand->forAll(pFactCallback, pIsWrappingExpressionNegated, ignoreValue, pOnlyMandatoryFacts);
   if (rightOperand && res == ContinueOrBreak::CONTINUE)
-    res = rightOperand->forAll(pFactCallback, pIsWrappingExpressionNegated, ignoreFluent, pOnlyMandatoryFacts);
+    res = rightOperand->forAll(pFactCallback, pIsWrappingExpressionNegated, ignoreValue, pOnlyMandatoryFacts);
   return res;
 }
 
@@ -401,13 +401,13 @@ bool ConditionNode::findConditionCandidateFromFactFromEffect(
       const auto& leftFact = *leftFactPtr;
       if (nodeType == ConditionNodeType::EQUALITY)
       {
-        if (leftFact.factOptional.fact.areEqualWithoutFluentConsideration(pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr))
+        if (leftFact.factOptional.fact.areEqualWithoutValueConsideration(pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr))
         {
           bool potRes = _forEachValueUntil(
                 [&](const Entity& pValue)
           {
             auto factToCheck = leftFact.factOptional.fact;
-            factToCheck.setFluent(pValue);
+            factToCheck.setValue(pValue);
             return pDoesConditionFactMatchFactFromEffect(FactOptional(factToCheck));
           }, true, *rightOperand, pWorldState, &pConditionParametersToPossibleArguments);
           if (potRes)
@@ -418,13 +418,13 @@ bool ConditionNode::findConditionCandidateFromFactFromEffect(
         if (rightFactPtr != nullptr)
         {
           const auto& rightFact = *rightFactPtr;
-          if (rightFact.factOptional.fact.areEqualWithoutFluentConsideration(pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr))
+          if (rightFact.factOptional.fact.areEqualWithoutValueConsideration(pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr))
           {
             return _forEachValueUntil(
                   [&](const Entity& pValue)
             {
               auto factToCheck = rightFact.factOptional.fact;
-              factToCheck.setFluent(pValue);
+              factToCheck.setValue(pValue);
               return pDoesConditionFactMatchFactFromEffect(FactOptional(factToCheck));
             }, true, *leftOperand, pWorldState, &pConditionParametersToPossibleArguments);
           }
@@ -461,7 +461,7 @@ bool ConditionNode::untilFalse(const std::function<bool (const FactOptional&)>& 
       if (nodeType == ConditionNodeType::EQUALITY)
       {
         auto factToCheck = leftFact.factOptional.fact;
-        factToCheck.setFluent(rightOperand->getFluent(pSetOfFact));
+        factToCheck.setValue(rightOperand->getValue(pSetOfFact));
         return pFactCallback(FactOptional(factToCheck));
       }
       else if (nodeType == ConditionNodeType::SUPERIOR || nodeType == ConditionNodeType::SUPERIOR_OR_EQUAL ||
@@ -547,7 +547,7 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
         _forEach([&](const Entity& pValue, const Fact* pFromFactPtr)
         {
           auto factToCheck = leftFactPtr->factOptional.fact;
-          factToCheck.setFluent(pValue);
+          factToCheck.setValue(pValue);
           bool subRes = false;
           if (factToCheck.isPunctual())
             subRes = pPunctualFacts.count(factToCheck) != 0;
@@ -565,7 +565,7 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
               for (auto& currArg : *pConditionParametersToPossibleArguments)
                 if (currArg.second.empty())
                 {
-                  auto value = rightFactPtr->factOptional.fact.tryToExtractArgumentFromExampleWithoutFluentConsideration(currArg.first, *pFromFactPtr);
+                  auto value = rightFactPtr->factOptional.fact.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, *pFromFactPtr);
                   if (value)
                     currArg.second.insert(*value);
                 }
@@ -591,10 +591,10 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
           auto leftFactMatchingInWs = factsMapping.find(leftFact);
           for (const auto& currWsFact : leftFactMatchingInWs)
           {
-            if (currWsFact.fluent() &&
-                leftFact.areEqualWithoutFluentConsideration(currWsFact))
+            if (currWsFact.value() &&
+                leftFact.areEqualWithoutValueConsideration(currWsFact))
             {
-              bool res = compIntNb(currWsFact.fluent()->value, rightNbPtr->nb,
+              bool res = compIntNb(currWsFact.value()->value, rightNbPtr->nb,
                                    canBeSuperior(nodeType), canBeEqual(nodeType));
               if (!pIsWrappingExpressionNegated)
                 return res;
@@ -617,18 +617,18 @@ bool ConditionNode::operator==(const Condition& pOther) const
       _areEqual(rightOperand, otherNodePtr->rightOperand);
 }
 
-std::optional<Entity> ConditionNode::getFluent(const SetOfFacts& pSetOfFact) const
+std::optional<Entity> ConditionNode::getValue(const SetOfFacts& pSetOfFact) const
 {
   if (nodeType == ConditionNodeType::PLUS)
   {
-    auto leftValue = leftOperand->getFluent(pSetOfFact);
-    auto rightValue = rightOperand->getFluent(pSetOfFact);
+    auto leftValue = leftOperand->getValue(pSetOfFact);
+    auto rightValue = rightOperand->getValue(pSetOfFact);
     return plusIntOrStr(leftValue, rightValue);
   }
   if (nodeType == ConditionNodeType::MINUS)
   {
-    auto leftValue = leftOperand->getFluent(pSetOfFact);
-    auto rightValue = rightOperand->getFluent(pSetOfFact);
+    auto leftValue = leftOperand->getValue(pSetOfFact);
+    auto rightValue = rightOperand->getValue(pSetOfFact);
     return minusIntOrStr(leftValue, rightValue);
   }
   return {};
@@ -697,7 +697,7 @@ bool ConditionNode::hasAContradictionWith(const std::set<FactOptional>& pFactsOp
           nodeType == ConditionNodeType::INFERIOR || nodeType == ConditionNodeType::INFERIOR_OR_EQUAL)
       {
         for (const auto& currFactOpt : pFactsOpt)
-          if (leftFact.areEqualWithoutFluentConsideration(currFactOpt.fact))
+          if (leftFact.areEqualWithoutValueConsideration(currFactOpt.fact))
             return true;
         return false;
       }
@@ -734,12 +734,12 @@ bool ConditionExists::hasFact(const Fact& pFact) const
 
 ContinueOrBreak ConditionExists::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                         bool pIsWrappingExpressionNegated,
-                                        bool pIgnoreFluent,
+                                        bool pIgnoreValue,
                                         bool pOnlyMandatoryFacts) const
 {
 
   if (condition)
-    return condition->forAll(pFactCallback, pIsWrappingExpressionNegated, pIgnoreFluent, pOnlyMandatoryFacts);
+    return condition->forAll(pFactCallback, pIsWrappingExpressionNegated, pIgnoreValue, pOnlyMandatoryFacts);
   return ContinueOrBreak::CONTINUE;
 }
 
@@ -840,7 +840,7 @@ bool ConditionExists::hasAContradictionWith(const std::set<FactOptional>& pFacts
         nodeOfConditionPtr->nodeType == ConditionNodeType::INFERIOR || nodeOfConditionPtr->nodeType == ConditionNodeType::INFERIOR_OR_EQUAL)
     {
       for (auto& currFactOpt : pFactsOpt)
-        if (factOfConditionPtr->factOptional.fact.areEqualWithoutArgsAndFluentConsideration(currFactOpt.fact, &contextParameters))
+        if (factOfConditionPtr->factOptional.fact.areEqualWithoutArgsAndValueConsideration(currFactOpt.fact, &contextParameters))
           return true;
       return false;
     }
@@ -884,12 +884,12 @@ bool ConditionForall::hasFact(const Fact& pFact) const
 
 ContinueOrBreak ConditionForall::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                         bool pIsWrappingExpressionNegated,
-                                        bool pIgnoreFluent,
+                                        bool pIgnoreValue,
                                         bool pOnlyMandatoryFacts) const
 {
 
   if (condition)
-    return condition->forAll(pFactCallback, pIsWrappingExpressionNegated, pIgnoreFluent, pOnlyMandatoryFacts);
+    return condition->forAll(pFactCallback, pIsWrappingExpressionNegated, pIgnoreValue, pOnlyMandatoryFacts);
   return ContinueOrBreak::CONTINUE;
 }
 
@@ -1007,7 +1007,7 @@ bool ConditionForall::hasAContradictionWith(const std::set<FactOptional>& pFacts
         nodeOfConditionPtr->nodeType == ConditionNodeType::INFERIOR || nodeOfConditionPtr->nodeType == ConditionNodeType::INFERIOR_OR_EQUAL)
     {
       for (auto& currFactOpt : pFactsOpt)
-        if (factOfConditionPtr->factOptional.fact.areEqualWithoutArgsAndFluentConsideration(currFactOpt.fact, &contextParameters))
+        if (factOfConditionPtr->factOptional.fact.areEqualWithoutArgsAndValueConsideration(currFactOpt.fact, &contextParameters))
           return true;
       return false;
     }
@@ -1026,11 +1026,11 @@ bool ConditionForall::hasAContradictionWith(const std::set<FactOptional>& pFacts
 
 
 std::string ConditionNot::toStr(const std::function<std::string (const Fact&)>* pFactWriterPtr,
-                                bool pPrintAnyFluent) const
+                                bool pPrintAnyValue) const
 {
   std::string conditionStr;
   if (condition)
-    conditionStr = condition->toStr(pFactWriterPtr, pPrintAnyFluent);
+    conditionStr = condition->toStr(pFactWriterPtr, pPrintAnyValue);
   if (condition->fcExistsPtr() != nullptr)
     return "!" + conditionStr;
   return "!(" + conditionStr + ")";
@@ -1050,12 +1050,12 @@ bool ConditionNot::hasFact(const Fact& pFact) const
 
 ContinueOrBreak ConditionNot::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                      bool pIsWrappingExpressionNegated,
-                                     bool pIgnoreFluent,
+                                     bool pIgnoreValue,
                                      bool pOnlyMandatoryFacts) const
 {
 
   if (condition)
-    return condition->forAll(pFactCallback, !pIsWrappingExpressionNegated, pIgnoreFluent, pOnlyMandatoryFacts);
+    return condition->forAll(pFactCallback, !pIsWrappingExpressionNegated, pIgnoreValue, pOnlyMandatoryFacts);
   return ContinueOrBreak::CONTINUE;
 }
 
@@ -1132,15 +1132,15 @@ bool ConditionFact::hasFact(const Fact& pFact) const
 
 ContinueOrBreak ConditionFact::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                       bool pIsWrappingExpressionNegated,
-                                      bool pIgnoreFluent,
+                                      bool pIgnoreValue,
                                       bool) const
 {
   if (!pIsWrappingExpressionNegated)
-    return pFactCallback(factOptional, pIgnoreFluent);
+    return pFactCallback(factOptional, pIgnoreValue);
 
   auto factOptionalCopied = factOptional;
   factOptionalCopied.isFactNegated = !factOptionalCopied.isFactNegated;
-  return pFactCallback(factOptionalCopied, pIgnoreFluent);
+  return pFactCallback(factOptionalCopied, pIgnoreValue);
 }
 
 
@@ -1184,9 +1184,9 @@ bool ConditionFact::operator==(const Condition& pOther) const
       factOptional == otherFactPtr->factOptional;
 }
 
-std::optional<Entity> ConditionFact::getFluent(const SetOfFacts& pSetOfFact) const
+std::optional<Entity> ConditionFact::getValue(const SetOfFacts& pSetOfFact) const
 {
-  return pSetOfFact.getFactFluent(factOptional.fact);
+  return pSetOfFact.getFluentValue(factOptional.fact);
 }
 
 std::unique_ptr<Condition> ConditionFact::clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
@@ -1235,7 +1235,7 @@ bool ConditionNumber::operator==(const Condition& pOther) const
       nb == otherNbPtr->nb;
 }
 
-std::optional<Entity> ConditionNumber::getFluent(const SetOfFacts&) const
+std::optional<Entity> ConditionNumber::getValue(const SetOfFacts&) const
 {
   return Entity::createNumberEntity(toStr(nullptr, true));
 }

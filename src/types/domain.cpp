@@ -52,13 +52,13 @@ struct ActionWithConditionAndFactFacts
       if (effectOptFact.fact.hasAParameter(true))
         return true;
 
-      if (effectOptFact.fact.fluent() && effectOptFact.fact.fluent()->isAnyValue())
+      if (effectOptFact.fact.value() && effectOptFact.fact.value()->isAnyEntity())
         for (auto& otherCondOptFact : pOther.factsFromCondition)
           if (effectOptFact.isFactNegated == otherCondOptFact.isFactNegated &&
-              effectOptFact.fact.areEqualExceptAnyValuesAndFluent(otherCondOptFact.fact))
+              effectOptFact.fact.areEqualExceptAnyValuesAndValue(otherCondOptFact.fact))
             return true;
 
-      if (!effectOptFact.fact.fluent() || !effectOptFact.fact.fluent()->isAParameterToFill())
+      if (!effectOptFact.fact.value() || !effectOptFact.fact.value()->isAParameterToFill())
         for (auto& otherCondOptFact : pOther.factsFromCondition)
           if (effectOptFact.isFactNegated != otherCondOptFact.isFactNegated &&
               effectOptFact.fact == otherCondOptFact.fact)

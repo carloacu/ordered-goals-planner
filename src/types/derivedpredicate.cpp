@@ -15,8 +15,8 @@ DerivedPredicate::DerivedPredicate(const Predicate& pPredicate,
   for (const auto& currParam : pPredicate.parameters)
     if (currParam.isAParameterToFill())
       parameters.emplace_back(currParam);
-  if (pPredicate.fluent)
-    parameters.emplace_back(Parameter::fromType(pPredicate.fluent));
+  if (pPredicate.value)
+    parameters.emplace_back(Parameter::fromType(pPredicate.value));
 
   condition = strToCondition(pConditionStr, pOntology, {}, parameters);
 }

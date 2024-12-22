@@ -133,7 +133,7 @@ void _test_fact_initialization()
     EXPECT_TRUE(false);
   }
   catch(const std::exception& e) {
-    EXPECT_EQ("The fact \"pred_name\" does not have the same number of parameters than the associated predicate \"pred_name(?v - my_type)\". The exception was thrown while parsing fact: \"pred_name\"", std::string(e.what()));
+    EXPECT_EQ("The fact \"(pred_name)\" does not have the same number of parameters than the associated predicate \"(pred_name ?v - my_type)\". The exception was thrown while parsing fact: \"pred_name\"", std::string(e.what()));
   }
   try
   {
@@ -141,7 +141,7 @@ void _test_fact_initialization()
     EXPECT_TRUE(false);
   }
   catch(const std::exception& e) {
-    EXPECT_EQ("\"titi - my_type2\" is not a \"my_type\" for predicate: \"pred_name(?v - my_type)\". The exception was thrown while parsing fact: \"pred_name(titi)\"", std::string(e.what()));
+    EXPECT_EQ("\"titi - my_type2\" is not a \"my_type\" for predicate: \"(pred_name ?v - my_type)\". The exception was thrown while parsing fact: \"pred_name(titi)\"", std::string(e.what()));
   }
   try
   {
