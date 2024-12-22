@@ -91,7 +91,7 @@ ParallelPan toParallelPlan
         {
           const Condition* conditionWithoutParameterPtr = actionInvocationCand.getConditionWithoutParameterPtr();
           if (conditionWithoutParameterPtr == nullptr ||
-              conditionWithoutParameterPtr->isTrue(pProblem.worldState, ontology.constants, pProblem.entities))
+              conditionWithoutParameterPtr->isTrue(pProblem.worldState, ontology.constants, pProblem.objects))
           {
             auto tmpProblem = pProblem;
             notifyActionStarted(tmpProblem, pDomain, callbacks, actionInvocationCand.actionInvWithGoal, pNow);

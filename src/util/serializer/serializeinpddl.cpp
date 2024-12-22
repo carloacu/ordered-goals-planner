@@ -426,10 +426,10 @@ std::string problemToPddl(const Problem& pProblem,
   res += std::string(identation, ' ') + "(problem " + pProblem.name + ")\n";
   res += std::string(identation, ' ') + "(:domain " + pDomain.getName() + ")\n\n";
 
-  if (!pProblem.entities.empty())
+  if (!pProblem.objects.empty())
   {
     res += std::string(identation, ' ') + "(:objects\n";
-    res += pProblem.entities.toStr(_identationOffset + identation);
+    res += pProblem.objects.toStr(_identationOffset + identation);
     res += "\n" + std::string(identation, ' ') + ")\n\n";
   }
 

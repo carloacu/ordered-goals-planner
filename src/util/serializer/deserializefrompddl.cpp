@@ -1074,7 +1074,7 @@ DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
           std::size_t beginPos = pos;
           ExpressionParsed::moveUntilClosingParenthesis(pStr, pos);
           std::string entitiesStr = pStr.substr(beginPos, pos - beginPos);
-          res.problemPtr->entities.addAllFromPddl(entitiesStr, ontology.types);
+          res.problemPtr->objects.addAllFromPddl(entitiesStr, ontology.types);
         }
         else if (token == ":init")
         {
@@ -1085,7 +1085,7 @@ DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
           const SetOfCallbacks callbacks;
           res.problemPtr->worldState.modifyFactsFromPddl(pStr, pos, res.problemPtr->goalStack,
                                                          setOfEventsMap, callbacks,
-                                                         ontology, res.problemPtr->entities, {});
+                                                         ontology, res.problemPtr->objects, {});
         }
         else if (token == ":goal")
         {
@@ -1096,7 +1096,7 @@ DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
           const auto& ontology = res.domainPtr->getOntology();
           std::vector<Goal> goals;
           const auto& worldState = res.problemPtr->worldState;
-          const auto& entities = res.problemPtr->entities;
+          const auto& entities = res.problemPtr->objects;
 
           auto expressionParsed = ExpressionParsed::fromPddl(pStr, pos, false);
           if (expressionParsed.name == "and" && expressionParsed.tags.count("__ORDERED") > 0)

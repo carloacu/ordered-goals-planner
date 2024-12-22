@@ -25,17 +25,18 @@ struct ORDEREDGOALSPLANNER_API Problem
 {
   Problem(const SetOfFacts* pFactsPtr = nullptr)
     : name(),
-      entities(),
+      objects(),
       goalStack(),
       worldState(pFactsPtr),
       historical()
   {
   }
 
-  /// BName of the problem;
+  /// BName of the problem.
   std::string name;
 
-  SetOfEntities entities;
+  /// Objects of the problem.
+  SetOfEntities objects;
 
   /// Objectives that the bot wants to do.
   GoalStack goalStack;

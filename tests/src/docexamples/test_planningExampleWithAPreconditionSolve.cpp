@@ -33,7 +33,7 @@ void planningExampleWithAPreconditionSolve()
 
   // Initialize the problem with the goal to satisfy
   ogp::Problem problem;
-  problem.goalStack.setGoals({ogp::Goal::fromStr(proposedOurHelpToUser, ontology, {})}, problem.worldState, ontology.constants, problem.entities, now);
+  problem.goalStack.setGoals({ogp::Goal::fromStr(proposedOurHelpToUser, ontology, {})}, problem.worldState, ontology.constants, problem.objects, now);
 
   // Look for an action to do
   auto planResult1 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);

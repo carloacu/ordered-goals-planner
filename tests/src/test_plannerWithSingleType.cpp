@@ -107,7 +107,7 @@ void _setGoalsForAPriority(ogp::Problem& pProblem,
   std::vector<ogp::Goal> goals;
   for (auto& currFactStr : pGoalStrs)
     goals.emplace_back(ogp::Goal::fromStr(currFactStr, pOntology, ogp::SetOfEntities()));
-  pProblem.goalStack.setGoals(goals, pProblem.worldState, pOntology.constants, pProblem.entities, pNow, pPriority);
+  pProblem.goalStack.setGoals(goals, pProblem.worldState, pOntology.constants, pProblem.objects, pNow, pPriority);
 }
 
 
@@ -117,7 +117,7 @@ void _setGoalsForAPriority(ogp::Problem& pProblem,
                            const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
                            int pPriority = ogp::GoalStack::getDefaultPriority())
 {
-  pProblem.goalStack.setGoals(pGoals, pProblem.worldState, pConstants, pProblem.entities, pNow, pPriority);
+  pProblem.goalStack.setGoals(pGoals, pProblem.worldState, pConstants, pProblem.objects, pNow, pPriority);
 }
 
 
@@ -133,7 +133,7 @@ void _setGoals(ogp::Problem& pProblem,
     for (auto& currGoal : currGoals.second)
       goalsForAPrio.emplace_back(ogp::Goal::fromStr(currGoal, pOntology, ogp::SetOfEntities()));
   }
-  pProblem.goalStack.setGoals(goals, pProblem.worldState, pOntology.constants, pProblem.entities, pNow);
+  pProblem.goalStack.setGoals(goals, pProblem.worldState, pOntology.constants, pProblem.objects, pNow);
 }
 
 
@@ -142,7 +142,7 @@ void _setGoals(ogp::Problem& pProblem,
                const ogp::SetOfEntities& pConstants,
                const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {})
 {
-  pProblem.goalStack.setGoals(pGoals, pProblem.worldState, pConstants, pProblem.entities, pNow);
+  pProblem.goalStack.setGoals(pGoals, pProblem.worldState, pConstants, pProblem.objects, pNow);
 }
 
 
@@ -158,7 +158,7 @@ void _addGoals(ogp::Problem& pProblem,
     for (auto& currGoal : currGoals.second)
       goalsForAPrio.emplace_back(ogp::Goal::fromStr(currGoal, pOntology, ogp::SetOfEntities()));
   }
-  pProblem.goalStack.addGoals(goals, pProblem.worldState, pOntology.constants, pProblem.entities, pNow);
+  pProblem.goalStack.addGoals(goals, pProblem.worldState, pOntology.constants, pProblem.objects, pNow);
 }
 
 void _addGoalsForAPriority(ogp::Problem& pProblem,
@@ -170,7 +170,7 @@ void _addGoalsForAPriority(ogp::Problem& pProblem,
   std::vector<ogp::Goal> goals;
   for (auto& currFactStr : pGoalStrs)
     goals.emplace_back(ogp::Goal::fromStr(currFactStr, pOntology, ogp::SetOfEntities()));
-  pProblem.goalStack.addGoals(goals, pProblem.worldState, pOntology.constants, pProblem.entities, pNow, pPriority);
+  pProblem.goalStack.addGoals(goals, pProblem.worldState, pOntology.constants, pProblem.objects, pNow, pPriority);
 }
 
 
@@ -180,7 +180,7 @@ void _addGoalsForAPriority(ogp::Problem& pProblem,
                            const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
                            int pPriority = ogp::GoalStack::getDefaultPriority())
 {
-  pProblem.goalStack.addGoals(pGoals, pProblem.worldState, pConstants, pProblem.entities, pNow, pPriority);
+  pProblem.goalStack.addGoals(pGoals, pProblem.worldState, pConstants, pProblem.objects, pNow, pPriority);
 }
 
 
@@ -640,16 +640,16 @@ void _removeSomeGoals()
   auto onGoalsRemovedConnection = goalsRemovedTracker.onGoalsRemoved.connectUnsafe([&](const std::set<std::string>& pGoalsRemoved) {
     goalsRemoved = pGoalsRemoved;
   });
-  problem.goalStack.pushFrontGoal(_goal("checked_in", ontology, -1, goalGroupId), problem.worldState, ontology.constants, problem.entities, {});
-  problem.goalStack.pushFrontGoal(_goal("greeted", ontology, -1, goalGroupId), problem.worldState, ontology.constants, problem.entities, {});
+  problem.goalStack.pushFrontGoal(_goal("checked_in", ontology, -1, goalGroupId), problem.worldState, ontology.constants, problem.objects, {});
+  problem.goalStack.pushFrontGoal(_goal("greeted", ontology, -1, goalGroupId), problem.worldState, ontology.constants, problem.objects, {});
   EXPECT_EQ(_action_greet, _lookForAnActionToDoConstStr(problem, domain));
   EXPECT_EQ(0, goalsRemoved.size());
-  EXPECT_TRUE(problem.goalStack.removeGoals(goalGroupId, problem.worldState, ontology.constants, problem.entities, {}));
+  EXPECT_TRUE(problem.goalStack.removeGoals(goalGroupId, problem.worldState, ontology.constants, problem.objects, {}));
   EXPECT_EQ(2, goalsRemoved.size());
-  EXPECT_FALSE(problem.goalStack.removeGoals(goalGroupId, problem.worldState, ontology.constants, problem.entities, {}));
+  EXPECT_FALSE(problem.goalStack.removeGoals(goalGroupId, problem.worldState, ontology.constants, problem.objects, {}));
   EXPECT_EQ(_action_goodBoy, _lookForAnActionToDoConstStr(problem, domain));
   EXPECT_EQ(_action_goodBoy, _lookForAnActionToDoConstStr(problem, domain));
-  problem.goalStack.clearGoals(problem.worldState, ontology.constants, problem.entities, {});
+  problem.goalStack.clearGoals(problem.worldState, ontology.constants, problem.objects, {});
   EXPECT_EQ("", _lookForAnActionToDoConstStr(problem, domain));
   onGoalsRemovedConnection.disconnect();
 }
@@ -671,31 +671,31 @@ void _notifyGoalRemovedWhenItIsImmediatlyRemoved()
     goalsRemoved = pGoalsRemoved;
   });
 
-  problem.goalStack.addGoals({{10, {_goal(_fact_a, ontology)}}}, problem.worldState, ontology.constants, problem.entities, {});
+  problem.goalStack.addGoals({{10, {_goal(_fact_a, ontology)}}}, problem.worldState, ontology.constants, problem.objects, {});
 
-  problem.goalStack.addGoals({{9, {_goal(_fact_b, ontology, 0)}}}, problem.worldState, ontology.constants, problem.entities, {});
+  problem.goalStack.addGoals({{9, {_goal(_fact_b, ontology, 0)}}}, problem.worldState, ontology.constants, problem.objects, {});
   EXPECT_EQ(1u, goalsRemoved.size());
   EXPECT_EQ(_fact_b, *goalsRemoved.begin());
   goalsRemoved.clear();
 
-  problem.goalStack.pushBackGoal(_goal(_fact_c, ontology, 0), problem.worldState, ontology.constants, problem.entities, {}, 9);
+  problem.goalStack.pushBackGoal(_goal(_fact_c, ontology, 0), problem.worldState, ontology.constants, problem.objects, {}, 9);
   EXPECT_EQ(1u, goalsRemoved.size());
   EXPECT_EQ(_fact_c, *goalsRemoved.begin());
   goalsRemoved.clear();
 
-  problem.goalStack.pushFrontGoal(_goal(_fact_d, ontology, 0), problem.worldState, ontology.constants, problem.entities, {}, 9);
+  problem.goalStack.pushFrontGoal(_goal(_fact_d, ontology, 0), problem.worldState, ontology.constants, problem.objects, {}, 9);
   EXPECT_EQ(1u, goalsRemoved.size());
   EXPECT_EQ(_fact_d, *goalsRemoved.begin());
   goalsRemoved.clear();
 
-  problem.goalStack.pushFrontGoal(_goal(_fact_e, ontology, 0), problem.worldState, ontology.constants, problem.entities, {}, 11);
+  problem.goalStack.pushFrontGoal(_goal(_fact_e, ontology, 0), problem.worldState, ontology.constants, problem.objects, {}, 11);
   EXPECT_EQ(0u, goalsRemoved.size());
-  problem.goalStack.changeGoalPriority(_fact_e, 9, true, problem.worldState, ontology.constants, problem.entities, {});
+  problem.goalStack.changeGoalPriority(_fact_e, 9, true, problem.worldState, ontology.constants, problem.objects, {});
   EXPECT_EQ(1u, goalsRemoved.size());
   EXPECT_EQ(_fact_e, *goalsRemoved.begin());
   goalsRemoved.clear();
 
-  problem.goalStack.setGoals({{10, {_goal(_fact_a, ontology, 0)}}, {9, {_goal(_fact_b, ontology, 0)}}}, problem.worldState, ontology.constants, problem.entities, {});
+  problem.goalStack.setGoals({{10, {_goal(_fact_a, ontology, 0)}}, {9, {_goal(_fact_b, ontology, 0)}}}, problem.worldState, ontology.constants, problem.objects, {});
   EXPECT_EQ(1u, goalsRemoved.size());
   EXPECT_EQ(_fact_b, *goalsRemoved.begin());
   onGoalsRemovedConnection.disconnect();
@@ -1526,7 +1526,7 @@ void _stackablePropertyOfGoals()
 
   ogp::Problem problem2;
   _setGoals(problem2, {{10, {_goal(_fact_greeted, ontology, 0)}}, {9, {_goal(_fact_checkedIn, ontology, 0), _goal(_fact_beHappy, ontology)}}}, ontology.constants);
-  problem2.goalStack.pushFrontGoal(_goal(_fact_presented, ontology), problem2.worldState, ontology.constants, problem2.entities, {}, 10);
+  problem2.goalStack.pushFrontGoal(_goal(_fact_presented, ontology), problem2.worldState, ontology.constants, problem2.objects, {}, 10);
   EXPECT_EQ(_action_presentation + _sep +
             _action_goodBoy, _solveStr(problem2, actions, ontology));
 }
@@ -1633,7 +1633,7 @@ void _changePriorityOfGoal()
     EXPECT_EQ(2, goals.find(10)->second.size());
   }
 
-  problem.goalStack.changeGoalPriority(_fact_checkedIn, 9, true, problem.worldState, ontology.constants, problem.entities, _now);
+  problem.goalStack.changeGoalPriority(_fact_checkedIn, 9, true, problem.worldState, ontology.constants, problem.objects, _now);
   {
     auto& goals = problem.goalStack.goals();
     EXPECT_EQ(goalsFromSubscription, goals);
@@ -1645,7 +1645,7 @@ void _changePriorityOfGoal()
   }
 
   _setGoals(problem, {{9, {_fact_userSatisfied}}, {10, {_fact_greeted, _fact_checkedIn}}}, ontology);
-  problem.goalStack.changeGoalPriority(_fact_checkedIn, 9, false, problem.worldState, ontology.constants, problem.entities, _now);
+  problem.goalStack.changeGoalPriority(_fact_checkedIn, 9, false, problem.worldState, ontology.constants, problem.objects, _now);
   {
     auto& goals = problem.goalStack.goals();
     EXPECT_EQ(goalsFromSubscription, goals);
@@ -1657,7 +1657,7 @@ void _changePriorityOfGoal()
   }
 
   _setGoals(problem, {{10, {_fact_greeted, _fact_checkedIn}}}, ontology);
-  problem.goalStack.changeGoalPriority(_fact_checkedIn, 9, true, problem.worldState, ontology.constants, problem.entities, _now);
+  problem.goalStack.changeGoalPriority(_fact_checkedIn, 9, true, problem.worldState, ontology.constants, problem.objects, _now);
   {
     auto& goals = problem.goalStack.goals();
     EXPECT_EQ(goalsFromSubscription, goals);
@@ -1988,19 +1988,19 @@ void _testGetNotSatisfiedGoals()
   _addGoalsForAPriority(problem, {goal2, goal3, goal4}, ontology);
 
   EXPECT_EQ(goal1 + ", " + goal2 + ", " + goal3 + ", " + goal4, ogp::printGoals(problem.goalStack.goals()));
-  EXPECT_EQ(goal2 + ", " + goal4, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.entities)));
+  EXPECT_EQ(goal2 + ", " + goal4, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.objects)));
   _addFact(problem.worldState, _fact_a, problem.goalStack, ontology);
-  EXPECT_EQ(goal1 + ", " + goal2 + ", " + goal4, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.entities)));
+  EXPECT_EQ(goal1 + ", " + goal2 + ", " + goal4, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.objects)));
   _addFact(problem.worldState, _fact_c, problem.goalStack, ontology);
-  EXPECT_EQ(goal1 + ", " + goal2 + ", " + goal3, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.entities)));
+  EXPECT_EQ(goal1 + ", " + goal2 + ", " + goal3, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.objects)));
   _addFact(problem.worldState, _fact_d, problem.goalStack, ontology);
-  EXPECT_EQ(goal1 + ", " + goal2, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.entities)));
+  EXPECT_EQ(goal1 + ", " + goal2, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.objects)));
   _removeFact(problem.worldState, _fact_a, problem.goalStack, ontology);
-  EXPECT_EQ(goal2, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.entities)));
+  EXPECT_EQ(goal2, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.objects)));
   _addFact(problem.worldState, _fact_b, problem.goalStack, ontology);
-  EXPECT_EQ("", ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.entities)));
+  EXPECT_EQ("", ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.objects)));
   _removeFact(problem.worldState, _fact_d, problem.goalStack, ontology);
-  EXPECT_EQ(goal3, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.entities)));
+  EXPECT_EQ(goal3, ogp::printGoals(problem.goalStack.getNotSatisfiedGoals(problem.worldState, ontology.constants, problem.objects)));
 }
 
 
@@ -2034,7 +2034,7 @@ void _testGoalUnderPersist()
     ogp::Problem problem;
     _addGoalsForAPriority(problem, {"persist(!" + _fact_a + ")"}, ontology, now, ogp::GoalStack::getDefaultPriority() + 2);
     _addGoalsForAPriority(problem, {_goal(_fact_b, ontology, 0)}, ontology.constants, now, ogp::GoalStack::getDefaultPriority());
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.entities, {});
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, {});
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain));
   }
 
@@ -2059,7 +2059,7 @@ void _testGoalUnderPersist()
     ogp::Problem problem;
     _addGoalsForAPriority(problem, {"persist(" + _fact_c + ")"}, ontology, now, ogp::GoalStack::getDefaultPriority() + 2);
     EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.actionId);
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.entities, {});
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, {});
     _addGoalsForAPriority(problem, {_goal(_fact_b, ontology, 0)}, ontology.constants, now, ogp::GoalStack::getDefaultPriority());
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain));
   }
@@ -2068,30 +2068,30 @@ void _testGoalUnderPersist()
     ogp::Problem problem;
     _addGoalsForAPriority(problem, {_fact_c}, ontology, now, ogp::GoalStack::getDefaultPriority() + 2);
     EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.actionId);
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.entities, {});
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, {});
     _addGoalsForAPriority(problem, {_goal(_fact_b, ontology, 0)}, ontology.constants, now, ogp::GoalStack::getDefaultPriority());
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain));
   }
 
   {
     ogp::Problem problem;
-    problem.goalStack.pushBackGoal({_goal("persist(!" + _fact_e + ")", ontology)}, problem.worldState, ontology.constants, problem.entities, now, ogp::GoalStack::getDefaultPriority() + 2);
-    problem.goalStack.pushBackGoal(_goal(_fact_c, ontology), problem.worldState, ontology.constants, problem.entities, now, ogp::GoalStack::getDefaultPriority() + 2);
+    problem.goalStack.pushBackGoal({_goal("persist(!" + _fact_e + ")", ontology)}, problem.worldState, ontology.constants, problem.objects, now, ogp::GoalStack::getDefaultPriority() + 2);
+    problem.goalStack.pushBackGoal(_goal(_fact_c, ontology), problem.worldState, ontology.constants, problem.objects, now, ogp::GoalStack::getDefaultPriority() + 2);
     EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain, now).actionInvocation.actionId);
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.entities, now);
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, now);
     _addGoalsForAPriority(problem, {_goal(_fact_b, ontology, 1)}, ontology.constants, now, ogp::GoalStack::getDefaultPriority());
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain, now));
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain, now));
 
     _removeFact(problem.worldState, _fact_c, problem.goalStack, ontology);
-    problem.goalStack.pushBackGoal(_goal(_fact_c, ontology), problem.worldState, ontology.constants, problem.entities, now, ogp::GoalStack::getDefaultPriority() + 2);
+    problem.goalStack.pushBackGoal(_goal(_fact_c, ontology), problem.worldState, ontology.constants, problem.objects, now, ogp::GoalStack::getDefaultPriority() + 2);
     auto plannerResult = _lookForAnActionToDo(problem, domain, now);
     EXPECT_EQ(action2, plannerResult.actionInvocation.actionId);
 
     now = std::make_unique<std::chrono::steady_clock::time_point>(std::chrono::steady_clock::now() + std::chrono::minutes(5));
     ogp::notifyActionDone(problem, domain, _emptyCallbacks, plannerResult, now);
 
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.entities, now);
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, now);
     EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, now).actionInvocation.actionId); // Not action1 because it was inactive for too long
   }
 
@@ -2151,7 +2151,7 @@ void _oneStepTowards()
   _setGoals(problem, {{11, {implyGoal}},
                       {10, {_goal("oneStepTowards(" + _fact_greeted + ")", ontology, 0)}},
                       {9, {_goal(_fact_checkedIn, ontology, 0), _goal(_fact_beHappy, ontology)}}}, ontology.constants, _now);
-  problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.entities, _now);
+  problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, _now);
   EXPECT_EQ(_action_greet, _lookForAnActionToDoStr(problem, domain, _now));
   EXPECT_EQ(_action_greet, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.actionId);
   EXPECT_EQ(_action_goodBoy, _lookForAnActionToDoStr(problem, domain, _now));

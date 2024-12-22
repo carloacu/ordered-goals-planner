@@ -318,14 +318,14 @@ bool _fillParameter(const Parameter& pParameter,
       else if (!parentParamValue->isAParameterToFill() || parentParamValue->isAnyEntity())
         newParamValues.insert(*parentParamValue);
       return !newParamValues.empty();
-    }, pContext.problem.worldState, ontology.constants, pContext.problem.entities, pFact, pParentParameters, pTmpParentParametersPtr, pHoldingActionParameters);
+    }, pContext.problem.worldState, ontology.constants, pContext.problem.objects, pFact, pParentParameters, pTmpParentParametersPtr, pHoldingActionParameters);
 
     if (foundSomethingThatMatched && newParamValues.empty())
     {
       if (pParameter.type)
       {
         // find all the possible occurence in the entities
-        newParamValues = typenameToEntities(pParameter.type->name, ontology.constants, pContext.problem.entities);
+        newParamValues = typenameToEntities(pParameter.type->name, ontology.constants, pContext.problem.objects);
 
         // remove the ones that are already in the world state for this fact
         std::set<Entity> parameterValues;
@@ -572,7 +572,7 @@ bool _doesConditionMatchAnOptionalFact(const std::map<Parameter, std::set<Entity
         (pIsWrappingExpressionNegated && pFactOptional.isFactNegated != pConditionFactOptional.isFactNegated))
       return pConditionFactOptional.fact.areEqualExceptAnyValues(pFactOptional.fact, &pParameters, pParametersToModifyInPlacePtr);
     return false;
-  }, pContext.problem.worldState, ontology.constants, pContext.problem.entities, pFactOptional.fact, pParameters, pParametersToModifyInPlacePtr, {});
+  }, pContext.problem.worldState, ontology.constants, pContext.problem.objects, pFactOptional.fact, pParameters, pParametersToModifyInPlacePtr, {});
 }
 
 
@@ -873,7 +873,7 @@ ActionId _findFirstActionForAGoal(
         if (_lookForAPossibleEffect(newPotRes.parametersWithData, dataRelatedToOptimisation, *newTreePtr,
                                     action.effect.worldStateModification, action.effect.potentialWorldStateModification,
                                     context, factsAlreadyChecked, currActionId) &&
-            (!action.precondition || action.precondition->isTrue(pProblem.worldState, ontology.constants, pProblem.entities, {}, {}, &newPotRes.parametersWithData.parameters)))
+            (!action.precondition || action.precondition->isTrue(pProblem.worldState, ontology.constants, pProblem.objects, {}, {}, &newPotRes.parametersWithData.parameters)))
         {
           while (true)
           {
@@ -947,7 +947,7 @@ bool _goalToPlanRec(
                                                            pDomain, pNow, nullptr, nullptr);
       ActionPtrWithGoal previousAction(potActionPtr, pGoal);
       auto* previousActionPtr = nextInPlanCanBeAnEvent ? nullptr : &previousAction;
-      if (problemForPlanCost.worldState.isGoalSatisfied(pGoal, ontology.constants, problemForPlanCost.entities) ||
+      if (problemForPlanCost.worldState.isGoalSatisfied(pGoal, ontology.constants, problemForPlanCost.objects) ||
           _goalToPlanRec(pActionInvocations, problemForPlanCost, pActionAlreadyInPlan,
                          pDomain, pTryToDoMoreOptimalSolution, pNow, nullptr, pGoal, pPriority, previousActionPtr))
       {
@@ -982,7 +982,7 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
                                   pDomain, pTryToDoMoreOptimalSolution, pNow, pGlobalHistorical, pGoal, pPriority,
                                   pPreviousActionPtr);
           },
-        pProblem.worldState, ontology.constants, pProblem.entities, pNow,
+        pProblem.worldState, ontology.constants, pProblem.objects, pNow,
         pLookForAnActionOutputInfosPtr);
   return res;
 }
@@ -1036,7 +1036,7 @@ void notifyActionStarted(Problem& pProblem,
       const auto& ontology = pDomain.getOntology();
       if (worldStateModificationAtStart)
         pProblem.worldState.modify(&*worldStateModificationAtStart, pProblem.goalStack, setOfEvents,
-                                   pCallbacks, ontology, pProblem.entities, pNow);
+                                   pCallbacks, ontology, pProblem.objects, pNow);
     }
   }
 }
@@ -1245,7 +1245,7 @@ bool evaluate
 
   std::unique_ptr<std::chrono::steady_clock::time_point> now;
   pProblem.goalStack.refreshIfNeeded(pDomain);
-  pProblem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(pProblem.worldState, ontology.constants, pProblem.entities, now);
+  pProblem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(pProblem.worldState, ontology.constants, pProblem.objects, now);
   auto itBegin = planWithCache.begin();
   auto goals = extractSatisfiedGoals(pProblem, pDomain, itBegin, planWithCache, nullptr, now);
   return goals == expectedGoalsSatisfied;

@@ -13,7 +13,7 @@ void _setGoalsForAPriority(ogp::Problem& pProblem,
                            const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
                            int pPriority = ogp::GoalStack::getDefaultPriority())
 {
-  pProblem.goalStack.setGoals(pGoals, pProblem.worldState, pConstants, pProblem.entities, pNow, pPriority);
+  pProblem.goalStack.setGoals(pGoals, pProblem.worldState, pConstants, pProblem.objects, pNow, pPriority);
 }
 
 std::string _actionIdsToStr(const std::set<ActionId>& pActionIds)
@@ -98,7 +98,7 @@ TEST(Tool, test_goalsCache)
   const auto& domainOntology = domain.getOntology();
 
   Problem problem;
-  auto& entities = problem.entities;
+  auto& entities = problem.objects;
   entities = ogp::SetOfEntities::fromPddl("ent - entity\n"
                                          "sub_ent1 - e1\n"
                                          "sub_ent2 - e2", ontology.types);

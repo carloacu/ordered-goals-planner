@@ -154,13 +154,13 @@ std::list<Goal> extractSatisfiedGoals(
         continue;
 
       const auto* conditionPtr = currAction.getConditionWithoutParameterPtr();
-      if (conditionPtr != nullptr && !conditionPtr->isTrue(pProblem.worldState, ontology.constants, pProblem.entities))
+      if (conditionPtr != nullptr && !conditionPtr->isTrue(pProblem.worldState, ontology.constants, pProblem.objects))
         return {};
 
       auto* worldStateModificationAtStartWithoutParameterPtr = currAction.getWorldStateModificationAtStartWithoutParameterPtr();
       if (worldStateModificationAtStartWithoutParameterPtr != nullptr)
         pProblem.worldState.modify(worldStateModificationAtStartWithoutParameterPtr, pProblem.goalStack, setOfEvents,
-                                   callbacks, ontology, pProblem.entities, pNow);
+                                   callbacks, ontology, pProblem.objects, pNow);
       actionsInParallel.emplace_back(&currAction);
 
       bool somethingChanged = false;
@@ -168,12 +168,12 @@ std::list<Goal> extractSatisfiedGoals(
       const auto* worldStateModificationWithoutParameterPtr = currAction.getWorldStateModificationWithoutParameterPtr();
       if (worldStateModificationWithoutParameterPtr != nullptr)
         somethingChanged = pProblem.worldState.modify(worldStateModificationWithoutParameterPtr, pProblem.goalStack, setOfEvents,
-                                                      callbacks, ontology, pProblem.entities, pNow);
+                                                      callbacks, ontology, pProblem.objects, pNow);
 
       const auto* potentialWorldStateModificationWithoutParameterPtr = currAction.getPotentialWorldStateModificationWithoutParameterPtr();
       if (potentialWorldStateModificationWithoutParameterPtr != nullptr)
         somethingChanged = pProblem.worldState.modify(potentialWorldStateModificationWithoutParameterPtr, pProblem.goalStack, setOfEvents,
-                                                      callbacks, ontology, pProblem.entities, pNow) || somethingChanged;
+                                                      callbacks, ontology, pProblem.objects, pNow) || somethingChanged;
 
       if (!somethingChanged)
         return {};
@@ -181,7 +181,7 @@ std::list<Goal> extractSatisfiedGoals(
       pProblem.goalStack.notifyActionDone(currAction.actionInvWithGoal, pNow,
                                           &currAction.action.effect.goalsToAdd,
                                           &currAction.action.effect.goalsToAddInCurrentPriority, pProblem.worldState,
-                                          ontology.constants, pProblem.entities, &lookForAnActionOutputInfos);
+                                          ontology.constants, pProblem.objects, &lookForAnActionOutputInfos);
     }
     ++pCurrItInPlan;
   }

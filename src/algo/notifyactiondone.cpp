@@ -25,11 +25,11 @@ void notifyActionInvocationDone(Problem& pProblem,
 
   pProblem.worldState.applyEffect(pOnStepOfPlannerResult.actionInvocation.parameters, pEffect,
                                   pGoalChanged, pProblem.goalStack, pSetOfEvents, pCallbacks,
-                                  pOntology, pProblem.entities, pNow);
+                                  pOntology, pProblem.objects, pNow);
 
   pGoalChanged = pProblem.goalStack.notifyActionDone(pOnStepOfPlannerResult, pNow, pGoalsToAdd,
                                                      pGoalsToAddInCurrentPriority, pProblem.worldState,
-                                                     pOntology.constants, pProblem.entities,
+                                                     pOntology.constants, pProblem.objects,
                                                      pLookForAnActionOutputInfosPtr) || pGoalChanged;
 }
 
@@ -71,7 +71,7 @@ void updateProblemForNextPotentialPlannerResultWithAction(
   const auto& ontology = pDomain.getOntology();
   if (pOneStepAction.effect.worldStateModificationAtStart)
     pProblem.worldState.modify(&*pOneStepAction.effect.worldStateModificationAtStart, pProblem.goalStack, setOfEvents,
-                               callbacks, ontology, pProblem.entities, pNow);
+                               callbacks, ontology, pProblem.objects, pNow);
 
   notifyActionInvocationDone(pProblem, pGoalChanged, setOfEvents, callbacks, pOneStepOfPlannerResult,
                              pOneStepAction.effect.worldStateModification, ontology, pNow,
@@ -83,7 +83,7 @@ void updateProblemForNextPotentialPlannerResultWithAction(
     auto potentialEffect = pOneStepAction.effect.potentialWorldStateModification->clone(&pOneStepOfPlannerResult.actionInvocation.parameters);
     if (potentialEffect)
       pProblem.worldState.modify(&*potentialEffect, pProblem.goalStack, setOfEvents,
-                                 callbacks, ontology, pProblem.entities, pNow);
+                                 callbacks, ontology, pProblem.objects, pNow);
   }
 }
 
