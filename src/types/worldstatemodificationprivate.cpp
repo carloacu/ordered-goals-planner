@@ -46,7 +46,7 @@ bool _isOkWithLocalParameters(const std::map<Parameter, std::set<Entity>>& pLoca
 
         const auto& factAccessorsToFacts = pWorldState.factsMapping();
 
-        if (factWithValueToAssign.isInOtherFactsMap(factAccessorsToFacts, true, &newParameters, false, &pParametersToModifyInPlace))
+        if (factWithValueToAssign.isInOtherFactsMap(factAccessorsToFacts, &newParameters, false, &pParametersToModifyInPlace))
           res = true;
         parameterPossibilities.erase(itBeginOfParamPoss);
       }

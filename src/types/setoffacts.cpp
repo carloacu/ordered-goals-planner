@@ -119,7 +119,7 @@ void SetOfFacts::add(const Fact& pFact,
 
 
   std::list<std::string> factSignatures;
-  pFact.generateSignatureForAllUpperTypes(factSignatures);
+  pFact.generateSignatureForSubAndUpperTypes(factSignatures);
   for (auto& currSignature : factSignatures)
   {
     auto& factArguments = pFact.arguments();

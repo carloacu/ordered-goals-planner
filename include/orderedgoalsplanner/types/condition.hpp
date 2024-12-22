@@ -97,7 +97,6 @@ struct ORDEREDGOALSPLANNER_API Condition
    * @param[in] pRemovedFacts Facts present in the world state but that should be consider as not present.
    * @param[in, out] pConditionParametersToPossibleArguments Map of the parameters of the condition to their possible arguments <br/>
    * refreshed if it is necessary to have the condition true.
-   * @param[out] pCanBecomeTruePtr If this condition can become true according to the facts that can become true in the world state.
    * @param[in] pIsWrappingExpressionNegated Is the expression wrapping this call is negated.
    * @return True if this condition is satisfied.
    */
@@ -107,7 +106,6 @@ struct ORDEREDGOALSPLANNER_API Condition
                       const std::set<Fact>& pPunctualFacts = {},
                       const std::set<Fact>& pRemovedFacts = {},
                       std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments = nullptr,
-                      bool* pCanBecomeTruePtr = nullptr,
                       bool pIsWrappingExpressionNegated = false) const = 0;
 
   /// Equality operators.
@@ -221,7 +219,6 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
               std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
-              bool* pCanBecomeTruePtr,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -288,7 +285,6 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
               std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
-              bool* pCanBecomeTruePtr,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -355,7 +351,6 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
               std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
-              bool* pCanBecomeTruePtr,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -421,7 +416,6 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
               std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
-              bool* pCanBecomeTruePtr,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -483,7 +477,6 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
               std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
-              bool* pCanBecomeTruePtr,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -542,7 +535,6 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
               const std::set<Fact>&,
               const std::set<Fact>&,
               std::map<Parameter, std::set<Entity>>*,
-              bool*,
               bool pIsWrappingExpressionNegated) const override { return !pIsWrappingExpressionNegated; }
   bool operator==(const Condition& pOther) const override;
 

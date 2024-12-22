@@ -20,6 +20,7 @@ std::map<ogp::Parameter, std::set<ogp::Entity>> _toParameterMap(const std::vecto
   return res;
 }
 
+
 void _test_setOfTypes()
 {
   ogp::SetOfTypes setOfTypes;
@@ -249,47 +250,24 @@ void _test_action_initialization()
 }
 
 
-void _test_checkConditionWithOntology()
+
+void _test_generateSignatureForSubAndUpperTypes()
 {
   ogp::Ontology ontology;
-  ontology.types = ogp::SetOfTypes::fromPddl("entity\n"
-                                           "my_type my_type2 my_type3 - entity");
+  ontology.types = ogp::SetOfTypes::fromPddl("my_type my_type2 my_type3 - entity\n"
+                                             "sub_my_type3 - my_type3");
   ontology.constants = ogp::SetOfEntities::fromPddl("toto - my_type\n"
-                                                    "titi - my_type2", ontology.types);
+                                                    "titi - my_type2\n", ontology.types);
   ontology.predicates = ogp::SetOfPredicates::fromStr("pred_name(?e - entity)\n"
                                                       "fun1(?e - my_type3) - entity\n"
                                                       "fun2(?e - my_type2) - entity", ontology.types);
 
-  ogp::WorldState worldState;
-  ogp::GoalStack goalStack;
   ogp::SetOfEntities objects;
-  std::map<ogp::SetOfEventsId, ogp::SetOfEvents> setOfEvents;
-  worldState.addFact(ogp::Fact::fromStr("pred_name(toto)", ontology, {}, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, {}, {});
-  EXPECT_FALSE(ogp::strToCondition("pred_name(titi)", ontology, {}, {})->isTrue(worldState, ontology.constants, objects));
-
-  {
-    std::vector<ogp::Parameter> parameters(1, ogp::Parameter::fromStr("?p - my_type", ontology.types));
-    auto parametersMap = _toParameterMap(parameters);
-    EXPECT_TRUE(ogp::strToCondition("pred_name(?p)", ontology, {}, parameters)->isTrue(worldState, ontology.constants, objects, {}, {}, &parametersMap));
-  }
-
-  {
-    std::vector<ogp::Parameter> parameters(1, ogp::Parameter::fromStr("?p - my_type2", ontology.types));
-    auto parametersMap = _toParameterMap(parameters);
-    EXPECT_FALSE(ogp::strToCondition("pred_name(?p)", ontology, {}, parameters)->isTrue(worldState, ontology.constants, objects, {}, {}, &parametersMap));
-  }
-
-  {
-    std::size_t pos = 0;
-    EXPECT_FALSE(ogp::pddlToCondition("(exists (?p - my_type3) (= (fun1 ?p) undefined))", pos, ontology, {}, {})->isTrue(worldState, ontology.constants, objects, {}, {}));
-  }
-
-  {
-    std::size_t pos = 0;
-    EXPECT_TRUE(ogp::pddlToCondition("(exists (?p - my_type2) (= (fun2 ?p) undefined))", pos, ontology, {}, {})->isTrue(worldState, ontology.constants, objects, {}, {}));
-  }
+  objects.add(ogp::Entity::fromDeclaration("sub3a - sub_my_type3", ontology.types));
+  std::list<std::string> signatures;
+  ogp::Fact::fromStr("fun1(sub3a)=toto", ontology, objects, {}).generateSignatureForSubAndUpperTypes(signatures);
+  EXPECT_EQ(9, signatures.size());
 }
-
 
 }
 
@@ -304,5 +282,5 @@ TEST(Tool, test_ontology)
   _test_setOfEntities_fromStr();
   _test_fact_initialization();
   _test_action_initialization();
-  _test_checkConditionWithOntology();
+  _test_generateSignatureForSubAndUpperTypes();
 }

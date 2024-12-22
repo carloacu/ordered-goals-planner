@@ -606,28 +606,27 @@ std::string Fact::toStr(bool pPrintAnyValue) const
 
 Fact Fact::fromStr(const std::string& pStr,
                    const Ontology& pOntology,
-                   const SetOfEntities& pEntities,
+                   const SetOfEntities& pobjects,
                    const std::vector<Parameter>& pParameters,
                    bool* pIsFactNegatedPtr)
 {
-  return Fact(pStr, false, pOntology, pEntities, pParameters, pIsFactNegatedPtr);
+  return Fact(pStr, false, pOntology, pobjects, pParameters, pIsFactNegatedPtr);
 }
 
 
 Fact Fact::fromPddl(const std::string& pStr,
                     const Ontology& pOntology,
-                    const SetOfEntities& pEntities,
+                    const SetOfEntities& pObjects,
                     const std::vector<Parameter>& pParameters,
                     std::size_t pBeginPos,
                     std::size_t* pResPos,
                     bool pIsOkIfValueIsMissing)
 {
-  return Fact(pStr, true, pOntology, pEntities, pParameters, nullptr, pBeginPos, pResPos, pIsOkIfValueIsMissing);
+  return Fact(pStr, true, pOntology, pObjects, pParameters, nullptr, pBeginPos, pResPos, pIsOkIfValueIsMissing);
 }
 
 
 bool Fact::isInOtherFacts(const std::set<Fact>& pOtherFacts,
-                          bool pParametersAreForTheFact,
                           std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
                           bool pCheckAllPossibilities,
                           const std::map<Parameter, std::set<Entity>>* pParametersPtr,
@@ -638,22 +637,18 @@ bool Fact::isInOtherFacts(const std::set<Fact>& pOtherFacts,
   std::map<Parameter, std::set<Entity>> newPotentialParameters;
   std::map<Parameter, std::set<Entity>> newPotentialParametersInPlace;
   for (const auto& currOtherFact : pOtherFacts)
-    if (isInOtherFact(currOtherFact, pParametersAreForTheFact, newPotentialParameters,
+    if (isInOtherFact(currOtherFact, newPotentialParameters,
                       pParametersPtr, newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
       res = true;
 
-  if (res)
-  {
-    if (pParametersToModifyInPlacePtr != nullptr)
-      *pParametersToModifyInPlacePtr = std::move(newPotentialParametersInPlace);
-    return _updateParameters(pNewParametersPtr, newPotentialParameters, pCheckAllPossibilities, pParametersPtr, pTriedToModifyParametersPtr);
-  }
-  return false;
+  if (!res)
+    return false;
+  return updateParameters(newPotentialParameters, newPotentialParametersInPlace, pNewParametersPtr, pCheckAllPossibilities,
+                          pParametersPtr, pParametersToModifyInPlacePtr, pTriedToModifyParametersPtr);
 }
 
 
 bool Fact::isInOtherFactsMap(const SetOfFacts& pOtherFacts,
-                             bool pParametersAreForTheFact,
                              std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
                              bool pCheckAllPossibilities,
                              const std::map<Parameter, std::set<Entity>>* pParametersPtr,
@@ -667,17 +662,28 @@ bool Fact::isInOtherFactsMap(const SetOfFacts& pOtherFacts,
   if (pParametersToModifyInPlacePtr != nullptr)
     newPotentialParametersInPlace = *pParametersToModifyInPlacePtr;
   for (const auto& currOtherFact : otherFactsThatMatched)
-    if (isInOtherFact(currOtherFact, pParametersAreForTheFact, newPotentialParameters,
-                      pParametersPtr, newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
+    if (isInOtherFact(currOtherFact, newPotentialParameters, pParametersPtr,
+                      newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
       res = true;
 
-  if (res)
-  {
-    if (pParametersToModifyInPlacePtr != nullptr)
-      *pParametersToModifyInPlacePtr = std::move(newPotentialParametersInPlace);
-    return _updateParameters(pNewParametersPtr, newPotentialParameters, pCheckAllPossibilities, pParametersPtr, pTriedToModifyParametersPtr);
-  }
-  return false;
+  if (!res)
+    return false;
+  return updateParameters(newPotentialParameters, newPotentialParametersInPlace, pNewParametersPtr, pCheckAllPossibilities,
+                          pParametersPtr, pParametersToModifyInPlacePtr, pTriedToModifyParametersPtr);
+}
+
+
+bool Fact::updateParameters(std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,
+                            std::map<Parameter, std::set<Entity>>& pNewPotentialParametersInPlace,
+                            std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
+                            bool pCheckAllPossibilities,
+                            const std::map<Parameter, std::set<Entity>>* pParametersPtr,
+                            std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr,
+                            bool* pTriedToModifyParametersPtr) const
+{
+  if (pParametersToModifyInPlacePtr != nullptr)
+    *pParametersToModifyInPlacePtr = std::move(pNewPotentialParametersInPlace);
+  return _updateParameters(pNewParametersPtr, pNewPotentialParameters, pCheckAllPossibilities, pParametersPtr, pTriedToModifyParametersPtr);
 }
 
 
@@ -714,7 +720,6 @@ bool Fact::_updateParameters(std::map<Parameter, std::set<Entity>>* pNewParamete
 
 
 bool Fact::isInOtherFact(const Fact& pOtherFact,
-                         bool pParametersAreForTheFact,
                          std::map<Parameter, std::set<Entity>>& pNewParameters,
                          const std::map<Parameter, std::set<Entity>>* pParametersPtr,
                          std::map<Parameter, std::set<Entity>>& pNewParametersInPlace,
@@ -748,7 +753,8 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
     if (pParametersToModifyInPlacePtr != nullptr)
     {
       auto itParam = pParametersToModifyInPlacePtr->find(pFactValue.toParameter());
-      if (itParam != pParametersToModifyInPlacePtr->end())
+      if (itParam != pParametersToModifyInPlacePtr->end() &&
+          (!pValueToLookFor.type || !itParam->first.type || pValueToLookFor.type->isA(*itParam->first.type)))
       {
         if (!itParam->second.empty() && itParam->second.count(pValueToLookFor) == 0)
           return false;
@@ -767,8 +773,7 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
     while (itFactArguments != pOtherFact._arguments.end())
     {
       if (*itFactArguments != *itLookForArguments &&
-          ((!pParametersAreForTheFact && !doesItMatch(*itFactArguments, *itLookForArguments)) ||
-           (pParametersAreForTheFact && !doesItMatch(*itLookForArguments, *itFactArguments))))
+          !doesItMatch(*itLookForArguments, *itFactArguments))
         doesParametersMatches = false;
       ++itFactArguments;
       ++itLookForArguments;
@@ -784,16 +789,8 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
   }
   else if (_value && pOtherFact._value)
   {
-    if (pParametersAreForTheFact)
-    {
-      if (doesItMatch(*_value, *pOtherFact._value))
-        resOpt.emplace(pOtherFact._isValueNegated == _isValueNegated);
-    }
-    else
-    {
-      if (doesItMatch(*pOtherFact._value, *_value))
-        resOpt.emplace(pOtherFact._isValueNegated == _isValueNegated);
-    }
+    if (doesItMatch(*_value, *pOtherFact._value))
+      resOpt.emplace(pOtherFact._isValueNegated == _isValueNegated);
   }
 
   if (!resOpt)
@@ -900,38 +897,6 @@ std::string Fact::generateFactSignature() const
 }
 
 
-void Fact::generateSignatureForAllSubTypes(std::list<std::string>& pRes) const
-{
-  pRes.emplace_back(factSignature());
-
-  // Generate parameters sub-types
-  for (std::size_t i = 0; i < _arguments.size(); ++i)
-  {
-    const auto& currArg = _arguments[i];
-    if (currArg.type && currArg.isAParameterToFill())
-    {
-      for (const auto& currSubType : currArg.type->subTypes)
-      {
-        auto fact = *this;
-        fact.setArgumentType(i, currSubType);
-        fact.generateSignatureForAllSubTypes(pRes);
-      }
-    }
-  }
-
-  // Generate value sub-types
-  if (_value && _value->type && _value->isAParameterToFill())
-  {
-    for (const auto& currSubType : _value->type->subTypes)
-    {
-      auto fact = *this;
-      fact.setValueType(currSubType);
-      fact.generateSignatureForAllSubTypes(pRes);
-    }
-  }
-}
-
-
 void Fact::generateSignatureForAllUpperTypes(std::list<std::string>& pRes) const
 {
   pRes.emplace_back(factSignature());
@@ -984,7 +949,7 @@ void Fact::generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) co
         {
           auto fact = *this;
           fact.setArgumentType(i, currSubType);
-          fact.generateSignatureForAllSubTypes(pRes);
+          fact._generateSignatureForAllSubTypes(pRes);
         }
       }
 
@@ -993,7 +958,7 @@ void Fact::generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) co
       {
         auto fact = *this;
         fact.setArgumentType(i, parentType);
-        pRes.emplace_back(fact.factSignature());
+        fact.generateSignatureForAllUpperTypes(pRes);
         parentType = parentType->parent;
       }
     }
@@ -1008,7 +973,7 @@ void Fact::generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) co
       {
         auto fact = *this;
         fact.setValueType(currSubType);
-        fact.generateSignatureForAllSubTypes(pRes);
+        fact._generateSignatureForAllSubTypes(pRes);
       }
     }
 
@@ -1017,7 +982,7 @@ void Fact::generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) co
     {
       auto fact = *this;
       fact.setValueType(parentType);
-      pRes.emplace_back(fact.factSignature());
+      fact.generateSignatureForAllUpperTypes(pRes);
       parentType = parentType->parent;
     }
   }
@@ -1079,6 +1044,38 @@ const std::string& Fact::getPunctualPrefix()
 {
   static const std::string punctualPrefix = "~punctual~";
   return punctualPrefix;
+}
+
+
+void Fact::_generateSignatureForAllSubTypes(std::list<std::string>& pRes) const
+{
+  pRes.emplace_back(factSignature());
+
+  // Generate parameters sub-types
+  for (std::size_t i = 0; i < _arguments.size(); ++i)
+  {
+    const auto& currArg = _arguments[i];
+    if (currArg.type && currArg.isAParameterToFill())
+    {
+      for (const auto& currSubType : currArg.type->subTypes)
+      {
+        auto fact = *this;
+        fact.setArgumentType(i, currSubType);
+        fact._generateSignatureForAllSubTypes(pRes);
+      }
+    }
+  }
+
+  // Generate value sub-types
+  if (_value && _value->type && _value->isAParameterToFill())
+  {
+    for (const auto& currSubType : _value->type->subTypes)
+    {
+      auto fact = *this;
+      fact.setValueType(currSubType);
+      fact._generateSignatureForAllSubTypes(pRes);
+    }
+  }
 }
 
 

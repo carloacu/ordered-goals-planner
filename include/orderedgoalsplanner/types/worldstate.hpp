@@ -48,7 +48,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
                            const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                            const SetOfCallbacks& pCallbacks,
                            const Ontology& pOntology,
-                           const SetOfEntities& pEntities,
+                           const SetOfEntities& pObjects,
                            const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                            bool pCanFactsBeRemoved = true);
 
@@ -69,7 +69,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
                    const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                    const SetOfCallbacks& pCallbacks,
                    const Ontology& pOntology,
-                   const SetOfEntities& pEntities,
+                   const SetOfEntities& pObjects,
                    const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow);
 
 
@@ -95,7 +95,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
                const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                const SetOfCallbacks& pCallbacks,
                const Ontology& pOntology,
-               const SetOfEntities& pEntities,
+               const SetOfEntities& pObjects,
                const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                bool pCanFactsBeRemoved = true);
 
@@ -113,7 +113,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
                 const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                 const SetOfCallbacks& pCallbacks,
                 const Ontology& pOntology,
-                const SetOfEntities& pEntities,
+                const SetOfEntities& pObjects,
                 const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                 bool pCanFactsBeRemoved = true);
 
@@ -133,7 +133,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
                   const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                   const SetOfCallbacks& pCallbacks,
                   const Ontology& pOntology,
-                  const SetOfEntities& pEntities,
+                  const SetOfEntities& pObjects,
                   const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow);
 
   /**
@@ -150,7 +150,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
                    const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                    const SetOfCallbacks& pCallbacks,
                    const Ontology& pOntology,
-                   const SetOfEntities& pEntities,
+                   const SetOfEntities& pObjects,
                    const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow);
 
   /**
@@ -208,7 +208,6 @@ struct ORDEREDGOALSPLANNER_API WorldState
    * @param[in] pRemovedFacts Facts currently removed in the context.
    * @param[in, out] pParametersToPossibleArgumentsPtr Map of parameters to possible values to extract.
    * @param[in, out] pParametersToModifyInPlacePtr Another map of parameters to possible values to extract.
-   * @param[out] pCanBecomeTruePtr If this optional fact can become true according to the facts that can become true.
    * @return True if the optional fact is satisfied, false otherwise.
    */
   bool isOptionalFactSatisfiedInASpecificContext(const FactOptional& pFactOptional,
@@ -216,8 +215,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
                                                  const std::set<Fact>& pRemovedFacts,
                                                  bool pCheckAllPossibilities,
                                                  std::map<Parameter, std::set<Entity>>* pParametersToPossibleArgumentsPtr,
-                                                 std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr,
-                                                 bool* pCanBecomeTruePtr) const;
+                                                 std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const;
 
   /**
    * @brief Check if a goal is satisfied.<br/>
@@ -293,7 +291,7 @@ private:
                  const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                  const SetOfCallbacks& pCallbacks,
                  const Ontology& pOntology,
-                 const SetOfEntities& pEntities,
+                 const SetOfEntities& pObjects,
                  const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                  bool pCanFactsBeRemoved);
 
@@ -303,7 +301,7 @@ private:
                  const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                  const SetOfCallbacks& pCallbacks,
                  const Ontology& pOntology,
-                 const SetOfEntities& pEntities,
+                 const SetOfEntities& pObjects,
                  const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                  bool pCanFactsBeRemoved);
 
@@ -335,7 +333,7 @@ private:
                const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                const SetOfCallbacks& pCallbacks,
                const Ontology& pOntology,
-               const SetOfEntities& pEntities,
+               const SetOfEntities& pObjects,
                const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                bool pCanFactsBeRemoved);
 
@@ -358,7 +356,7 @@ private:
                         const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                         const SetOfCallbacks& pCallbacks,
                         const Ontology& pOntology,
-                        const SetOfEntities& pEntities,
+                        const SetOfEntities& pObjects,
                         const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow);
 
   void _tryToCallCallbacks(std::set<CallbackId>& pCallbackAlreadyCalled,
@@ -383,7 +381,7 @@ private:
                           const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                           const SetOfCallbacks& pCallbacks,
                           const Ontology& pOntology,
-                          const SetOfEntities& pEntities,
+                          const SetOfEntities& pObjects,
                           const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow);
 
 

@@ -19,6 +19,7 @@ struct Entity;
 struct Goal;
 struct Parameter;
 struct SetOfEntities;
+struct Type;
 
 
 // A variant type that can hold either int or float
@@ -100,14 +101,9 @@ void trim(std::string& s);
 
 
 ORDEREDGOALSPLANNER_API
-bool hasAnEntyTypeWihTypename(const std::string& pParamtypename,
-                             const ogp::SetOfEntities& pConstants,
-                             const ogp::SetOfEntities& pObjects);
-
-ORDEREDGOALSPLANNER_API
-std::set<Entity> typenameToEntities(const std::string& pParamtypename,
-                                    const SetOfEntities& pConstants,
-                                    const SetOfEntities& pObjects);
+std::set<Entity> typeToEntities(const Type& pParamType,
+                                const SetOfEntities& pConstants,
+                                const SetOfEntities& pObjects);
 
 
 template <typename T>

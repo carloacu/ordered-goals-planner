@@ -26,38 +26,26 @@ T _lexical_cast(const std::string& pStr)
   return atoi(pStr.c_str());
 }
 
-void _unfoldMapWithSet(std::list<std::map<Parameter, Entity>>& pOutMap,
-                       std::map<Parameter, std::set<Entity>>& pInMap)
+void _typeToEntitiesRec(std::set<Entity>& pRes,
+                        const Type& pParamType,
+                        const SetOfEntities& pConstants,
+                        const SetOfEntities& pObjects)
 {
-  if (pInMap.size() == 1)
+  auto* constantsPtr = pConstants.typeNameToEntities(pParamType.name);
+  if (constantsPtr != nullptr)
+    pRes = *constantsPtr;
+
+  auto* entitiesPtr = pObjects.typeNameToEntities(pParamType.name);
+  if (entitiesPtr != nullptr)
   {
-    auto itFirstElt = pInMap.begin();
-    for (auto& currValue : itFirstElt->second)
-      pOutMap.emplace_back(std::map<Parameter, Entity>{{itFirstElt->first, currValue}});
-    return;
+    if (pRes.empty())
+      pRes = *entitiesPtr;
+    else
+      pRes.insert(entitiesPtr->begin(), entitiesPtr->end());
   }
 
-
-  while (!pInMap.empty())
-  {
-    auto itFirstElt = pInMap.begin();
-    auto key = itFirstElt->first;
-    auto values = std::move(itFirstElt->second);
-    pInMap.erase(itFirstElt);
-
-    std::list<std::map<Parameter, Entity>> subRes;
-    unfoldMapWithSet(subRes, pInMap);
-
-    for (auto& currValue : values)
-    {
-      auto newRes = subRes;
-      for (auto& currSubResValue : newRes)
-      {
-        currSubResValue.emplace(key, currValue);
-        pOutMap.emplace_back(std::move(currSubResValue));
-      }
-    }
-  }
+  for (const auto& currSubType : pParamType.subTypes)
+    _typeToEntitiesRec(pRes, *currSubType, pConstants, pObjects);
 }
 
 }
@@ -149,11 +137,46 @@ bool isNumber(const std::string& str) {
     return hasDigits; // Valid if there's at least one digit
 }
 
+void _unfoldMapWithSet(std::list<std::map<Parameter, Entity>>& pOutMap,
+                       const std::map<Parameter, std::set<Entity>>& pInMap,
+                       std::map<Parameter, std::set<Entity>>::const_iterator pItInMap)
+{
+  auto nextIt = pItInMap;
+  ++nextIt;
+  if (nextIt == pInMap.end())
+  {
+    for (auto& currValue : pItInMap->second)
+      pOutMap.emplace_back(std::map<Parameter, Entity>{{pItInMap->first, currValue}});
+    return;
+  }
+
+  for (auto it = pItInMap; it != pInMap.end(); ++it)
+  {
+    auto key = it->first;
+    auto values = std::move(it->second);
+    ++it;
+
+    std::list<std::map<Parameter, Entity>> subRes;
+    _unfoldMapWithSet(subRes, pInMap, it);
+
+    for (auto& currValue : values)
+    {
+      auto newRes = subRes;
+      for (auto& currSubResValue : newRes)
+      {
+        currSubResValue.try_emplace(key, currValue);
+        pOutMap.emplace_back(std::move(currSubResValue));
+      }
+    }
+  }
+}
+
 void unfoldMapWithSet(std::list<std::map<Parameter, Entity>>& pOutMap,
                       const std::map<Parameter, std::set<Entity>>& pInMap)
 {
-  auto inMap = pInMap;
-  _unfoldMapWithSet(pOutMap, inMap);
+  if (pInMap.empty())
+    return;
+  _unfoldMapWithSet(pOutMap, pInMap, pInMap.begin());
 }
 
 
@@ -323,37 +346,12 @@ void trim(std::string& s)
 }
 
 
-
-bool hasAnEntyTypeWihTypename(const std::string& pParamtypename,
-                             const SetOfEntities& pConstants,
-                             const SetOfEntities& pObjects)
-{
-  auto* constantsPtr = pConstants.typeNameToEntities(pParamtypename);
-  if (constantsPtr != nullptr && !constantsPtr->empty())
-    return true;
-
-  auto* entitiesPtr = pObjects.typeNameToEntities(pParamtypename);
-  return entitiesPtr != nullptr && !entitiesPtr->empty();
-}
-
-
-std::set<Entity> typenameToEntities(const std::string& pParamtypename,
-                                    const SetOfEntities& pConstants,
-                                    const SetOfEntities& pObjects)
+std::set<Entity> typeToEntities(const Type& pParamType,
+                                const SetOfEntities& pConstants,
+                                const SetOfEntities& pObjects)
 {
   std::set<Entity> res;
-  auto* constantsPtr = pConstants.typeNameToEntities(pParamtypename);
-  if (constantsPtr != nullptr)
-    res = *constantsPtr;
-
-  auto* entitiesPtr = pObjects.typeNameToEntities(pParamtypename);
-  if (entitiesPtr != nullptr)
-  {
-    if (res.empty())
-      res = *entitiesPtr;
-    else
-      res.insert(entitiesPtr->begin(), entitiesPtr->end());
-  }
+  _typeToEntitiesRec(res, pParamType, pConstants, pObjects);
   return res;
 }
 

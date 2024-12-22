@@ -19,11 +19,13 @@ add_executable(
 
   src/test_arithmeticevaluator.cpp
   src/test_callbacks.cpp
+  src/test_condition.cpp
   src/test_conditional_effects_requirement.cpp
   src/test_evaluate.cpp
   src/test_existential_preconditions_requirement.cpp
   src/test_facttoconditions.cpp
   src/test_goalscache.cpp
+  src/test_negative_preconditions_requirement.cpp
   src/test_planner.cpp
   src/test_plannerWithSingleType.cpp
   src/test_ontology.cpp

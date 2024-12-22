@@ -175,13 +175,13 @@ struct ORDEREDGOALSPLANNER_API Fact
    */
   static Fact fromStr(const std::string& pStr,
                       const Ontology& pOntology,
-                      const SetOfEntities& pEntities,
+                      const SetOfEntities& pobjects,
                       const std::vector<Parameter>& pParameters,
                       bool* pIsFactNegatedPtr = nullptr);
 
   static Fact fromPddl(const std::string& pStr,
                        const Ontology& pOntology,
-                       const SetOfEntities& pEntities,
+                       const SetOfEntities& pObjects,
                        const std::vector<Parameter>& pParameters,
                        std::size_t pBeginPos = 0,
                        std::size_t* pResPos = nullptr,
@@ -198,7 +198,6 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return True if the fact matches any of the other facts.
    */
   bool isInOtherFacts(const std::set<Fact>& pOtherFacts,
-                      bool pParametersAreForTheFact,
                       std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
                       bool pCheckAllPossibilities,
                       const std::map<Parameter, std::set<Entity>>* pParametersPtr,
@@ -216,24 +215,29 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return True if the fact matches any of the other facts.
    */
   bool isInOtherFactsMap(const SetOfFacts& pOtherFacts,
-                         bool pParametersAreForTheFact,
                          std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
                          bool pCheckAllPossibilities,
                          const std::map<Parameter, std::set<Entity>>* pParametersPtr,
                          std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr = nullptr,
                          bool* pTriedToModifyParametersPtr = nullptr) const;
 
+  bool updateParameters(std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,
+                        std::map<Parameter, std::set<Entity>>& pNewPotentialParametersInPlace,
+                        std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
+                        bool pCheckAllPossibilities,
+                        const std::map<Parameter, std::set<Entity>>* pParametersPtr,
+                        std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr,
+                        bool* pTriedToModifyParametersPtr) const;
+
   /**
    * @brief Does the fact matches the other fact.
    * @param[in] pOtherFact The other facts.
-   * @param[in] pParametersAreForTheFact If true, get the parameters from the fact else get the parameters from the other fact.
    * @param[out] pNewParameters New parameter possibilities corresponding of the found match.
    * @param[in] pParametersPtr Already known parameters.
    * @param[in, out] pParametersToModifyInPlacePtr Parameters to modify in place.
    * @return True if the fact matches the other fact.
    */
   bool isInOtherFact(const Fact& pOtherFact,
-                     bool pParametersAreForTheFact,
                      std::map<Parameter, std::set<Entity>>& pNewParameters,
                      const std::map<Parameter, std::set<Entity>>* pParametersPtr,
                      std::map<Parameter, std::set<Entity>>& pNewParametersInPlace,
@@ -257,7 +261,6 @@ struct ORDEREDGOALSPLANNER_API Fact
 
   std::string factSignature() const;
   std::string generateFactSignature() const;
-  void generateSignatureForAllSubTypes(std::list<std::string>& pRes) const;
   void generateSignatureForAllUpperTypes(std::list<std::string>& pRes) const;
   void generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) const;
 
@@ -286,6 +289,8 @@ private:
   /// Is the value of the fact negated.
   bool _isValueNegated;
   std::string _factSignature;
+
+  void _generateSignatureForAllSubTypes(std::list<std::string>& pRes) const;
 
   bool _updateParameters(std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
                          std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,
