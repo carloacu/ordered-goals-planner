@@ -33,7 +33,12 @@ void _typeToEntitiesRec(std::set<Entity>& pRes,
 {
   auto* constantsPtr = pConstants.typeNameToEntities(pParamType.name);
   if (constantsPtr != nullptr)
-    pRes = *constantsPtr;
+  {
+    if (pRes.empty())
+      pRes = *constantsPtr;
+    else
+      pRes.insert(constantsPtr->begin(), constantsPtr->end());
+  }
 
   auto* entitiesPtr = pObjects.typeNameToEntities(pParamType.name);
   if (entitiesPtr != nullptr)

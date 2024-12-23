@@ -265,6 +265,30 @@ void _checkExistsInGoalWithSubType()
 }
 
 
+void _checkExistsInGoalWithSubTypeAndAnotherConstantWithParentType()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("sub_entity sub_entity2 - entity");
+  ontology.constants = ogp::SetOfEntities::fromPddl("v1a - sub_entity\n"
+                                                    "vent - sub_entity2", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr(_fact_a + " - entity", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{_parameter("?p - entity", ontology)};
+  ogp::Action actionObj1({}, _worldStateModification_fromStr(_fact_a + "=?p", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  ogp::Problem problem;
+  _setGoalsForAPriority(problem, {_pddlGoal("(exists (?v - sub_entity) (= (" + _fact_a + ") ?v))", ontology)}, ontology.constants);
+  EXPECT_EQ("action1(?p -> v1a)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
+
 void _checkExistsInGoalWithListExpression()
 {
   const std::string action1 = "action1";
@@ -621,6 +645,7 @@ TEST(Planner, test_existentialPreconditionsRequirement)
   _existsCondition();
   _checkExistsInGoalThatCanBeSatisfied();
   _checkExistsInGoalWithSubType();
+  _checkExistsInGoalWithSubTypeAndAnotherConstantWithParentType();
   _checkExistsInGoalWithListExpression();
   _checkExistsInGoalThatCannotBeSatisfied();
   _checkExistsWithActionParameterInvolved();

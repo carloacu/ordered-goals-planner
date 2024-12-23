@@ -302,6 +302,7 @@ bool _fillParameter(const Parameter& pParameter,
     const auto& ontology = pContext.domain.getOntology();
     auto& newParamValues = pNewParentParameters[pParameter];
 
+    std::shared_ptr<Type> parameterType = pParameter.type;
     bool foundSomethingThatMatched = false;
     pCondition.findConditionCandidateFromFactFromEffect(
           [&](const FactOptional& pConditionFactOptional)
@@ -317,15 +318,17 @@ bool _fillParameter(const Parameter& pParameter,
         newParamValues = itParam->second;
       else if (!parentParamValue->isAParameterToFill() || parentParamValue->isAnyEntity())
         newParamValues.insert(*parentParamValue);
+      else if (parentParamValue->type && parameterType && parentParamValue->type->isA(*parameterType))
+        parameterType = parentParamValue->type;
       return !newParamValues.empty();
     }, pContext.problem.worldState, ontology.constants, pContext.problem.objects, pFact, pParentParameters, pTmpParentParametersPtr, pHoldingActionParameters);
 
     if (foundSomethingThatMatched && newParamValues.empty())
     {
-      if (pParameter.type)
+      if (parameterType)
       {
         // find all the possible occurence in the entities
-        newParamValues = typeToEntities(*pParameter.type, ontology.constants, pContext.problem.objects);
+        newParamValues = typeToEntities(*parameterType, ontology.constants, pContext.problem.objects);
 
         // remove the ones that are already in the world state for this fact
         std::set<Entity> parameterValues;
