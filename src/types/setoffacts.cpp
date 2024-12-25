@@ -57,7 +57,7 @@ SetOfFacts::SetOfFacts()
 SetOfFacts SetOfFacts::fromPddl(const std::string& pStr,
                                 std::size_t& pPos,
                                 const Ontology& pOntology,
-                                const SetOfEntities& pEntities,
+                                const SetOfEntities& pObjects,
                                 bool pCanFactsBeRemoved)
 {
   SetOfFacts res;
@@ -67,7 +67,7 @@ SetOfFacts SetOfFacts::fromPddl(const std::string& pStr,
   while (pPos < strSize && pStr[pPos] != ')')
   {
     bool isFactNegated = false;
-    Fact fact(pStr, true, pOntology, pEntities, {}, &isFactNegated, pPos, &pPos);
+    Fact fact(pStr, true, pOntology, pObjects, {}, &isFactNegated, pPos, &pPos);
     if (isFactNegated)
       res.erase(fact);
     else

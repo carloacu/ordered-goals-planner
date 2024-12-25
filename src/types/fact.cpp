@@ -76,7 +76,7 @@ bool _isInside(const Entity& pEntity,
 Fact::Fact(const std::string& pStr,
            bool pStrPddlFormated,
            const Ontology& pOntology,
-           const SetOfEntities& pEntities,
+           const SetOfEntities& pObjects,
            const std::vector<Parameter>& pParameters,
            bool* pIsFactNegatedPtr,
            std::size_t pBeginPos,
@@ -132,18 +132,18 @@ Fact::Fact(const std::string& pStr,
       }
       else
       {
-        _value.emplace(Entity::fromUsage(valueStr, pOntology, pEntities, pParameters));
+        _value.emplace(Entity::fromUsage(valueStr, pOntology, pObjects, pParameters));
       }
       expressionParsedForArgumentsPtr = &expressionParsed.arguments.front();
       _name = expressionParsedForArgumentsPtr->name;
     }
     else if (expressionParsed.value != "")
     {
-      _value.emplace(Entity::fromUsage(expressionParsed.value, pOntology, pEntities, pParameters));
+      _value.emplace(Entity::fromUsage(expressionParsed.value, pOntology, pObjects, pParameters));
     }
 
     for (auto& currArgument : expressionParsedForArgumentsPtr->arguments)
-      _arguments.push_back(Entity::fromUsage(currArgument.name, pOntology, pEntities, pParameters));
+      _arguments.push_back(Entity::fromUsage(currArgument.name, pOntology, pObjects, pParameters));
 
 
     predicate = pOntology.predicates.nameToPredicate(_name);
@@ -168,9 +168,10 @@ Fact::Fact(const std::string& pName,
            const std::string& pValueStr,
            bool pIsValueNegated,
            const Ontology& pOntology,
-           const SetOfEntities& pEntities,
+           const SetOfEntities& pObjects,
            const std::vector<Parameter>& pParameters,
-           bool pIsOkIfValueIsMissing)
+           bool pIsOkIfValueIsMissing,
+           const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
   : predicate("_not_set", true, pOntology.types),
     _name(pName),
     _arguments(),
@@ -187,9 +188,9 @@ Fact::Fact(const std::string& pName,
   predicate = *predicatePtr;
   for (auto& currParam : pArgumentStrs)
     if (!currParam.empty())
-      _arguments.push_back(Entity::fromUsage(currParam, pOntology, pEntities, pParameters));
+      _arguments.push_back(Entity::fromUsage(currParam, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
   if (!pValueStr.empty())
-    _value = Entity::fromUsage(pValueStr, pOntology, pEntities, pParameters);
+    _value = Entity::fromUsage(pValueStr, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr);
   else if (pIsOkIfValueIsMissing && predicate.value)
     _value = Entity(Entity::anyEntityValue(), predicate.value);
   _finalizeInisilizationAndValidityChecks(pIsOkIfValueIsMissing);

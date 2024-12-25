@@ -25,6 +25,8 @@ struct ORDEREDGOALSPLANNER_API SetOfEntities
   void addAllFromPddl(const std::string& pStr,
                       const SetOfTypes& pSetOfTypes);
 
+  void remove(const Entity& pEntity);
+
   const std::set<Entity>* typeNameToEntities(const std::string& pTypename) const;
 
   const Entity* valueToEntity(const std::string& pValue) const;

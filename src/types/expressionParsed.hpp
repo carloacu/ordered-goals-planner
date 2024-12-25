@@ -2,6 +2,7 @@
 #define INCLUDE_ORDEREDGOALSPLANNER_EXPRESSION_PARSED_HPP
 
 #include <list>
+#include <map>
 #include <memory>
 #include <set>
 #include <string>
@@ -9,6 +10,7 @@
 
 namespace ogp
 {
+struct Entity;
 struct FactOptional;
 struct Ontology;
 struct Parameter;
@@ -34,9 +36,10 @@ struct ExpressionParsed
   std::string toStr() const;
 
   FactOptional toFact(const Ontology& pOntology,
-                      const SetOfEntities& pEntities,
+                      const SetOfEntities& pObjects,
                       const std::vector<Parameter>& pParameters,
-                      bool pIsOkIfValueIsMissing) const;
+                      bool pIsOkIfValueIsMissing,
+                      const std::map<std::string, Entity>* pParameterNamesToEntityPtr) const;
 
   static ExpressionParsed fromStr(const std::string& pStr,
                                   std::size_t& pPos);

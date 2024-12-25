@@ -1,6 +1,7 @@
 #ifndef INCLUDE_ORDEREDGOALSPLANNER_ENTITY_HPP
 #define INCLUDE_ORDEREDGOALSPLANNER_ENTITY_HPP
 
+#include <map>
 #include <string>
 #include <vector>
 #include "../util/api.hpp"
@@ -37,8 +38,9 @@ struct ORDEREDGOALSPLANNER_API Entity
 
   static Entity fromUsage(const std::string& pStr,
                           const Ontology& pOntology,
-                          const SetOfEntities& pEntities,
-                          const std::vector<Parameter>& pParameters);
+                          const SetOfEntities& pObjects,
+                          const std::vector<Parameter>& pParameters,
+                          const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
 
   std::string toStr() const;
   bool isAnyEntity() const;

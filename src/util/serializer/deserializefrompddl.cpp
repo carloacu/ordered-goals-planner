@@ -95,9 +95,10 @@ std::vector<Parameter> _expressionParsedToParameters(
 
 std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& pExpressionParsed,
                                                         const Ontology& pOntology,
-                                                        const SetOfEntities& pEntities,
+                                                        const SetOfEntities& pObjects,
                                                         const std::vector<Parameter>& pParameters,
-                                                        bool pIsOkIfValueIsMissing)
+                                                        bool pIsOkIfValueIsMissing,
+                                                        const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
 {
   std::unique_ptr<Condition> res;
 
@@ -120,7 +121,7 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
        pExpressionParsed.name == _equalsCharConditonFunctionName) &&
       pExpressionParsed.arguments.size() == 2)
   {
-    auto leftOperand = _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pEntities, pParameters, true);
+    auto leftOperand = _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr);
     auto* leftFactPtr = leftOperand->fcFactPtr();
 
     const auto& rightOperandExp = *(++pExpressionParsed.arguments.begin());
@@ -138,14 +139,14 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
                rightOperandExp.name != "")
       {
         leftFactPtr->factOptional.fact.setValue(
-              Entity::fromUsage(rightOperandExp.name, pOntology, pEntities, pParameters));
+              Entity::fromUsage(rightOperandExp.name, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
         res = std::make_unique<ConditionFact>(std::move(*leftFactPtr));
       }
     }
 
     if (!res)
     {
-      auto rightOperand = _expressionParsedToCondition(rightOperandExp, pOntology, pEntities, pParameters, true);
+      auto rightOperand = _expressionParsedToCondition(rightOperandExp, pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr);
       res = std::make_unique<ConditionNode>(ConditionNodeType::EQUALITY,
                                             std::move(leftOperand), std::move(rightOperand));
     }
@@ -165,7 +166,7 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
 
     ++itArg;
     res = std::make_unique<ConditionExists>(existsParameter,
-                                            _expressionParsedToCondition(*itArg, pOntology, pEntities, newParameters, false));
+                                            _expressionParsedToCondition(*itArg, pOntology, pObjects, newParameters, false, pParameterNamesToEntityPtr));
   }
   else if (pExpressionParsed.name == _forallConditonFunctionName)
   {
@@ -182,14 +183,14 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
 
     ++itArg;
     res = std::make_unique<ConditionForall>(existsParameter,
-                                            _expressionParsedToCondition(*itArg, pOntology, pEntities, newParameters, false));
+                                            _expressionParsedToCondition(*itArg, pOntology, pObjects, newParameters, false, pParameterNamesToEntityPtr));
   }
   else if (pExpressionParsed.name == _notConditonFunctionName &&
            pExpressionParsed.arguments.size() == 1)
   {
     auto& expNegationned = pExpressionParsed.arguments.front();
 
-    res = _expressionParsedToCondition(expNegationned, pOntology, pEntities, pParameters, pIsOkIfValueIsMissing);
+    res = _expressionParsedToCondition(expNegationned, pOntology, pObjects, pParameters, pIsOkIfValueIsMissing, pParameterNamesToEntityPtr);
     if (res)
     {
        auto* factPtr = res->fcFactPtr();
@@ -203,29 +204,29 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
            pExpressionParsed.arguments.size() == 2)
   {
     res = std::make_unique<ConditionNode>(ConditionNodeType::SUPERIOR,
-                                          _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pEntities, pParameters, true),
-                                          _expressionParsedToCondition(*(++pExpressionParsed.arguments.begin()), pOntology, pEntities, pParameters, true));
+                                          _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr),
+                                          _expressionParsedToCondition(*(++pExpressionParsed.arguments.begin()), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr));
   }
   else if (pExpressionParsed.name == _superiorOrEqualConditionFunctionName &&
            pExpressionParsed.arguments.size() == 2)
   {
     res = std::make_unique<ConditionNode>(ConditionNodeType::SUPERIOR_OR_EQUAL,
-                                          _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pEntities, pParameters, true),
-                                          _expressionParsedToCondition(*(++pExpressionParsed.arguments.begin()), pOntology, pEntities, pParameters, true));
+                                          _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr),
+                                          _expressionParsedToCondition(*(++pExpressionParsed.arguments.begin()), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr));
   }
   else if (pExpressionParsed.name == _inferiorConditionFunctionName &&
            pExpressionParsed.arguments.size() == 2)
   {
     res = std::make_unique<ConditionNode>(ConditionNodeType::INFERIOR,
-                                          _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pEntities, pParameters, true),
-                                          _expressionParsedToCondition(*(++pExpressionParsed.arguments.begin()), pOntology, pEntities, pParameters, true));
+                                          _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr),
+                                          _expressionParsedToCondition(*(++pExpressionParsed.arguments.begin()), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr));
   }
   else if (pExpressionParsed.name == _inferiorOrEqualConditionFunctionName &&
            pExpressionParsed.arguments.size() == 2)
   {
     res = std::make_unique<ConditionNode>(ConditionNodeType::INFERIOR_OR_EQUAL,
-                                          _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pEntities, pParameters, true),
-                                          _expressionParsedToCondition(*(++pExpressionParsed.arguments.begin()), pOntology, pEntities, pParameters, true));
+                                          _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr),
+                                          _expressionParsedToCondition(*(++pExpressionParsed.arguments.begin()), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr));
   }
   else if ((pExpressionParsed.name == _andConditonFunctionName ||
             pExpressionParsed.name == _orConditonFunctionName ||
@@ -239,7 +240,7 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
       listNodeType = ConditionNodeType::IMPLY;
     std::list<std::unique_ptr<Condition>> elts;
     for (auto& currExp : pExpressionParsed.arguments)
-      elts.emplace_back(_expressionParsedToCondition(currExp, pOntology, pEntities, pParameters, false));
+      elts.emplace_back(_expressionParsedToCondition(currExp, pOntology, pObjects, pParameters, false, pParameterNamesToEntityPtr));
 
     res = std::make_unique<ConditionNode>(listNodeType, std::move(*(--(--elts.end()))), std::move(elts.back()));
     elts.pop_back();
@@ -265,7 +266,7 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
       bool isOkIfValueIsMissing = pIsOkIfValueIsMissing ||
           nodeType == ConditionNodeType::SUPERIOR || nodeType == ConditionNodeType::SUPERIOR_OR_EQUAL ||
           nodeType == ConditionNodeType::INFERIOR || nodeType == ConditionNodeType::INFERIOR_OR_EQUAL;
-      res = std::make_unique<ConditionFact>(pExpressionParsed.toFact(pOntology, pEntities, pParameters, isOkIfValueIsMissing));
+      res = std::make_unique<ConditionFact>(pExpressionParsed.toFact(pOntology, pObjects, pParameters, isOkIfValueIsMissing, pParameterNamesToEntityPtr));
     }
   }
 
@@ -273,7 +274,7 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
   {
     res = std::make_unique<ConditionNode>(nodeType,
                                           std::move(res),
-                                          _expressionParsedToCondition(*pExpressionParsed.followingExpression, pOntology, pEntities, pParameters, false));
+                                          _expressionParsedToCondition(*pExpressionParsed.followingExpression, pOntology, pObjects, pParameters, false, pParameterNamesToEntityPtr));
   }
 
   return res;
@@ -282,9 +283,10 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
 
 std::unique_ptr<Goal> _expressionParsedToGoal(ExpressionParsed& pExpressionParsed,
                                               const Ontology& pOntology,
-                                              const SetOfEntities& pEntities,
+                                              const SetOfEntities& pObjects,
                                               int pMaxTimeToKeepInactive,
-                                              const std::string& pGoalGroupId)
+                                              const std::string& pGoalGroupId,
+                                              const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
 {
   bool isPersistentIfSkipped = false;
   bool oneStepTowards = false;
@@ -300,7 +302,7 @@ std::unique_ptr<Goal> _expressionParsedToGoal(ExpressionParsed& pExpressionParse
     pExpressionParsed = pExpressionParsed.arguments.front().clone();
   }
 
-  auto objective = _expressionParsedToCondition(pExpressionParsed, pOntology, pEntities, {}, false);
+  auto objective = _expressionParsedToCondition(pExpressionParsed, pOntology, pObjects, {}, false, pParameterNamesToEntityPtr);
   if (!objective)
     throw std::runtime_error("Failed to load the goal objective");
   return std::make_unique<Goal>(std::move(objective), isPersistentIfSkipped, oneStepTowards,
@@ -310,7 +312,7 @@ std::unique_ptr<Goal> _expressionParsedToGoal(ExpressionParsed& pExpressionParse
 
 std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const ExpressionParsed& pExpressionParsed,
                                                                           const Ontology& pOntology,
-                                                                          const SetOfEntities& pEntities,
+                                                                          const SetOfEntities& pObjects,
                                                                           const std::vector<Parameter>& pParameters,
                                                                           bool pIsOkIfValueIsMissing)
 {
@@ -320,7 +322,7 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
        pExpressionParsed.name == _setWsFunctionName) && // set is deprecated
       pExpressionParsed.arguments.size() == 2)
   {
-    auto leftOperand = _expressionParsedToWsModification(pExpressionParsed.arguments.front(), pOntology, pEntities, pParameters, true);
+    auto leftOperand = _expressionParsedToWsModification(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, true);
     const auto& rightOperandExp = *(++pExpressionParsed.arguments.begin());
     auto* leftFactPtr = dynamic_cast<WorldStateModificationFact*>(&*leftOperand);
     if (leftFactPtr != nullptr && !leftFactPtr->factOptional.isFactNegated &&
@@ -336,14 +338,14 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
       else if (pExpressionParsed.name == _assignWsFunctionName && !rightOperandExp.isAFunction &&
                rightOperandExp.name != "")
       {
-        leftFactPtr->factOptional.fact.setValue(Entity::fromUsage(rightOperandExp.name, pOntology, pEntities, pParameters));
+        leftFactPtr->factOptional.fact.setValue(Entity::fromUsage(rightOperandExp.name, pOntology, pObjects, pParameters));
         res = std::make_unique<WorldStateModificationFact>(std::move(*leftFactPtr));
       }
     }
 
     if (!res)
     {
-      auto rightOperand = _expressionParsedToWsModification(rightOperandExp, pOntology, pEntities, pParameters, true);
+      auto rightOperand = _expressionParsedToWsModification(rightOperandExp, pOntology, pObjects, pParameters, true);
       res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::ASSIGN,
                                                          std::move(leftOperand), std::move(rightOperand));
     }
@@ -351,7 +353,7 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
   else if (pExpressionParsed.name == _notWsFunctionName &&
            pExpressionParsed.arguments.size() == 1)
   {
-    auto factNegationedWs = _expressionParsedToWsModification(pExpressionParsed.arguments.front(), pOntology, pEntities, pParameters, true);
+    auto factNegationedWs = _expressionParsedToWsModification(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, true);
     if (factNegationedWs)
     {
       auto* factNegationedPtr = dynamic_cast<WorldStateModificationFact*>(&*factNegationedWs);
@@ -384,8 +386,8 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
       ++itArg;
       auto& thridArg = *itArg;
       res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::FOR_ALL,
-                                                         std::make_unique<WorldStateModificationFact>(secondArg.toFact(pOntology, pEntities, newParameters, false)),
-                                                         _expressionParsedToWsModification(thridArg, pOntology, pEntities, newParameters, false),
+                                                         std::make_unique<WorldStateModificationFact>(secondArg.toFact(pOntology, pObjects, newParameters, false, nullptr)),
+                                                         _expressionParsedToWsModification(thridArg, pOntology, pObjects, newParameters, false),
                                                          forAllParameter);
     }
     else if (secondArg.name == _whenWsFunctionName &&
@@ -396,8 +398,8 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
       ++itWhenArg;
       auto& secondWhenArg = *itWhenArg;
       res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::FOR_ALL,
-                                                         std::make_unique<WorldStateModificationFact>(firstWhenArg.toFact(pOntology, pEntities, newParameters, false)),
-                                                         _expressionParsedToWsModification(secondWhenArg, pOntology, pEntities, newParameters, false),
+                                                         std::make_unique<WorldStateModificationFact>(firstWhenArg.toFact(pOntology, pObjects, newParameters, false, nullptr)),
+                                                         _expressionParsedToWsModification(secondWhenArg, pOntology, pObjects, newParameters, false),
                                                          forAllParameter);
     }
   }
@@ -406,7 +408,7 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
   {
     std::list<std::unique_ptr<WorldStateModification>> elts;
     for (auto& currExp : pExpressionParsed.arguments)
-      elts.emplace_back(_expressionParsedToWsModification(currExp, pOntology, pEntities, pParameters, false));
+      elts.emplace_back(_expressionParsedToWsModification(currExp, pOntology, pObjects, pParameters, false));
 
     res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::AND, std::move(*(--(--elts.end()))), std::move(elts.back()));
     elts.pop_back();
@@ -430,10 +432,10 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
       rightOpPtr = WorldStateModificationNumber::create(secondArg.name);
     }  catch (...) {}
     if (!rightOpPtr)
-      rightOpPtr = _expressionParsedToWsModification(secondArg, pOntology, pEntities, pParameters, true);
+      rightOpPtr = _expressionParsedToWsModification(secondArg, pOntology, pObjects, pParameters, true);
 
     res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::INCREASE,
-                                                       _expressionParsedToWsModification(firstArg, pOntology, pEntities, pParameters, true),
+                                                       _expressionParsedToWsModification(firstArg, pOntology, pObjects, pParameters, true),
                                                        std::move(rightOpPtr));
   }
   else if (pExpressionParsed.name == _decreaseWsFunctionName &&
@@ -448,10 +450,10 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
       rightOpPtr = WorldStateModificationNumber::create(secondArg.name);
     }  catch (...) {}
     if (!rightOpPtr)
-      rightOpPtr = _expressionParsedToWsModification(secondArg, pOntology, pEntities, pParameters, true);
+      rightOpPtr = _expressionParsedToWsModification(secondArg, pOntology, pObjects, pParameters, true);
 
     res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::DECREASE,
-                                                       _expressionParsedToWsModification(firstArg, pOntology, pEntities, pParameters, true),
+                                                       _expressionParsedToWsModification(firstArg, pOntology, pObjects, pParameters, true),
                                                        std::move(rightOpPtr));
   }
   else if (pExpressionParsed.name == _mutliplyWsFunctionName &&
@@ -466,7 +468,7 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
       leftIsNumber = true;
     }  catch (...) {}
     if (!leftOpPtr)
-      leftOpPtr = _expressionParsedToWsModification(firstArg, pOntology, pEntities, pParameters, true);
+      leftOpPtr = _expressionParsedToWsModification(firstArg, pOntology, pObjects, pParameters, true);
 
     ++itArg;
     auto& secondArg = *itArg;
@@ -477,7 +479,7 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
       rightIsNumber = true;
     }  catch (...) {}
     if (!rightOpPtr)
-      rightOpPtr = _expressionParsedToWsModification(secondArg, pOntology, pEntities, pParameters, true);
+      rightOpPtr = _expressionParsedToWsModification(secondArg, pOntology, pObjects, pParameters, true);
 
     if (leftIsNumber && !rightIsNumber)
       res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::MULTIPLY,
@@ -496,8 +498,8 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
     ++itWhenArg;
     auto& secondWhenArg = *itWhenArg;
     res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::WHEN,
-                                                       std::make_unique<WorldStateModificationFact>(firstWhenArg.toFact(pOntology, pEntities, {}, false)),
-                                                       _expressionParsedToWsModification(secondWhenArg, pOntology, pEntities, {}, false));
+                                                       std::make_unique<WorldStateModificationFact>(firstWhenArg.toFact(pOntology, pObjects, {}, false, nullptr)),
+                                                       _expressionParsedToWsModification(secondWhenArg, pOntology, pObjects, {}, false));
   }
   else
   {
@@ -509,7 +511,7 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
     }
 
     if (!res)
-      res = std::make_unique<WorldStateModificationFact>(pExpressionParsed.toFact(pOntology, pEntities, pParameters, pIsOkIfValueIsMissing));
+      res = std::make_unique<WorldStateModificationFact>(pExpressionParsed.toFact(pOntology, pObjects, pParameters, pIsOkIfValueIsMissing, nullptr));
   }
 
   if (pExpressionParsed.followingExpression)
@@ -522,7 +524,7 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
     res = std::make_unique<WorldStateModificationNode>(nodeType,
                                                        std::move(res),
                                                        _expressionParsedToWsModification(*pExpressionParsed.followingExpression,
-                                                                                         pOntology, pEntities, pParameters, false));
+                                                                                         pOntology, pObjects, pParameters, false));
   }
 
   return res;
@@ -855,11 +857,11 @@ Action _durativeActionPddlToAction(const std::string& pStr,
 
       auto atStartExpressionParsed = _extractConditionPart(expressionParsed, ConditionPart::AT_START);
       if (!atStartExpressionParsed.empty())
-        precondition = _expressionParsedToCondition(atStartExpressionParsed, pOntology, {}, parameters, false);
+        precondition = _expressionParsedToCondition(atStartExpressionParsed, pOntology, {}, parameters, false, nullptr);
 
       auto overAllExpressionParsed = _extractConditionPart(expressionParsed, ConditionPart::OVER_ALL);
       if (!overAllExpressionParsed.empty())
-        overAllCondition = _expressionParsedToCondition(overAllExpressionParsed, pOntology, {}, parameters, false);
+        overAllCondition = _expressionParsedToCondition(overAllExpressionParsed, pOntology, {}, parameters, false, nullptr);
     }
     else if (subToken == ":effect")
     {
@@ -1103,7 +1105,7 @@ DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
           {
             for (auto& currGoalExpParsed : expressionParsed.arguments)
             {
-              auto goalPtr = _expressionParsedToGoal(currGoalExpParsed, ontology, entities, -1, "");
+              auto goalPtr = _expressionParsedToGoal(currGoalExpParsed, ontology, entities, -1, "", nullptr);
               if (!goalPtr)
                 throw std::runtime_error("Failed to parse a pddl goal");
               goals.emplace_back(std::move(*goalPtr));
@@ -1111,7 +1113,7 @@ DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
           }
           else
           {
-            auto goalPtr = _expressionParsedToGoal(expressionParsed, ontology, entities, -1, "");
+            auto goalPtr = _expressionParsedToGoal(expressionParsed, ontology, entities, -1, "", nullptr);
             if (!goalPtr)
               throw std::runtime_error("Failed to parse a pddl goal");
             goals.emplace_back(std::move(*goalPtr));
@@ -1146,44 +1148,45 @@ DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
 std::unique_ptr<Condition> pddlToCondition(const std::string& pStr,
                                            std::size_t& pPos,
                                            const Ontology& pOntology,
-                                           const SetOfEntities& pEntities,
+                                           const SetOfEntities& pObjects,
                                            const std::vector<Parameter>& pParameters)
 {
   auto expressionParsed = ExpressionParsed::fromPddl(pStr, pPos, false);
-  return _expressionParsedToCondition(expressionParsed, pOntology, pEntities, pParameters, false);
+  return _expressionParsedToCondition(expressionParsed, pOntology, pObjects, pParameters, false, nullptr);
 }
 
 
 std::unique_ptr<Condition> strToCondition(const std::string& pStr,
                                           const Ontology& pOntology,
-                                          const SetOfEntities& pEntities,
+                                          const SetOfEntities& pObjects,
                                           const std::vector<Parameter>& pParameters)
 {
   if (pStr.empty())
     return {};
   std::size_t pos = 0;
   auto expressionParsed = ExpressionParsed::fromStr(pStr, pos);
-  return _expressionParsedToCondition(expressionParsed, pOntology, pEntities, pParameters, false);
+  return _expressionParsedToCondition(expressionParsed, pOntology, pObjects, pParameters, false, nullptr);
 }
 
 
 std::unique_ptr<Goal> pddlToGoal(const std::string& pStr,
                                  std::size_t& pPos,
                                  const Ontology& pOntology,
-                                 const SetOfEntities& pEntities,
+                                 const SetOfEntities& pObjects,
                                  int pMaxTimeToKeepInactive,
-                                 const std::string& pGoalGroupId)
+                                 const std::string& pGoalGroupId,
+                                 const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
 {
   if (pStr.empty())
     return {};
   auto expressionParsed = ExpressionParsed::fromPddl(pStr, pPos, false);
-  return _expressionParsedToGoal(expressionParsed, pOntology, pEntities,
-                                 pMaxTimeToKeepInactive, pGoalGroupId);
+  return _expressionParsedToGoal(expressionParsed, pOntology, pObjects,
+                                 pMaxTimeToKeepInactive, pGoalGroupId, pParameterNamesToEntityPtr);
 }
 
 std::unique_ptr<Goal> strToGoal(const std::string& pStr,
                                 const Ontology& pOntology,
-                                const SetOfEntities& pEntities,
+                                const SetOfEntities& pObjects,
                                 int pMaxTimeToKeepInactive,
                                 const std::string& pGoalGroupId)
 {
@@ -1191,31 +1194,31 @@ std::unique_ptr<Goal> strToGoal(const std::string& pStr,
     return {};
   std::size_t pos = 0;
   auto expressionParsed = ExpressionParsed::fromStr(pStr, pos);
-  return _expressionParsedToGoal(expressionParsed, pOntology, pEntities,
-                                 pMaxTimeToKeepInactive, pGoalGroupId);
+  return _expressionParsedToGoal(expressionParsed, pOntology, pObjects,
+                                 pMaxTimeToKeepInactive, pGoalGroupId, nullptr);
 }
 
 std::unique_ptr<WorldStateModification> pddlToWsModification(const std::string& pStr,
                                                              std::size_t& pPos,
                                                              const Ontology& pOntology,
-                                                             const SetOfEntities& pEntities,
+                                                             const SetOfEntities& pObjects,
                                                              const std::vector<Parameter>& pParameters)
 {
   auto expressionParsed = ExpressionParsed::fromPddl(pStr, pPos, false);
-  return _expressionParsedToWsModification(expressionParsed, pOntology, pEntities, pParameters, false);
+  return _expressionParsedToWsModification(expressionParsed, pOntology, pObjects, pParameters, false);
 }
 
 
 std::unique_ptr<WorldStateModification> strToWsModification(const std::string& pStr,
-                                                             const Ontology& pOntology,
-                                                             const SetOfEntities& pEntities,
-                                                             const std::vector<Parameter>& pParameters)
+                                                            const Ontology& pOntology,
+                                                            const SetOfEntities& pObjects,
+                                                            const std::vector<Parameter>& pParameters)
 {
   if (pStr.empty())
     return {};
   std::size_t pos = 0;
   auto expressionParsed = ExpressionParsed::fromStr(pStr, pos);
-  return _expressionParsedToWsModification(expressionParsed, pOntology, pEntities, pParameters, false);
+  return _expressionParsedToWsModification(expressionParsed, pOntology, pObjects, pParameters, false);
 }
 
 

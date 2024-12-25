@@ -96,8 +96,9 @@ Entity Entity::fromDeclaration(const std::string& pStr,
 
 Entity Entity::fromUsage(const std::string& pStr,
                          const Ontology& pOntology,
-                         const SetOfEntities& pEntities,
-                         const std::vector<Parameter>& pParameters)
+                         const SetOfEntities& pObjects,
+                         const std::vector<Parameter>& pParameters,
+                         const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
 {
   if (pStr.empty())
     throw std::runtime_error("Empty entity usage");
@@ -107,6 +108,11 @@ Entity Entity::fromUsage(const std::string& pStr,
     for (const auto& currParam : pParameters)
       if (currParam.name == pStr)
         return Entity(currParam.name, currParam.type);
+    if (pParameterNamesToEntityPtr != nullptr) {
+      auto it = pParameterNamesToEntityPtr->find(pStr);
+      if (it != pParameterNamesToEntityPtr->end())
+        return it->second;
+    }
     throw std::runtime_error("The parameter \"" + pStr + "\" is unknown");
   }
 
@@ -114,7 +120,7 @@ Entity Entity::fromUsage(const std::string& pStr,
   if (entityPtr != nullptr)
     return Entity(*entityPtr);
 
-  entityPtr = pEntities.valueToEntity(pStr);
+  entityPtr = pObjects.valueToEntity(pStr);
   if (entityPtr != nullptr)
     return Entity(*entityPtr);
   if (pStr == Entity::anyEntityValue())

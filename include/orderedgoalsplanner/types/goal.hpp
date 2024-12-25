@@ -30,7 +30,7 @@ struct ORDEREDGOALSPLANNER_API Goal
 
   static Goal fromStr(const std::string& pStr,
                       const Ontology& pOntology,
-                      const SetOfEntities& pEntities,
+                      const SetOfEntities& pObjects,
                       int pMaxTimeToKeepInactive = -1,
                       const std::string& pGoalGroupId = "");
 

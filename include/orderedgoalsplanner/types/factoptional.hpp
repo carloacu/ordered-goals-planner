@@ -28,9 +28,10 @@ struct ORDEREDGOALSPLANNER_API FactOptional
                const std::string& pValueStr,
                bool pIsValueNegated,
                const Ontology& pOntology,
-               const SetOfEntities& pEntities,
+               const SetOfEntities& pObjects,
                const std::vector<Parameter>& pParameters,
-               bool pIsOkIfValueIsMissing = false);
+               bool pIsOkIfValueIsMissing = false,
+               const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
 
   /**
    * @brief Construct an optional fact from another one.
@@ -48,7 +49,7 @@ struct ORDEREDGOALSPLANNER_API FactOptional
    */
   FactOptional(const std::string& pStr,
                const Ontology& pOntology,
-               const SetOfEntities& pEntities,
+               const SetOfEntities& pObjects,
                const std::vector<Parameter>& pParameters,
                std::size_t pBeginPos = 0,
                std::size_t* pResPos = nullptr);

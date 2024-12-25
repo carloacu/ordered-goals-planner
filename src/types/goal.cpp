@@ -49,11 +49,11 @@ Goal::Goal(const Goal& pOther,
 
 Goal Goal::fromStr(const std::string& pStr,
                    const Ontology& pOntology,
-                   const SetOfEntities& pEntities,
+                   const SetOfEntities& pObjects,
                    int pMaxTimeToKeepInactive,
                    const std::string& pGoalGroupId)
 {
-  auto resPtr = strToGoal(pStr, pOntology, pEntities, pMaxTimeToKeepInactive, pGoalGroupId);
+  auto resPtr = strToGoal(pStr, pOntology, pObjects, pMaxTimeToKeepInactive, pGoalGroupId);
   if (!resPtr)
     throw std::runtime_error("Failed to load the goal: " + pStr);
   return *resPtr;

@@ -88,7 +88,7 @@ void _test_pddlSerializationParts()
     std::size_t pos = 0;
     std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(exists (?e - entity) (= (pred_d ?e) undefined))", pos, ontology, {}, {});
     if (!cond)
-      ASSERT_TRUE(false);
+      FAIL();
     EXPECT_EQ("exists(?e - entity, !pred_d(?e)=*)", cond->toStr());
   }
 
@@ -96,7 +96,7 @@ void _test_pddlSerializationParts()
     std::size_t pos = 0;
     std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(forall (?e - entity) (= (pred_d ?e) undefined))", pos, ontology, {}, {});
     if (!cond)
-      ASSERT_TRUE(false);
+      FAIL();
     EXPECT_EQ("forall(?e - entity, !pred_d(?e)=*)", cond->toStr());
   }
 
@@ -104,7 +104,7 @@ void _test_pddlSerializationParts()
     std::size_t pos = 0;
     std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(decrease (battery-amount toto) 4)", pos, ontology, {}, {});
     if (!ws)
-      ASSERT_TRUE(false);
+      FAIL();
     EXPECT_EQ("decrease(battery-amount(toto), 4)", ws->toStr());
   }
 
@@ -112,7 +112,7 @@ void _test_pddlSerializationParts()
     std::size_t pos = 0;
     std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(forall (?e - entity) (when (pred_a ?e) (pred_c ?e))", pos, ontology, {}, {});
     if (!ws)
-      ASSERT_TRUE(false);
+      FAIL();
     EXPECT_EQ("forall(?e - entity, when(pred_a(?e), pred_c(?e)))", ws->toStr());
   }
 
@@ -121,10 +121,36 @@ void _test_pddlSerializationParts()
     auto parameters = ogp::pddlToParameters("(?e - entity)", ontology.types);
     std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(pred_c ?e)", pos, ontology, {}, parameters);
     if (!ws)
-      ASSERT_TRUE(false);
+      FAIL();
     EXPECT_EQ("pred_c(?e)", ws->toStr());
   }
 
+  {
+    std::size_t pos = 0;
+    std::map<std::string, ogp::Entity> parameterNamesToEntity{{"?e", ogp::Entity::fromUsage("titi", ontology, {}, {})}};
+    std::unique_ptr<ogp::Goal> goalPtr = ogp::pddlToGoal("(pred_c ?e)", pos, ontology, {}, -1, "", &parameterNamesToEntity);
+    if (!goalPtr)
+      FAIL();
+    EXPECT_EQ("pred_c(titi)", goalPtr->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
+    std::map<std::string, ogp::Entity> parameterNamesToEntity{{"?e", ogp::Entity::fromUsage("titi", ontology, {}, {})}};
+    std::unique_ptr<ogp::Goal> goalPtr = ogp::pddlToGoal("(exists (?p - entity) (= (pred_d ?e) ?p))", pos, ontology, {}, -1, "", &parameterNamesToEntity);
+    if (!goalPtr)
+      FAIL();
+    EXPECT_EQ("exists(?p - entity, pred_d(titi)=?p)", goalPtr->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
+    std::map<std::string, ogp::Entity> parameterNamesToEntity{{"?e", ogp::Entity::fromUsage("toto", ontology, {}, {})}};
+    std::unique_ptr<ogp::Goal> goalPtr = ogp::pddlToGoal("(exists (?p - entity) (= (pred_d ?p) ?e))", pos, ontology, {}, -1, "", &parameterNamesToEntity);
+    if (!goalPtr)
+      FAIL();
+    EXPECT_EQ("exists(?p - entity, pred_d(?p)=toto)", goalPtr->toStr());
+  }
 }
 
 

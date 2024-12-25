@@ -17,11 +17,12 @@ FactOptional::FactOptional(bool pIsFactNegated,
                            const std::string& pValueStr,
                            bool pIsValueNegated,
                            const Ontology& pOntology,
-                           const SetOfEntities& pEntities,
+                           const SetOfEntities& pObjects,
                            const std::vector<Parameter>& pParameters,
-                           bool pIsOkIfValueIsMissing)
+                           bool pIsOkIfValueIsMissing,
+                           const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
   : isFactNegated(pIsFactNegated),
-    fact(pName, pArgumentStrs, pValueStr, pIsValueNegated, pOntology, pEntities, pParameters, pIsOkIfValueIsMissing)
+    fact(pName, pArgumentStrs, pValueStr, pIsValueNegated, pOntology, pObjects, pParameters, pIsOkIfValueIsMissing, pParameterNamesToEntityPtr)
 {
   _simplify();
 }
@@ -38,12 +39,12 @@ FactOptional::FactOptional(const FactOptional& pOther,
 
 FactOptional::FactOptional(const std::string& pStr,
                            const Ontology& pOntology,
-                           const SetOfEntities& pEntities,
+                           const SetOfEntities& pObjects,
                            const std::vector<Parameter>& pParameters,
                            std::size_t pBeginPos,
                            std::size_t* pResPos)
   : isFactNegated(false),
-    fact(pStr, false, pOntology, pEntities, pParameters, &isFactNegated, pBeginPos, pResPos)
+    fact(pStr, false, pOntology, pObjects, pParameters, &isFactNegated, pBeginPos, pResPos)
 {
   _simplify();
 }

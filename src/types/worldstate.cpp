@@ -310,15 +310,15 @@ bool WorldState::modify(const WorldStateModification* pWsModifPtr,
                         const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                         const SetOfCallbacks& pCallbacks,
                         const Ontology& pOntology,
-                        const SetOfEntities& pEntities,
+                        const SetOfEntities& pObjects,
                         const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                         bool pCanFactsBeRemoved)
 {
   WhatChanged whatChanged;
-  _modify(whatChanged, pWsModifPtr, pGoalStack, pSetOfEvents, pCallbacks, pOntology, pEntities, pNow, pCanFactsBeRemoved);
+  _modify(whatChanged, pWsModifPtr, pGoalStack, pSetOfEvents, pCallbacks, pOntology, pObjects, pNow, pCanFactsBeRemoved);
   bool goalChanged = false;
   _notifyWhatChanged(whatChanged, goalChanged, pGoalStack, pSetOfEvents, pCallbacks,
-                     pOntology, pEntities, pNow);
+                     pOntology, pObjects, pNow);
   return whatChanged.hasFactsToModifyInTheWorldForSure();
 }
 
@@ -328,17 +328,17 @@ void WorldState::setFacts(const std::set<Fact>& pFacts,
                           const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                           const SetOfCallbacks& pCallbacks,
                           const Ontology& pOntology,
-                          const SetOfEntities& pEntities,
+                          const SetOfEntities& pObjects,
                           const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow)
 {
   _factsMapping.clear();
   for (const auto& currFact : pFacts)
     _factsMapping.add(currFact);
   WhatChanged whatChanged;
-  pGoalStack._removeNoStackableGoalsAndNotifyGoalsChanged(*this, pOntology.constants, pEntities, pNow);
+  pGoalStack._removeNoStackableGoalsAndNotifyGoalsChanged(*this, pOntology.constants, pObjects, pNow);
   bool goalChanged = false;
   _notifyWhatChanged(whatChanged, goalChanged, pGoalStack, pSetOfEvents, pCallbacks,
-                     pOntology, pEntities, pNow);
+                     pOntology, pObjects, pNow);
 }
 
 

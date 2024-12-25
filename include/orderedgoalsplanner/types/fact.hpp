@@ -31,7 +31,7 @@ struct ORDEREDGOALSPLANNER_API Fact
   Fact(const std::string& pStr,
        bool pStrPddlFormated,
        const Ontology& pOntology,
-       const SetOfEntities& pEntities,
+       const SetOfEntities& pObjects,
        const std::vector<Parameter>& pParameters,
        bool* pIsFactNegatedPtr = nullptr,
        std::size_t pBeginPos = 0,
@@ -43,9 +43,10 @@ struct ORDEREDGOALSPLANNER_API Fact
        const std::string& pValueStr,
        bool pIsValueNegated,
        const Ontology& pOntology,
-       const SetOfEntities& pEntities,
+       const SetOfEntities& pObjects,
        const std::vector<Parameter>& pParameters,
-       bool pIsOkIfValueIsMissing = false);
+       bool pIsOkIfValueIsMissing = false,
+       const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
 
   /// Destruct the fact.
   ~Fact();

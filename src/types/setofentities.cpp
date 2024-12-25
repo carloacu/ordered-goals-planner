@@ -66,6 +66,19 @@ void SetOfEntities::addAllFromPddl(const std::string& pStr,
 }
 
 
+void SetOfEntities::remove(const Entity& pEntity)
+{
+  _valueToEntity.erase(pEntity.value);
+
+  if (pEntity.type)
+  {
+    auto& typeToEntities = _typeNameToEntities[pEntity.type->name];
+   typeToEntities.erase(pEntity);
+   if (typeToEntities.empty())
+     _typeNameToEntities.erase(pEntity.type->name);
+  }
+}
+
 const std::set<Entity>* SetOfEntities::typeNameToEntities(const std::string& pTypename) const
 {
   auto it = _typeNameToEntities.find(pTypename);

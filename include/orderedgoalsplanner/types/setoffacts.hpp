@@ -26,7 +26,7 @@ struct ORDEREDGOALSPLANNER_API SetOfFacts
   static SetOfFacts fromPddl(const std::string& pStr,
                              std::size_t& pPos,
                              const Ontology& pOntology,
-                             const SetOfEntities& pEntities,
+                             const SetOfEntities& pObjects,
                              bool pCanFactsBeRemoved = true);
 
   std::string toPddl(std::size_t pIdentation, bool pPrintTimeLessFactsToo) const;
