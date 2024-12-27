@@ -53,6 +53,9 @@ struct ORDEREDGOALSPLANNER_API Successions
 /// Modification of a world state represented in a tree structure to apply to a world state.
 struct ORDEREDGOALSPLANNER_API WorldStateModification
 {
+  /// Because it is a parent struct.
+  virtual ~WorldStateModification() = default;
+
   /**
    * @brief Create a world state modification by concatenating two existing world state modifications.
    * @param[in] pWsModif1 First world state modification to concatenate.

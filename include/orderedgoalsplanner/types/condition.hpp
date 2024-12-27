@@ -35,6 +35,9 @@ enum class ConditionPart
 /// Condition with a tree structure to check in a world.
 struct ORDEREDGOALSPLANNER_API Condition
 {
+  /// Because it is a parent struct.
+  virtual ~Condition() = default;
+
   /**
    * @brief Convert the condition to a string.
    * @param[in] pFactWriterPtr Specific function to use to convert a fact to a string.

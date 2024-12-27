@@ -151,8 +151,10 @@ bool SetOfFacts::erase(const Fact& pFact)
     return true;
 
   auto factIt = find(pFact);
-  for (const auto& currFact : factIt)
-    return _erase(currFact);
+  for (const auto& currFact : factIt) {
+    auto copiedFact = currFact; // Copy to prevent usage after memory liberation
+    return _erase(copiedFact);
+  }
   return false;
 }
 

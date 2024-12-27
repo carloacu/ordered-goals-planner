@@ -272,7 +272,7 @@ void _existsExtractPossRec(std::map<Parameter, std::set<Entity>>& pLocalParamToV
 bool Condition::isOptFactMandatory(const FactOptional& pFactOptional,
                                    bool pIgnoreValue) const
 {
-  bool res;
+  bool res = false;
   forAll([&](const FactOptional& pFactOptionalFromCond, bool pIgnoreValueFromCond) {
     if (pFactOptional.isFactNegated == pFactOptionalFromCond.isFactNegated)
     {
