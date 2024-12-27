@@ -118,6 +118,30 @@ void _test_checkConditionWithOntology()
   EXPECT_FALSE(_isTrue("(forall (?p - my_type3) (= (fun1 ?p) toto))", ontology, worldState, objects));
 }
 
+void _test_fluent_value_equality_with_sub_types()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("location\n"
+                                             "robot checkpoint - physical_object\n"
+                                             "charging_zone - checkpoint");
+  ontology.constants = ogp::SetOfEntities::fromPddl("self - robot", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("declared_location(?po - physical_object) - location", ontology.types);
+
+  ogp::WorldState worldState;
+  ogp::GoalStack goalStack;
+  ogp::SetOfEntities objects;
+  std::map<ogp::SetOfEventsId, ogp::SetOfEvents> setOfEvents;
+  objects.add(ogp::Entity::fromDeclaration("charging_zone_loc - location", ontology.types));
+  objects.add(ogp::Entity::fromDeclaration("a_checkpoint_loc - location", ontology.types));
+  objects.add(ogp::Entity::fromDeclaration("a_checkpoint - checkpoint", ontology.types));
+  objects.add(ogp::Entity::fromDeclaration("pod - charging_zone", ontology.types));
+
+  worldState.addFact(ogp::Fact::fromPddl("(= (declared_location a_checkpoint) a_checkpoint_loc)", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  worldState.addFact(ogp::Fact::fromPddl("(= (declared_location pod) charging_zone_loc)", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  worldState.addFact(ogp::Fact::fromPddl("(= (declared_location self) a_checkpoint_loc)", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+
+  EXPECT_FALSE(_isTrue("(exists (?cz - charging_zone) (= (declared_location self) (declared_location ?cz))", ontology, worldState, objects));
+}
 
 }
 
@@ -126,4 +150,5 @@ void _test_checkConditionWithOntology()
 TEST(Tool, test_condition)
 {
   _test_checkConditionWithOntology();
+  _test_fluent_value_equality_with_sub_types();
 }

@@ -4,7 +4,7 @@
 #include <map>
 #include "../util/api.hpp"
 #include <orderedgoalsplanner/types/event.hpp>
-#include <orderedgoalsplanner/types/factstovalue.hpp>
+#include <orderedgoalsplanner/types/factoptionalstoid.hpp>
 #include <orderedgoalsplanner/util/alias.hpp>
 
 namespace ogp
@@ -26,40 +26,20 @@ struct ORDEREDGOALSPLANNER_API SetOfEvents
   EventId add(const Event& pEvent,
               const EventId& pEventId = "event");
 
-  /**
-   * @brief Remove an event.
-   * @param pEventId Identifier of the action to remove.
-   *
-   * If the event is not found, this function will have no effect.
-   * No exception will be raised.
-   */
-  void remove(const EventId& pEventId);
 
-
-  /// Links to point to event identifiers.
-  struct EventLinks
-  {
-    /// Map of fact conditions to event identifiers.
-    FactsToValue conditionToEvents{};
-    /// Map of negated fact conditions to event identifiers.
-    FactsToValue notConditionToEvents{};
-
-    bool empty() const { return conditionToEvents.empty() && notConditionToEvents.empty(); }
-  };
-
-  bool empty() const { return _events.empty() && _reachableEventLinks.empty(); }
+  bool empty() const { return _events.empty(); }
   /// All events of the problem.
   const std::map<EventId, Event>& events() const { return _events; }
   std::map<EventId, Event>& events() { return _events; }
   /// Reachable event links.
-  const EventLinks& reachableEventLinks() const { return _reachableEventLinks; }
+  const FactOptionalsToId& reachableEventLinks() const { return _reachableEventLinks; }
 
 
 private:
   /// Map of event indentifers to event.
   std::map<EventId, Event> _events{};
   /// Reachable event links.
-  EventLinks _reachableEventLinks{};
+  FactOptionalsToId _reachableEventLinks{};
 };
 
 } // !ogp

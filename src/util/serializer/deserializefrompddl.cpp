@@ -1230,5 +1230,14 @@ std::vector<Parameter> pddlToParameters(const std::string& pStr,
 }
 
 
+FactOptional pddlToFactOptional(const std::string& pStr,
+                                const Ontology& pOntology,
+                                const SetOfEntities& pObjects,
+                                const std::vector<Parameter>& pParameters)
+{
+  std::size_t pos = 0;
+  auto expressionParsed = ExpressionParsed::fromPddl(pStr, pos, false);
+  return expressionParsed.toFact(pOntology, pObjects, pParameters, false, nullptr);
+}
 
 }

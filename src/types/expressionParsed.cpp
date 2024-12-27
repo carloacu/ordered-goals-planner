@@ -67,10 +67,27 @@ FactOptional ExpressionParsed::toFact(const Ontology& pOntology,
 
   std::string factName;
   bool isFactNegated = false;
-  if (!name.empty() && name[0] == '!')
+  if (name.empty())
+    throw std::runtime_error("Fact cannot have an empty name");
+  if (name[0] == '!')
   {
     isFactNegated = true;
     factName = name.substr(1, name.size() - 1);
+  }
+  else if (name == "=" && arguments.size() == 2)
+  {
+    auto it = arguments.begin();
+    auto newFactOpt = it->toFact(pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr);
+    ++it;
+    newFactOpt.fact.setValue(Entity::fromUsage(it->name, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
+    return newFactOpt;
+  }
+  else if (name == "not" && arguments.size() == 1)
+  {
+    auto it = arguments.begin();
+    auto newFactOpt = it->toFact(pOntology, pObjects, pParameters, pIsOkIfValueIsMissing, pParameterNamesToEntityPtr);
+    newFactOpt.isFactNegated = !newFactOpt.isFactNegated;
+    return newFactOpt;
   }
   else
   {

@@ -3791,6 +3791,7 @@ void _fixEventWithValueInParameter()
             "\n"
             "fact: fact_a(titi)=*\n"
             "event: soe_from_constructor|event\n"
+            "event: soe_from_constructor|event_2\n"
             "\n"
             "not action: action1\n"
             "\n"

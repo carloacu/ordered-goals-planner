@@ -24,30 +24,45 @@ void Successions::addSuccesionsOptFact(const FactOptional& pFactOptional,
   if ((pFactOptional.fact.value() && pFactOptional.fact.value()->isAnyEntity()) ||
       pOptionalFactsToIgnore.count(pFactOptional) == 0)
   {
-    auto& preconditionToActions = !pFactOptional.isFactNegated ? pDomain.preconditionToActions() : pDomain.notPreconditionToActions();
-    auto actionsFromPreconditions = preconditionToActions.find(pFactOptional.fact);
-    for (const auto& currActionId : actionsFromPreconditions)
-      if (!pContainerId.isAction(currActionId))
-        actions.insert(currActionId);
+    const auto& preconditionToActionIds = pDomain.preconditionToActionIds();
+    preconditionToActionIds.find([&](const std::string& pId) {
+      if (!pContainerId.isAction(pId))
+        actions.insert(pId);
+      return ContinueOrBreak::CONTINUE;
+    }, pFactOptional);
 
     auto& setOfEvents = pDomain.getSetOfEvents();
     for (auto& currSetOfEvents : setOfEvents)
     {
       std::set<EventId>* eventsPtr = nullptr;
+
+      const FactOptionalsToId& conditionToEventIds = currSetOfEvents.second.reachableEventLinks();
+      conditionToEventIds.find([&](const std::string& pId) {
+        if (!pContainerId.isEvent(currSetOfEvents.first, pId))
+        {
+          if (eventsPtr == nullptr)
+            eventsPtr = &events[currSetOfEvents.first];
+          eventsPtr->insert(pId);
+        }
+        return ContinueOrBreak::CONTINUE;
+      }, pFactOptional);
+
+      /*
       auto& conditionToReachableEvents = !pFactOptional.isFactNegated ?
             currSetOfEvents.second.reachableEventLinks().conditionToEvents :
             currSetOfEvents.second.reachableEventLinks().notConditionToEvents;
 
       auto eventsFromCondtion = conditionToReachableEvents.find(pFactOptional.fact);
-      for (const auto& currEventId : eventsFromCondtion)
+      for (const auto& currEvent : eventsFromCondtion)
       {
-        if (!pContainerId.isEvent(currSetOfEvents.first, currEventId))
+        if (!pContainerId.isEvent(currSetOfEvents.first, currEvent.id))
         {
           if (eventsPtr == nullptr)
             eventsPtr = &events[currSetOfEvents.first];
-          eventsPtr->insert(currEventId);
+          eventsPtr->insert(currEvent.id);
         }
       }
+      */
     }
   }
 }

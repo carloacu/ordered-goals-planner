@@ -55,7 +55,7 @@ struct ActionWithConditionAndFactFacts
       if (effectOptFact.fact.value() && effectOptFact.fact.value()->isAnyEntity())
         for (auto& otherCondOptFact : pOther.factsFromCondition)
           if (effectOptFact.isFactNegated == otherCondOptFact.isFactNegated &&
-              effectOptFact.fact.areEqualExceptAnyValuesAndValue(otherCondOptFact.fact))
+              effectOptFact.fact.areEqualExceptAnyEntitiesAndValue(otherCondOptFact.fact))
             return true;
 
       if (!effectOptFact.fact.value() || !effectOptFact.fact.value()->isAParameterToFill())
@@ -159,7 +159,6 @@ Domain::Domain()
     _timelessFacts(),
     _actions(),
     _conditionsToActions(),
-    _actionsWithoutFactToAddInPrecondition(),
     _setOfEvents(),
     _requirements()
 {
@@ -178,7 +177,6 @@ Domain::Domain(const std::map<ActionId, Action>& pActions,
     _timelessFacts(pTimelessFacts),
     _actions(),
     _conditionsToActions(),
-    _actionsWithoutFactToAddInPrecondition(),
     _setOfEvents(pIdToSetOfEvents),
     _requirements()
 {
@@ -227,13 +225,6 @@ void Domain::_addAction(const ActionId& pActionId,
     return;
 
   _uuid = generateUuid(); // Regenerate uuid to force the problem to refresh his cache when it will use this object
-
-  bool hasAddedAFact = false;
-  if (action.precondition)
-    hasAddedAFact = _conditionsToActions.add(*action.precondition, pActionId);
-
-  if (!hasAddedAFact)
-    _actionsWithoutFactToAddInPrecondition.addValueWithoutFact(pActionId);
 }
 
 void Domain::removeAction(const ActionId& pActionId)
@@ -241,14 +232,7 @@ void Domain::removeAction(const ActionId& pActionId)
   auto it = _actions.find(pActionId);
   if (it == _actions.end())
     return;
-  auto& actionThatWillBeRemoved = it->second;
   _uuid = generateUuid(); // Regenerate uuid to force the problem to refresh his cache when it will use this object
-
-  if (actionThatWillBeRemoved.precondition)
-    _conditionsToActions.erase(pActionId);
-  else
-    _actionsWithoutFactToAddInPrecondition.erase(pActionId);
-
   _actions.erase(it);
   _updateSuccessions();
 }
@@ -348,15 +332,27 @@ void Domain::addRequirement(const std::string& pRequirement)
 
 void Domain::_updateSuccessions()
 {
+  // Update condition to action links
+  _conditionsToActions = FactOptionalsToId();
+  for (auto& currAction : _actions)
+  {
+    Action& action = currAction.second;
+    if (!action.canThisActionBeUsedByThePlanner)
+      continue;
+
+    if (action.precondition)
+      _conditionsToActions.add(*action.precondition, currAction.first);
+  }
+
   std::map<ActionId, ActionWithConditionAndFactFacts> actionTmpData;
   std::map<FullEventId, EventWithTmpData> eventTmpData;
-
   // Add successions cache of the actions
   for (auto& currAction : _actions)
   {
     Action& action = currAction.second;
     if (!action.canThisActionBeUsedByThePlanner)
       continue;
+
     ActionWithConditionAndFactFacts tmpData(currAction.first, action);
     tmpData.factsFromCondition = action.precondition ? action.precondition->getAllOptFacts() : std::set<FactOptional>();
     tmpData.factsFromEffect = action.effect.getAllOptFactsThatCanBeModified();

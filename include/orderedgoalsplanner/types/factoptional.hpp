@@ -19,19 +19,19 @@ struct ORDEREDGOALSPLANNER_API FactOptional
    * @param pFact Fact contained.
    * @param pIsFactNegated If the fact is negated.
    */
-  FactOptional(const Fact& pFact,
-               bool pIsFactNegated = false);
+  explicit FactOptional(const Fact& pFact,
+                        bool pIsFactNegated = false);
 
-  FactOptional(bool pIsFactNegated,
-               const std::string& pName,
-               const std::vector<std::string>& pArgumentStrs,
-               const std::string& pValueStr,
-               bool pIsValueNegated,
-               const Ontology& pOntology,
-               const SetOfEntities& pObjects,
-               const std::vector<Parameter>& pParameters,
-               bool pIsOkIfValueIsMissing = false,
-               const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
+  explicit  FactOptional(bool pIsFactNegated,
+                         const std::string& pName,
+                         const std::vector<std::string>& pArgumentStrs,
+                         const std::string& pValueStr,
+                         bool pIsValueNegated,
+                         const Ontology& pOntology,
+                         const SetOfEntities& pObjects,
+                         const std::vector<Parameter>& pParameters,
+                         bool pIsOkIfValueIsMissing = false,
+                         const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
 
   /**
    * @brief Construct an optional fact from another one.
@@ -47,12 +47,12 @@ struct ORDEREDGOALSPLANNER_API FactOptional
    * @param[in] pBeginPos Begin position in the input string.
    * @param[out] pResPos Postion in the input string after the parse.
    */
-  FactOptional(const std::string& pStr,
-               const Ontology& pOntology,
-               const SetOfEntities& pObjects,
-               const std::vector<Parameter>& pParameters,
-               std::size_t pBeginPos = 0,
-               std::size_t* pResPos = nullptr);
+  explicit FactOptional(const std::string& pStr,
+                        const Ontology& pOntology,
+                        const SetOfEntities& pObjects,
+                        const std::vector<Parameter>& pParameters,
+                        std::size_t pBeginPos = 0,
+                        std::size_t* pResPos = nullptr);
 
   /// Specify an order beween optional facts. It alows to use this type as key of map containers.
   bool operator<(const FactOptional& pOther) const;

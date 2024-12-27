@@ -6,7 +6,7 @@
 #include "../util/api.hpp"
 #include <orderedgoalsplanner/util/alias.hpp>
 #include <orderedgoalsplanner/types/action.hpp>
-#include <orderedgoalsplanner/types/condtionstovalue.hpp>
+#include <orderedgoalsplanner/types/factoptionalstoid.hpp>
 #include <orderedgoalsplanner/types/ontology.hpp>
 #include <orderedgoalsplanner/types/setofevents.hpp>
 #include <orderedgoalsplanner/types/setofconstfacts.hpp>
@@ -62,12 +62,8 @@ struct ORDEREDGOALSPLANNER_API Domain
 
   /// All action identifiers to action.
   const std::map<ActionId, Action>& actions() const { return _actions; }
-  /// All facts in precondition to action identifiers.
-  const FactsToValue& preconditionToActions() const { return _conditionsToActions.factsToValue(); }
-  /// All negationed facts in precondition to action identifiers.
-  const FactsToValue& notPreconditionToActions() const { return _conditionsToActions.notFactsToValue(); }
-  /// All action identifiers of the actions without precondtion.
-  const FactsToValue& actionsWithoutFactToAddInPrecondition() const { return _actionsWithoutFactToAddInPrecondition; }
+  /// All optional facts in precondition to action identifiers.
+  const FactOptionalsToId& preconditionToActionIds() const { return _conditionsToActions; }
 
 
 
@@ -127,9 +123,7 @@ private:
   /// Map of action identifiers to action.
   std::map<ActionId, Action> _actions;
   /// Conditions to action identifiers.
-  ConditionsToValue _conditionsToActions;
-  /// Set of action identifiers of the actions without precondtion.
-  FactsToValue _actionsWithoutFactToAddInPrecondition;
+  FactOptionalsToId _conditionsToActions;
   /// Map set of events identifiers to the set of events.
   std::map<SetOfEventsId, SetOfEvents> _setOfEvents;
   std::set<std::string> _requirements;

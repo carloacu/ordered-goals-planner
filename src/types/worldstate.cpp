@@ -389,14 +389,11 @@ bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& p
             {
               for (const auto& currFact : factMatchingInWs)
               {
-                if (currFact.areEqualExceptAnyValues(factToCompare))
+                if (currFact.areEqualExceptAnyEntities(factToCompare))
                 {
-                  if (!pFactOptional.fact.value()->isAnyEntity())
-                  {
-                    if (currFact.value())
-                      newParameters = {{pFactOptional.fact.value()->toParameter(), {*currFact.value()}}};
-                    applyNewParams(*pParametersToPossibleArgumentsPtr, newParameters);
-                  }
+                  if (currFact.value())
+                    newParameters = {{pFactOptional.fact.value()->toParameter(), {*currFact.value()}}};
+                  applyNewParams(*pParametersToPossibleArgumentsPtr, newParameters);
                   return false;
                 }
               }
@@ -468,7 +465,7 @@ void WorldState::iterateOnMatchingFactsWithoutValueConsideration
 {
   auto factMatchInWs = _factsMapping.find(pFact, true);
   for (const auto& currFact : factMatchInWs)
-    if (currFact.areEqualExceptAnyValuesAndValue(pFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr))
+    if (currFact.areEqualExceptAnyEntitiesAndValue(pFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr))
       if (pValueCallback(currFact))
         break;
 }
@@ -482,7 +479,7 @@ void WorldState::iterateOnMatchingFacts
 {
   auto factMatchInWs = _factsMapping.find(pFact);
   for (const auto& currFact : factMatchInWs)
-    if (currFact.areEqualExceptAnyValues(pFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr))
+    if (currFact.areEqualExceptAnyEntities(pFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr))
       if (pValueCallback(currFact))
         break;
 }
@@ -493,7 +490,7 @@ bool WorldState::_tryToApplyEvent(std::set<EventId>& pEventsAlreadyApplied,
                                   WhatChanged& pWhatChanged,
                                   bool& pGoalChanged,
                                   GoalStack& pGoalStack,
-                                  const FactsToValue::ConstMapOfFactIterator& pEventIds,
+                                  const EventId& pEventId,
                                   const std::map<EventId, Event>& pEvents,
                                   const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                                   const SetOfCallbacks& pCallbacks,
@@ -503,12 +500,12 @@ bool WorldState::_tryToApplyEvent(std::set<EventId>& pEventsAlreadyApplied,
 {
   const bool canFactsBeRemoved = true;
   bool somethingChanged = false;
-  for (const auto& currEventId : pEventIds)
+  //for (const auto& currEvent : pEventIds)
   {
-    if (pEventsAlreadyApplied.count(currEventId) == 0)
+    if (pEventsAlreadyApplied.count(pEventId) == 0)
     {
-      pEventsAlreadyApplied.insert(currEventId);
-      auto itEvent = pEvents.find(currEventId);
+      pEventsAlreadyApplied.insert(pEventId);
+      auto itEvent = pEvents.find(pEventId);
       if (itEvent != pEvents.end())
       {
         const Event& currEvent = itEvent->second;
@@ -568,32 +565,29 @@ bool WorldState::_tryToApplyEvent(std::set<EventId>& pEventsAlreadyApplied,
 
 
 
-void WorldState::_tryToCallCallbacks(std::set<CallbackId>& pCallbackAlreadyCalled,
-                                     const WhatChanged& pWhatChanged,
-                                     const SetOfEntities& pConstants,
-                                     const SetOfEntities& pObjects,
-                                     const FactsToValue::ConstMapOfFactIterator& pCallbackIds,
-                                     const std::map<CallbackId, ConditionToCallback>& pCallbacks)
+void WorldState::_tryToCallCallback(std::set<CallbackId>& pCallbackAlreadyCalled,
+                                    const WhatChanged& pWhatChanged,
+                                    const SetOfEntities& pConstants,
+                                    const SetOfEntities& pObjects,
+                                    const std::string& pCallbackId,
+                                    const std::map<CallbackId, ConditionToCallback>& pCallbacks)
 {
-  for (const auto& currCallbackId : pCallbackIds)
+  if (pCallbackAlreadyCalled.count(pCallbackId) == 0)
   {
-    if (pCallbackAlreadyCalled.count(currCallbackId) == 0)
+    auto itCallback = pCallbacks.find(pCallbackId);
+    if (itCallback != pCallbacks.end())
     {
-      auto itCallback = pCallbacks.find(currCallbackId);
-      if (itCallback != pCallbacks.end())
-      {
-        const ConditionToCallback& currCallback = itCallback->second;
+      const ConditionToCallback& currCallback = itCallback->second;
 
-        std::map<Parameter, std::set<Entity>> parametersToValues;
-        for (const auto& currParam : currCallback.parameters)
-          parametersToValues[currParam];
-        if (currCallback.condition && currCallback.condition->isTrue(*this, pConstants, pObjects,
-                                                                     pWhatChanged.punctualFacts, pWhatChanged.removedFacts,
-                                                                     &parametersToValues))
-        {
-          pCallbackAlreadyCalled.insert(currCallbackId);
-          currCallback.callback();
-        }
+      std::map<Parameter, std::set<Entity>> parametersToValues;
+      for (const auto& currParam : currCallback.parameters)
+        parametersToValues[currParam];
+      if (currCallback.condition && currCallback.condition->isTrue(*this, pConstants, pObjects,
+                                                                   pWhatChanged.punctualFacts, pWhatChanged.removedFacts,
+                                                                   &parametersToValues))
+      {
+        pCallbackAlreadyCalled.insert(pCallbackId);
+        currCallback.callback();
       }
     }
   }
@@ -620,53 +614,73 @@ void WorldState::_notifyWhatChanged(WhatChanged& pWhatChanged,
       for (auto& currSetOfEvents : pSetOfEvents)
       {
         auto& events = currSetOfEvents.second.events();
-        auto& condToReachableEvents = currSetOfEvents.second.reachableEventLinks().conditionToEvents;
-        auto& notCondToReachableEvents = currSetOfEvents.second.reachableEventLinks().notConditionToEvents;
+        const FactOptionalsToId& condToEvents = currSetOfEvents.second.reachableEventLinks();
         auto& eventsAlreadyApplied = soeToEventsAlreadyApplied[currSetOfEvents.first];
 
         for (auto& currAddedFact : pWhatChanged.punctualFacts)
         {
-          auto it = condToReachableEvents.find(currAddedFact);
-          if (_tryToApplyEvent(eventsAlreadyApplied, pWhatChanged, pGoalChanged, pGoalStack, it, events,
-                               pSetOfEvents, pCallbacks, pOntology, pObjects, pNow))
-            needAnotherLoop = true;
+          condToEvents.findFact([&](const EventId& pEventId) {
+            if (_tryToApplyEvent(eventsAlreadyApplied, pWhatChanged, pGoalChanged, pGoalStack, pEventId, events,
+                                 pSetOfEvents, pCallbacks, pOntology, pObjects, pNow))
+              needAnotherLoop = true;
+            return ContinueOrBreak::CONTINUE;
+          }, currAddedFact, false, false, false);
         }
         for (auto& currAddedFact : pWhatChanged.addedFacts)
         {
-          auto it = condToReachableEvents.find(currAddedFact);
-          if (_tryToApplyEvent(eventsAlreadyApplied, pWhatChanged, pGoalChanged, pGoalStack, it, events,
-                               pSetOfEvents, pCallbacks, pOntology, pObjects, pNow))
-            needAnotherLoop = true;
+          condToEvents.findFact([&](const EventId& pEventId) {
+            if (_tryToApplyEvent(eventsAlreadyApplied, pWhatChanged, pGoalChanged, pGoalStack, pEventId, events,
+                                 pSetOfEvents, pCallbacks, pOntology, pObjects, pNow))
+              needAnotherLoop = true;
+            return ContinueOrBreak::CONTINUE;
+          }, currAddedFact, false, false, false);
+
         }
         for (auto& currRemovedFact : pWhatChanged.removedFacts)
         {
-          auto it = notCondToReachableEvents.find(currRemovedFact);
-          if (_tryToApplyEvent(eventsAlreadyApplied, pWhatChanged, pGoalChanged, pGoalStack, it, events,
-                               pSetOfEvents, pCallbacks, pOntology, pObjects, pNow))
-            needAnotherLoop = true;
+          condToEvents.findFact([&](const EventId& pEventId) {
+            if (_tryToApplyEvent(eventsAlreadyApplied, pWhatChanged, pGoalChanged, pGoalStack, pEventId, events,
+                                 pSetOfEvents, pCallbacks, pOntology, pObjects, pNow))
+              needAnotherLoop = true;
+            return ContinueOrBreak::CONTINUE;
+          }, currRemovedFact, true, false, false);
         }
       }
 
       if (!pCallbacks.empty())
       {
         auto& callbacks = pCallbacks.callbacks();
-        auto& condToReachableCallbacks = pCallbacks.reachableCallbackLinks().conditionToCallbacks;
-        auto& notCondToReachableCallbacks = pCallbacks.reachableCallbackLinks().notConditionToCallbacks;
+        auto _tryToCallCallback = [&](const std::string& pCallbackId)
+        {
+          if (callbackAlreadyCalled.count(pCallbackId) == 0)
+          {
+            auto itCallback = callbacks.find(pCallbackId);
+            if (itCallback != callbacks.end())
+            {
+              const ConditionToCallback& currCallback = itCallback->second;
+
+              std::map<Parameter, std::set<Entity>> parametersToValues;
+              for (const auto& currParam : currCallback.parameters)
+                parametersToValues[currParam];
+              if (currCallback.condition && currCallback.condition->isTrue(*this, pOntology.constants, pObjects,
+                                                                           pWhatChanged.punctualFacts, pWhatChanged.removedFacts,
+                                                                           &parametersToValues))
+              {
+                callbackAlreadyCalled.insert(pCallbackId);
+                currCallback.callback();
+              }
+            }
+          }
+          return ContinueOrBreak::CONTINUE;
+        };
+
+        auto& factLinks = pCallbacks.conditionsToIds();
         for (auto& currAddedFact : pWhatChanged.punctualFacts)
-        {
-          auto it = condToReachableCallbacks.find(currAddedFact);
-          _tryToCallCallbacks(callbackAlreadyCalled, pWhatChanged, pOntology.constants, pObjects, it, callbacks);
-        }
+          factLinks.findFact(_tryToCallCallback, currAddedFact);
         for (auto& currAddedFact : pWhatChanged.addedFacts)
-        {
-          auto it = condToReachableCallbacks.find(currAddedFact);
-          _tryToCallCallbacks(callbackAlreadyCalled, pWhatChanged, pOntology.constants, pObjects, it, callbacks);
-        }
+          factLinks.findFact(_tryToCallCallback, currAddedFact);
         for (auto& currRemovedFact : pWhatChanged.removedFacts)
-        {
-          auto it = notCondToReachableCallbacks.find(currRemovedFact);
-          _tryToCallCallbacks(callbackAlreadyCalled, pWhatChanged, pOntology.constants, pObjects, it, callbacks);
-        }
+          factLinks.findFact(_tryToCallCallback, currRemovedFact, true);
       }
     }
 

@@ -5,6 +5,7 @@
 #include <string>
 #include <list>
 #include <memory>
+#include <set>
 
 namespace ogp
 {
@@ -24,6 +25,9 @@ struct ORDEREDGOALSPLANNER_API Type
   bool isA(const Type& pOtherType) const;
 
   bool operator<(const Type& pOther) const;
+
+  void getSubTypesRecursively(std::set<std::shared_ptr<Type>>& pResult) const;
+  void getParentTypesRecursively(std::set<std::shared_ptr<Type>>& pResult) const;
 
   static std::shared_ptr<Type> getSmallerType(const std::shared_ptr<Type>& pType1,
                                               const std::shared_ptr<Type>& pType2);

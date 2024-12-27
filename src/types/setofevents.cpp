@@ -20,40 +20,10 @@ EventId SetOfEvents::add(const Event& pEvent,
     return _events.count(pId) == 0;
   };
   auto newId = incrementLastNumberUntilAConditionIsSatisfied(pEventId, isIdOkForInsertion);
-
   _events.emplace(newId, pEvent);
-
   if (pEvent.precondition)
-  {
-    pEvent.precondition->forAll(
-          [&](const FactOptional& pFactOptional,
-          bool pIgnoreValue)
-    {
-      if (pFactOptional.isFactNegated)
-        _reachableEventLinks.notConditionToEvents.add(pFactOptional.fact, newId, pIgnoreValue);
-      else
-        _reachableEventLinks.conditionToEvents.add(pFactOptional.fact, newId, pIgnoreValue);
-      return ContinueOrBreak::CONTINUE;
-    }
-    );
-  }
+    _reachableEventLinks.add(*pEvent.precondition, newId);
   return newId;
-}
-
-
-void SetOfEvents::remove(const EventId& pEventId)
-{
-  auto it = _events.find(pEventId);
-  if (it == _events.end())
-    return;
-  auto& eventThatWillBeRemoved = it->second;
-
-  if (eventThatWillBeRemoved.precondition)
-  {
-    _reachableEventLinks.notConditionToEvents.erase(pEventId);
-    _reachableEventLinks.conditionToEvents.erase(pEventId);
-  }
-  _events.erase(it);
 }
 
 

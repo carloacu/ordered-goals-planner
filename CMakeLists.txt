@@ -20,18 +20,17 @@ set(ORDERED_GOALS_PLANNER_HPPS
     include/orderedgoalsplanner/types/axiom.hpp
     include/orderedgoalsplanner/types/condition.hpp
     include/orderedgoalsplanner/types/conditiontocallback.hpp
-    include/orderedgoalsplanner/types/condtionstovalue.hpp
     include/orderedgoalsplanner/types/derivedpredicate.hpp
     include/orderedgoalsplanner/types/domain.hpp
     include/orderedgoalsplanner/types/entity.hpp
     include/orderedgoalsplanner/types/event.hpp
     include/orderedgoalsplanner/types/fact.hpp
     include/orderedgoalsplanner/types/factoptional.hpp
+    include/orderedgoalsplanner/types/factoptionalstoid.hpp
     include/orderedgoalsplanner/types/goal.hpp
     include/orderedgoalsplanner/types/goalstack.hpp
     include/orderedgoalsplanner/types/historical.hpp
     include/orderedgoalsplanner/types/lookforanactionoutputinfos.hpp
-    include/orderedgoalsplanner/types/factstovalue.hpp
     include/orderedgoalsplanner/types/ontology.hpp
     include/orderedgoalsplanner/types/parameter.hpp
     include/orderedgoalsplanner/types/parallelplan.hpp
@@ -63,6 +62,7 @@ set(ORDERED_GOALS_PLANNER_HPPS
     include/orderedgoalsplanner/util/observableunsafe.hpp
     include/orderedgoalsplanner/util/replacevariables.hpp
     include/orderedgoalsplanner/util/util.hpp
+
     include/orderedgoalsplanner/orderedgoalsplanner.hpp
 )
 
@@ -79,7 +79,6 @@ set(ORDERED_GOALS_PLANNER_SRCS
     src/types/actioninvocationwithgoal.cpp
     src/types/axiom.cpp
     src/types/condition.cpp
-    src/types/condtionstovalue.cpp
     src/types/derivedpredicate.cpp
     src/types/domain.cpp
     src/types/entity.cpp
@@ -88,12 +87,12 @@ set(ORDERED_GOALS_PLANNER_SRCS
     src/types/event.cpp
     src/types/fact.cpp
     src/types/factoptional.cpp
+    src/types/factoptionalstoid.cpp
     src/types/factsalreadychecked.hpp
     src/types/goal.cpp
     src/types/goalstack.cpp
     src/types/historical.cpp
     src/types/lookforanactionoutputinfos.cpp
-    src/types/factstovalue.cpp
     src/types/parallelplan.cpp
     src/types/parameter.cpp
     src/types/predicate.cpp

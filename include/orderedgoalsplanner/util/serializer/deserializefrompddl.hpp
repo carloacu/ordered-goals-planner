@@ -11,6 +11,7 @@ namespace ogp
 struct Condition;
 struct Domain;
 struct Entity;
+struct FactOptional;
 struct Goal;
 struct Ontology;
 struct Parameter;
@@ -74,6 +75,11 @@ std::unique_ptr<WorldStateModification> strToWsModification(const std::string& p
 std::vector<Parameter> pddlToParameters(const std::string& pStr,
                                         const SetOfTypes& pSetOfTypes);
 
+
+FactOptional pddlToFactOptional(const std::string& pStr,
+                                const Ontology& pOntology,
+                                const SetOfEntities& pObjects,
+                                const std::vector<Parameter>& pParameters = {});
 
 } // End of namespace ogp
 

@@ -96,10 +96,11 @@ std::string SetOfFacts::toPddl(std::size_t pIdentation, bool pPrintTimeLessFacts
 
 
 
-void SetOfFacts::add(const Fact& pFact,
+bool SetOfFacts::add(const Fact& pFact,
                      bool pCanBeRemoved)
 {
-  auto insertionResult = _facts.emplace(pFact, pCanBeRemoved);
+  if (!_facts.try_emplace(pFact, pCanBeRemoved).second)
+    return false;
 
   if (!pFact.hasAParameter())
   {
@@ -118,12 +119,9 @@ void SetOfFacts::add(const Fact& pFact,
   }
 
 
-  std::list<std::string> factSignatures;
-  pFact.generateSignatureForSubAndUpperTypes(factSignatures);
-  for (auto& currSignature : factSignatures)
-  {
+  pFact.generateSignaturesWithRelatedTypes([&](const std::string& pSignature) {
     auto& factArguments = pFact.arguments();
-    auto insertionRes = _signatureToLists.emplace(currSignature, factArguments.size());
+    auto insertionRes = _signatureToLists.emplace(pSignature, factArguments.size());
     ParameterToValues& parameterToValues = insertionRes.first->second;
 
     parameterToValues.all.emplace_back(pFact);
@@ -141,7 +139,8 @@ void SetOfFacts::add(const Fact& pFact,
       else
         parameterToValues.fluentValueToValues[""].emplace_back(pFact);
     }
-  }
+  }, false, true);
+  return true;
 }
 
 
@@ -189,13 +188,9 @@ bool SetOfFacts::_erase(const Fact& pFact)
       }
     }
 
-    std::list<std::string> factSignatures;
-    pFact.generateSignatureForAllUpperTypes(factSignatures);
-    for (auto itSignature = factSignatures.rbegin(); itSignature != factSignatures.rend(); ++itSignature)
-    {
-      auto& currSignature = *itSignature;
+    pFact.generateSignaturesWithRelatedTypes([&](const std::string& pSignature) {
       auto& factArguments = pFact.arguments();
-      auto itParameterToValues = _signatureToLists.find(currSignature);
+      auto itParameterToValues = _signatureToLists.find(pSignature);
       if (itParameterToValues != _signatureToLists.end())
       {
         ParameterToValues& parameterToValues = itParameterToValues->second;
@@ -203,7 +198,7 @@ bool SetOfFacts::_erase(const Fact& pFact)
         _removeAValueForList(parameterToValues.all, pFact);
         if (parameterToValues.all.empty())
         {
-          _signatureToLists.erase(currSignature);
+          _signatureToLists.erase(pSignature);
         }
         else
         {
@@ -229,7 +224,7 @@ bool SetOfFacts::_erase(const Fact& pFact)
       {
         throw std::runtime_error("Errur while deleteing a fact link");
       }
-    }
+    }, false, true);
 
     _facts.erase(it);
     return true;
@@ -270,21 +265,15 @@ void SetOfFacts::clear()
 typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
                                                         bool pIgnoreValue) const
 {
-  const std::list<Fact>* exactMatchPtr = nullptr;
-
   if (!pFact.hasAParameter(pIgnoreValue) && !pFact.isValueNegated())
   {
     auto exactCallStr = _getExactCall(pFact);
     if (!pIgnoreValue && pFact.value())
     {
       _addValueToExactCall(exactCallStr, pFact);
-      exactMatchPtr = _findAnExactCall(_exactCallToListsOpt, exactCallStr);
+      return SetOfFactIterator(_findAnExactCall(_exactCallToListsOpt, exactCallStr));
     }
-    else
-    {
-      exactMatchPtr = _findAnExactCall(_exactCallWithoutValueToListsOpt, exactCallStr);
-    }
-    return SetOfFactIterator(exactMatchPtr);
+    return SetOfFactIterator(_findAnExactCall(_exactCallWithoutValueToListsOpt, exactCallStr));
   }
 
   const std::list<Fact>* resPtr = nullptr;
@@ -293,12 +282,9 @@ typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
     auto itForThisValue = pArgValueToValues.find(pArgValue);
     if (itForThisValue != pArgValueToValues.end())
     {
-      if (exactMatchPtr == nullptr)
-      {
-        if (resPtr != nullptr)
-          return SetOfFactIterator(intersectTwoLists(*resPtr, itForThisValue->second));
-        resPtr = &itForThisValue->second;
-      }
+      if (resPtr != nullptr)
+        return SetOfFactIterator(intersectTwoLists(*resPtr, itForThisValue->second));
+      resPtr = &itForThisValue->second;
     }
     return {};
   };
@@ -339,7 +325,7 @@ typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
 
   if (resPtr != nullptr)
     return SetOfFactIterator(resPtr);
-  return SetOfFactIterator(exactMatchPtr);
+  return SetOfFactIterator(nullptr);
 }
 
 std::optional<Entity> SetOfFacts::getFluentValue(const ogp::Fact& pFact) const

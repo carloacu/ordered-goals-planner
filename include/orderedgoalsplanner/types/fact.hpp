@@ -1,11 +1,12 @@
 #ifndef INCLUDE_ORDEREDGOALSPLANNER_FACT_HPP
 #define INCLUDE_ORDEREDGOALSPLANNER_FACT_HPP
 
-#include <string>
-#include <vector>
+#include <functional>
 #include <map>
 #include <optional>
 #include <set>
+#include <string>
+#include <vector>
 #include "../util/api.hpp"
 #include <orderedgoalsplanner/types/entity.hpp>
 #include <orderedgoalsplanner/types/predicate.hpp>
@@ -74,8 +75,8 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return True if the equality check succeeded.
    */
   bool areEqualWithoutValueConsideration(const Fact& pFact,
-                                          const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
-                                          const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
+                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
+                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
 
   /// Check equality with another fact without considering an argument.
   bool areEqualWithoutAnArgConsideration(const Fact& pFact,
@@ -84,6 +85,7 @@ struct ORDEREDGOALSPLANNER_API Fact
   bool areEqualWithoutArgsAndValueConsideration(const Fact& pFact,
                                                 const std::list<Parameter>* pParametersToIgnorePtr) const;
 
+  bool areEqualExceptAnyParameters(const Fact& pOther, bool pIgnoreValue = false) const;
 
   /**
    * @brief Is equal to another Fact or if any of the 2 Facts have an "any entity" that can match.
@@ -93,10 +95,10 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @param[in] pThisArgumentsToConsiderAsAnyValuePtr Arguments of the this fact to consider as "any entity".
    * @return True if the 2 facts match, false otherwise.
    */
-  bool areEqualExceptAnyValues(const Fact& pOther,
-                               const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
-                               const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr,
-                               const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr = nullptr) const;
+  bool areEqualExceptAnyEntities(const Fact& pOther,
+                                 const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
+                                 const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr,
+                                 const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr = nullptr) const;
 
   /**
    * @brief Is equal to another Fact or if any of the 2 Facts have an "any entity" that can match and without looking at the value.
@@ -105,9 +107,9 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @param[in] pOtherFactParametersToConsiderAsAnyValuePtr2 Another set of arguments to consider as "any entity".
    * @return True if the 2 facts match, false otherwise.
    */
-  bool areEqualExceptAnyValuesAndValue(const Fact& pOther,
-                                        const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
-                                        const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
+  bool areEqualExceptAnyEntitiesAndValue(const Fact& pOther,
+                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
+                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
 
   bool doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const Fact& pFact) const;
 
@@ -261,9 +263,10 @@ struct ORDEREDGOALSPLANNER_API Fact
   void setValueNegated(bool pIsValueNegated) { _isValueNegated = pIsValueNegated; }
 
   std::string factSignature() const;
-  std::string generateFactSignature() const;
-  void generateSignatureForAllUpperTypes(std::list<std::string>& pRes) const;
-  void generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) const;
+  void generateSignaturesWithRelatedTypes(const std::function<void(const std::string&)>& pSignatureCallback,
+                                          bool pIncludeSubTypes,
+                                          bool pIncludeParentTypes) const;
+
 
   void setArgumentType(std::size_t pIndex, const std::shared_ptr<Type>& pType);
   void setValueType(const std::shared_ptr<Type>& pType);
@@ -291,7 +294,7 @@ private:
   bool _isValueNegated;
   std::string _factSignature;
 
-  void _generateSignatureForAllSubTypes(std::list<std::string>& pRes) const;
+  std::string _generateFactSignature() const;
 
   bool _updateParameters(std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
                          std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,

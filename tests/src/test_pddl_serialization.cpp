@@ -57,6 +57,12 @@ void _test_pddlSerializationParts()
   }
 
   {
+    ogp::FactOptional factOpt = ogp::pddlToFactOptional("(not (= (battery-amount toto) 3.1))", ontology, {});
+    EXPECT_EQ("(not (= (battery-amount toto) 3.1))", factOpt.toPddl(false));
+    EXPECT_EQ("!battery-amount(toto)=3.1", factOpt.toStr());
+  }
+
+  {
     std::size_t pos = 0;
     try {
         ogp::Fact::fromPddl("(battery-amount toto)", ontology, {}, {}, pos, &pos);

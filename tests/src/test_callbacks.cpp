@@ -120,11 +120,12 @@ void _test_callbacks()
                                                       _fact_b + "\n" +
                                                       _fact_c + "(?e - e_a) - e_b", ontology.types);
 
-  ogp::SetOfCallbacks callbacks;
+  ogp::MutableSetOfCallbacks mutableSetOfCallbacks;
   std::size_t nbOfCallback1 = 0;
-  callbacks.add(ogp::ConditionToCallback(_condition_fromStr(_fact_a + "=v1", ontology), [&]() { ++nbOfCallback1; }));
+  mutableSetOfCallbacks.add(ogp::ConditionToCallback(_condition_fromStr(_fact_a + "=v1", ontology), [&]() { ++nbOfCallback1; }));
   std::size_t nbOfCallback2 = 0;
-  callbacks.add(ogp::ConditionToCallback(_condition_fromStr(_fact_a + "=v2 & " + _fact_c + "(e_a2)=e_b2", ontology), [&]() { ++nbOfCallback2; }));
+  mutableSetOfCallbacks.add(ogp::ConditionToCallback(_condition_fromStr(_fact_a + "=v2 & " + _fact_c + "(e_a2)=e_b2", ontology), [&]() { ++nbOfCallback2; }));
+  auto callbacks = ogp::SetOfCallbacks(mutableSetOfCallbacks.callbacks());
 
 
   std::map<std::string, ogp::Action> actions;

@@ -1,6 +1,6 @@
 #include <orderedgoalsplanner/types/goal.hpp>
 #include <assert.h>
-#include <orderedgoalsplanner/types/condtionstovalue.hpp>
+#include <orderedgoalsplanner/types/factoptionalstoid.hpp>
 #include <orderedgoalsplanner/types/domain.hpp>
 #include <orderedgoalsplanner/util/serializer/deserializefrompddl.hpp>
 #include <orderedgoalsplanner/util/serializer/serializeinpddl.hpp>
@@ -152,7 +152,7 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
     return;
   _uuidOfLastDomainUsedForCache = pDomain.getUuid();
 
-  ConditionsToValue conditionsToValue;
+  FactOptionalsToId conditionsToValue;
   conditionsToValue.add(*_objective, "goal");
   _cacheOfActionsPredecessors.clear();
   _cacheOfEventsPredecessors.clear();
@@ -160,26 +160,12 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
   auto optFactIteration = [&](const FactOptional& pFactOptional,
                               const std::unique_ptr<Condition>& pPreCondition,
                               const std::unique_ptr<Condition>& pConditionOverAll) -> ContinueOrBreak {
-    // Check that pFactOptional is not in the condtions
+    // Check that pFactOptional is not in the conditions
     if (pPreCondition && pPreCondition->isOptFactMandatory(pFactOptional))
       return ContinueOrBreak::CONTINUE;
     if (pConditionOverAll && pConditionOverAll->isOptFactMandatory(pFactOptional))
       return ContinueOrBreak::CONTINUE;
-
-    const FactsToValue& factsToValue = pFactOptional.isFactNegated ?
-          conditionsToValue.notFactsToValue() : conditionsToValue.factsToValue();
-    if (!factsToValue.find(pFactOptional.fact).empty())
-      return ContinueOrBreak::BREAK;
-
-    if (pFactOptional.fact.value())
-    {
-      const FactsToValue& invertedFactsToValue = pFactOptional.isFactNegated ?
-            conditionsToValue.factsToValue() : conditionsToValue.notFactsToValue();
-      if (!invertedFactsToValue.find(pFactOptional.fact, true).empty())
-        return ContinueOrBreak::BREAK;
-    }
-
-    return ContinueOrBreak::CONTINUE;
+    return conditionsToValue.find([](const std::string&) { return ContinueOrBreak::BREAK; },  pFactOptional);
   };
 
   // Update actions cache

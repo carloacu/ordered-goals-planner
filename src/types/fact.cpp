@@ -357,10 +357,43 @@ bool Fact::areEqualWithoutArgsAndValueConsideration(const Fact& pFact,
   return true;
 }
 
-bool Fact::areEqualExceptAnyValues(const Fact& pOther,
-                                   const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
-                                   const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2,
-                                   const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr) const
+
+bool Fact::areEqualExceptAnyParameters(const Fact& pOther,
+                                       bool pIgnoreValue) const
+{
+  if (_name != pOther._name || _arguments.size() != pOther._arguments.size())
+    return false;
+
+  auto itParam = _arguments.begin();
+  auto itOtherParam = pOther._arguments.begin();
+  while (itParam != _arguments.end())
+  {
+    if (*itParam != *itOtherParam && !itParam->isAParameterToFill() && !itOtherParam->isAParameterToFill())
+      return false;
+    ++itParam;
+    ++itOtherParam;
+  }
+
+  if (pIgnoreValue)
+    return true;
+  if (!_value && !pOther._value)
+    return _isValueNegated == pOther._isValueNegated;
+  if (_value && _value->isAParameterToFill())
+    return _isValueNegated == pOther._isValueNegated;
+  if (pOther._value && pOther._value->isAParameterToFill())
+    return _isValueNegated == pOther._isValueNegated;
+
+  if ((_value && !pOther._value) || (!_value && pOther._value) || *_value != *pOther._value)
+    return _isValueNegated != pOther._isValueNegated;
+
+  return _isValueNegated == pOther._isValueNegated;
+}
+
+
+bool Fact::areEqualExceptAnyEntities(const Fact& pOther,
+                                     const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
+                                     const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2,
+                                     const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr) const
 {
   if (_name != pOther._name || _arguments.size() != pOther._arguments.size())
     return false;
@@ -397,9 +430,9 @@ bool Fact::areEqualExceptAnyValues(const Fact& pOther,
 }
 
 
-bool Fact::areEqualExceptAnyValuesAndValue(const Fact& pOther,
-                                            const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
-                                            const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2) const
+bool Fact::areEqualExceptAnyEntitiesAndValue(const Fact& pOther,
+                                             const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
+                                             const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2) const
 {
   if (_name != pOther._name || _arguments.size() != pOther._arguments.size())
     return false;
@@ -867,11 +900,11 @@ std::string Fact::factSignature() const
     return _factSignature;
 
   if (ORDEREDGOALSPLANNER_DEBUG_FOR_TESTS)
-    throw std::runtime_error("_factSignature is not set");
-  return generateFactSignature();
+    throw std::runtime_error("_factSignature2 is not set");
+  return _generateFactSignature();
 }
 
-std::string Fact::generateFactSignature() const
+std::string Fact::_generateFactSignature() const
 {
   auto res = _name;
   res += "(";
@@ -888,108 +921,51 @@ std::string Fact::generateFactSignature() const
     }
   }
   res += ")";
-
-  if (_value)
-  {
-    if (_value->type)
-      res += "=" + _value->type->name;
-  }
   return res;
 }
 
 
-void Fact::generateSignatureForAllUpperTypes(std::list<std::string>& pRes) const
+void Fact::generateSignaturesWithRelatedTypes(
+    const std::function<void(const std::string&)>& pSignatureCallback,
+    bool pIncludeSubTypes,
+    bool pIncludeParentTypes) const
 {
-  pRes.emplace_back(factSignature());
-
-  // Generate parameters upper-types
+  // Gather all related types for each type in orderedTypes
+  std::vector<std::set<std::shared_ptr<Type>>> allRelatedTypes;
   for (std::size_t i = 0; i < _arguments.size(); ++i)
   {
     const auto& currArg = _arguments[i];
-    if (currArg.type)
-    {
-      auto parentType = currArg.type->parent;
-      while (parentType)
-      {
-        auto fact = *this;
-        fact.setArgumentType(i, parentType);
-        pRes.emplace_back(fact.factSignature());
-        parentType = parentType->parent;
-      }
-    }
+    std::set<std::shared_ptr<Type>> relatedTypes;
+    relatedTypes.insert(currArg.type);
+    if (pIncludeSubTypes)
+      currArg.type->getSubTypesRecursively(relatedTypes);
+    if (pIncludeParentTypes)
+       currArg.type->getParentTypesRecursively(relatedTypes);
+    allRelatedTypes.push_back(std::move(relatedTypes));
   }
 
-  // Generate value upper-types
-  if (_value && _value->type)
-  {
-    auto parentType = _value->type->parent;
-    while (parentType)
-    {
-      auto fact = *this;
-      fact.setValueType(parentType);
-      pRes.emplace_back(fact.factSignature());
-      parentType = parentType->parent;
+  // Generate all combinations
+  std::vector<std::shared_ptr<Type>> currentCombination(allRelatedTypes.size());
+  std::function<void(size_t)> backtrack = [&](size_t index) {
+    if (index == allRelatedTypes.size()) {
+      std::string newRes;
+      for (const auto& currElt : currentCombination)
+      {
+        if (!newRes.empty())
+          newRes += ", ";
+        newRes += currElt->name;
+      }
+      pSignatureCallback(_name + "(" + newRes + ")");
+      return;
     }
-  }
+
+    for (const auto& type : allRelatedTypes[index]) {
+      currentCombination[index] = type;
+      backtrack(index + 1);
+    }
+  };
+  backtrack(0);
 }
-
-
-void Fact::generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) const
-{
-  pRes.emplace_back(factSignature());
-
-  // Generate parameters sub and upper types
-  for (std::size_t i = 0; i < _arguments.size(); ++i)
-  {
-    const auto& currArg = _arguments[i];
-    if (currArg.type)
-    {
-      if (currArg.isAParameterToFill())
-      {
-        for (const auto& currSubType : currArg.type->subTypes)
-        {
-          auto fact = *this;
-          fact.setArgumentType(i, currSubType);
-          fact._generateSignatureForAllSubTypes(pRes);
-        }
-      }
-
-      auto parentType = currArg.type->parent;
-      while (parentType)
-      {
-        auto fact = *this;
-        fact.setArgumentType(i, parentType);
-        fact.generateSignatureForAllUpperTypes(pRes);
-        parentType = parentType->parent;
-      }
-    }
-  }
-
-  // Generate value sub and upper types
-  if (_value && _value->type)
-  {
-    if (_value->isAParameterToFill())
-    {
-      for (const auto& currSubType : _value->type->subTypes)
-      {
-        auto fact = *this;
-        fact.setValueType(currSubType);
-        fact._generateSignatureForAllSubTypes(pRes);
-      }
-    }
-
-    auto parentType = _value->type->parent;
-    while (parentType)
-    {
-      auto fact = *this;
-      fact.setValueType(parentType);
-      fact.generateSignatureForAllUpperTypes(pRes);
-      parentType = parentType->parent;
-    }
-  }
-}
-
-
 
 
 void Fact::setArgumentType(std::size_t pIndex, const std::shared_ptr<Type>& pType)
@@ -1048,41 +1024,9 @@ const std::string& Fact::getPunctualPrefix()
 }
 
 
-void Fact::_generateSignatureForAllSubTypes(std::list<std::string>& pRes) const
-{
-  pRes.emplace_back(factSignature());
-
-  // Generate parameters sub-types
-  for (std::size_t i = 0; i < _arguments.size(); ++i)
-  {
-    const auto& currArg = _arguments[i];
-    if (currArg.type && currArg.isAParameterToFill())
-    {
-      for (const auto& currSubType : currArg.type->subTypes)
-      {
-        auto fact = *this;
-        fact.setArgumentType(i, currSubType);
-        fact._generateSignatureForAllSubTypes(pRes);
-      }
-    }
-  }
-
-  // Generate value sub-types
-  if (_value && _value->type && _value->isAParameterToFill())
-  {
-    for (const auto& currSubType : _value->type->subTypes)
-    {
-      auto fact = *this;
-      fact.setValueType(currSubType);
-      fact._generateSignatureForAllSubTypes(pRes);
-    }
-  }
-}
-
-
 void Fact::_resetFactSignatureCache()
 {
-  _factSignature = generateFactSignature();
+  _factSignature = _generateFactSignature();
 }
 
 

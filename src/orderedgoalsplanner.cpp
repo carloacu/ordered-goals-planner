@@ -563,17 +563,13 @@ bool _doesConditionMatchAnOptionalFact(const std::map<Parameter, std::set<Entity
   return objective.findConditionCandidateFromFactFromEffect(
         [&](const FactOptional& pConditionFactOptional)
   {
-    if (pContext.problem.worldState.isOptionalFactSatisfied(pConditionFactOptional))
+    if (!pConditionFactOptional.fact.hasAParameter() && pContext.problem.worldState.isOptionalFactSatisfied(pConditionFactOptional))
       return false;
 
+    bool res = pConditionFactOptional.fact.areEqualExceptAnyEntities(pFactOptional.fact, &pParameters, pParametersToModifyInPlacePtr);
     if (pConditionFactOptional.isFactNegated != pFactOptional.isFactNegated)
-      return pConditionFactOptional.fact.areEqualWithoutValueConsideration(pFactOptional.fact) && pConditionFactOptional.fact.value() != pFactOptional.fact.value();
-
-    bool pIsWrappingExpressionNegated = false; // TODO: replace by real value
-    if ((!pIsWrappingExpressionNegated && pFactOptional.isFactNegated == pConditionFactOptional.isFactNegated) ||
-        (pIsWrappingExpressionNegated && pFactOptional.isFactNegated != pConditionFactOptional.isFactNegated))
-      return pConditionFactOptional.fact.areEqualExceptAnyValues(pFactOptional.fact, &pParameters, pParametersToModifyInPlacePtr);
-    return false;
+      res = !res;
+    return res;
   }, pContext.problem.worldState, ontology.constants, pContext.problem.objects, pFactOptional.fact, pParameters, pParametersToModifyInPlacePtr, {});
 }
 

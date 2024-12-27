@@ -301,6 +301,50 @@ void _test_implySuccessions()
 }
 
 
+void _test_successionsWithUndefinedValueInPrecondition()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+
+  std::map<std::string, ogp::Action> actions;
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("entity");
+  ontology.constants = ogp::SetOfEntities::fromPddl("e1 e2 - entity", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_a - entity\n"
+                                                     "fact_b",
+                                                     ontology.types);
+
+  {
+    std::vector<ogp::Parameter> parameters1{
+      ogp::Parameter::fromStr("?e - entity", ontology.types)};
+    ogp::Action actionObj1({},
+                          ogp::strToWsModification("assign(fact_a, ?e)", ontology, {}, parameters1));
+    actionObj1.parameters = std::move(parameters1);
+    actions.emplace(action1, actionObj1);
+  }
+
+  {
+    std::size_t pos = 0;
+    ogp::Action actionObj2(ogp::pddlToCondition("(= fact_a undefined)", pos, ontology, {}, {}),
+                          ogp::strToWsModification("fact_b", ontology, {}, {}));
+    actions.emplace(action2, actionObj2);
+  }
+
+  Domain domain(actions, ontology);
+  EXPECT_EQ("action: action1\n"
+            "----------------------------------\n"
+            "\n"
+            "not action: action1\n"
+            "\n"
+            "\n"
+            "action: action2\n"
+            "----------------------------------\n"
+            "\n"
+            "not action: action2\n", domain.printSuccessionCache());
+}
+
+
 }
 
 
@@ -310,4 +354,5 @@ TEST(Tool, test_successionsCache)
   _test_notActionSuccessions();
   _test_impossibleSuccessions();
   _test_implySuccessions();
+  _test_successionsWithUndefinedValueInPrecondition();
 }

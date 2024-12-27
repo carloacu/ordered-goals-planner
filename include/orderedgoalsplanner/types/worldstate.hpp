@@ -7,7 +7,6 @@
 #include <memory>
 #include <set>
 #include <orderedgoalsplanner/types/fact.hpp>
-#include <orderedgoalsplanner/types/factstovalue.hpp>
 #include <orderedgoalsplanner/types/setoffacts.hpp>
 #include <orderedgoalsplanner/util/alias.hpp>
 #include <orderedgoalsplanner/util/observableunsafe.hpp>
@@ -342,7 +341,7 @@ private:
    * @param[in, out] pEventsAlreadyApplied Cache of events that we already considered.
    * @param[in, out] pWhatChanged What changed in the world state.
    * @param[out] pGoalChanged Set to true if the goal stack changed.
-   * @param[in] pEventIds events to consider.
+   * @param[in] pEventId events to consider.
    * @param[in] pEvents All the events.
    * @param[in] pNow Current time.
    * @return True if at least one event was applied.
@@ -351,7 +350,7 @@ private:
                         WhatChanged& pWhatChanged,
                         bool& pGoalChanged,
                         GoalStack& pGoalStack,
-                        const FactsToValue::ConstMapOfFactIterator& pEventIds,
+                        const EventId& pEventId,
                         const std::map<EventId, Event>& pEvents,
                         const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                         const SetOfCallbacks& pCallbacks,
@@ -359,12 +358,12 @@ private:
                         const SetOfEntities& pObjects,
                         const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow);
 
-  void _tryToCallCallbacks(std::set<CallbackId>& pCallbackAlreadyCalled,
-                           const WhatChanged& pWhatChanged,
-                           const SetOfEntities& pConstants,
-                           const SetOfEntities& pObjects,
-                           const FactsToValue::ConstMapOfFactIterator& pCallbackIds,
-                           const std::map<CallbackId, ConditionToCallback>& pCallbacks);
+  void _tryToCallCallback(std::set<CallbackId>& pCallbackAlreadyCalled,
+                          const WhatChanged& pWhatChanged,
+                          const SetOfEntities& pConstants,
+                          const SetOfEntities& pObjects,
+                          const std::string& pCallbackId,
+                          const std::map<CallbackId, ConditionToCallback>& pCallbacks);
 
   /**
    * @brief Do events and raise the observables if some facts or goals changed.
