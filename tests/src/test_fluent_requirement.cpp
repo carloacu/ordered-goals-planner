@@ -124,6 +124,31 @@ void _test_set_a_fluent_value_to_undefined()
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
 }
 
+
+void _test_set_a_fluent_value_to_undefined_with_sub_types()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("type - entity\n"
+                                             "sub_type - type");
+  ontology.constants = ogp::SetOfEntities::fromPddl("v - sub_type", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_a - entity", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign fact_a undefined)", ontology));
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _addFact(problem.worldState, "fact_a=v", problem.goalStack, ontology, setOfEventsMap, _now);
+  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_a) undefined)", ontology)}, ontology.constants);
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
+
 }
 
 
@@ -131,4 +156,5 @@ void _test_set_a_fluent_value_to_undefined()
 TEST(Planner, test_fluent_requirement)
 {
   _test_set_a_fluent_value_to_undefined();
+  _test_set_a_fluent_value_to_undefined_with_sub_types();
 }

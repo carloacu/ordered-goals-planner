@@ -87,7 +87,8 @@ Fact::Fact(const std::string& pStr,
     _arguments(),
     _value(),
     _isValueNegated(false),
-    _factSignature()
+    _factSignature(),
+    _factSignature2()
 {
   std::size_t pos = pBeginPos;
   try
@@ -177,7 +178,8 @@ Fact::Fact(const std::string& pName,
     _arguments(),
     _value(),
     _isValueNegated(pIsValueNegated),
-    _factSignature()
+    _factSignature(),
+    _factSignature2()
 {
   auto* predicatePtr = pOntology.predicates.nameToPredicatePtr(_name);
   if (predicatePtr == nullptr)
@@ -208,7 +210,8 @@ Fact::Fact(const Fact& pOther)
     _arguments(pOther._arguments),
     _value(pOther._value),
     _isValueNegated(pOther._isValueNegated),
-    _factSignature(pOther._factSignature)
+    _factSignature(pOther._factSignature),
+    _factSignature2(pOther._factSignature2)
 {
 }
 
@@ -218,7 +221,8 @@ Fact::Fact(Fact&& pOther) noexcept
     _arguments(std::move(pOther._arguments)),
     _value(std::move(pOther._value)),
     _isValueNegated(std::move(pOther._isValueNegated)),
-    _factSignature(std::move(pOther._factSignature))
+    _factSignature(std::move(pOther._factSignature)),
+    _factSignature2(std::move(pOther._factSignature2))
 {
 }
 
@@ -229,6 +233,7 @@ Fact& Fact::operator=(const Fact& pOther) {
   _value = pOther._value;
   _isValueNegated = pOther._isValueNegated;
   _factSignature = pOther._factSignature;
+  _factSignature2 = pOther._factSignature2;
   return *this;
 }
 
@@ -239,6 +244,7 @@ Fact& Fact::operator=(Fact&& pOther) noexcept {
     _value = std::move(pOther._value);
     _isValueNegated = std::move(pOther._isValueNegated);
     _factSignature = std::move(pOther._factSignature);
+    _factSignature2 = std::move(pOther._factSignature2);
     return *this;
 }
 
@@ -871,6 +877,16 @@ std::string Fact::factSignature() const
   return generateFactSignature();
 }
 
+std::string Fact::factSignature2() const
+{
+  if (_factSignature2 != "")
+    return _factSignature2;
+
+  if (ORDEREDGOALSPLANNER_DEBUG_FOR_TESTS)
+    throw std::runtime_error("_factSignature2 is not set");
+  return generateFactSignature2();
+}
+
 std::string Fact::generateFactSignature() const
 {
   auto res = _name;
@@ -888,7 +904,6 @@ std::string Fact::generateFactSignature() const
     }
   }
   res += ")";
-
   if (_value)
   {
     if (_value->type)
@@ -897,6 +912,25 @@ std::string Fact::generateFactSignature() const
   return res;
 }
 
+std::string Fact::generateFactSignature2() const
+{
+  auto res = _name;
+  res += "(";
+  bool firstArg = true;
+  for (const auto& currArg : _arguments)
+  {
+    if (currArg.type)
+    {
+      if (firstArg)
+        firstArg = false;
+      else
+        res += ", ";
+      res += currArg.type->name;
+    }
+  }
+  res += ")";
+  return res;
+}
 
 void Fact::generateSignatureForAllUpperTypes(std::list<std::string>& pRes) const
 {
@@ -991,6 +1025,85 @@ void Fact::generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) co
 
 
 
+// Helper function to recursively gather all related types (subtypes and parent types).
+void _gatherRelatedTypes(const std::shared_ptr<Type>& type,
+                         std::set<std::shared_ptr<Type>>& result)
+{
+    if (result.count(type))
+      return;
+    result.insert(type);
+
+    // Add all subtypes recursively
+    for (const auto& subtype : type->subTypes) {
+      _gatherRelatedTypes(subtype, result);
+    }}
+
+
+void _gatherParentRelatedTypes(const std::shared_ptr<Type>& type,
+                               std::set<std::shared_ptr<Type>>& result)
+{
+    auto parentType = type->parent;
+    while (parentType)
+    {
+      result.insert(parentType);
+
+      _gatherRelatedTypes(parentType, result);
+      parentType = parentType->parent;
+    }
+}
+
+
+std::set<std::string> Fact::generateSignatureForSubAndUpperTypes2() const
+{
+  // Caches for subtypes and parent types
+  std::map<std::shared_ptr<Type>, std::shared_ptr<Type>> parentTypeCache;
+
+  // Prepopulate the caches
+  for (std::size_t i = 0; i < _arguments.size(); ++i)
+  {
+    const auto& currArg = _arguments[i];
+    parentTypeCache[currArg.type] = currArg.type->parent;
+  }
+
+  // Gather all related types for each type in orderedTypes
+  std::vector<std::set<std::shared_ptr<Type>>> allRelatedTypes;
+  for (std::size_t i = 0; i < _arguments.size(); ++i)
+  {
+    const auto& currArg = _arguments[i];
+    std::set<std::shared_ptr<Type>> relatedTypes;
+    _gatherRelatedTypes(currArg.type, relatedTypes);
+    _gatherParentRelatedTypes(currArg.type, relatedTypes);
+    allRelatedTypes.push_back(std::move(relatedTypes));
+  }
+
+  // Generate all combinations
+  std::set<std::string> combinations;
+  std::vector<std::shared_ptr<Type>> currentCombination(allRelatedTypes.size());
+
+  std::function<void(size_t)> backtrack = [&](size_t index) {
+    if (index == allRelatedTypes.size()) {
+      std::string newRes;
+      for (const auto& currElt : currentCombination)
+      {
+        if (!newRes.empty())
+          newRes += ", ";
+        newRes += currElt->name;
+      }
+      combinations.insert(_name + "(" + newRes + ")");
+      return;
+    }
+
+    for (const auto& type : allRelatedTypes[index]) {
+      currentCombination[index] = type;
+      backtrack(index + 1);
+    }
+  };
+
+  backtrack(0);
+  return combinations;
+}
+
+
 
 void Fact::setArgumentType(std::size_t pIndex, const std::shared_ptr<Type>& pType)
 {
@@ -1083,6 +1196,7 @@ void Fact::_generateSignatureForAllSubTypes(std::list<std::string>& pRes) const
 void Fact::_resetFactSignatureCache()
 {
   _factSignature = generateFactSignature();
+  _factSignature2 = generateFactSignature2();
 }
 
 

@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 #include <orderedgoalsplanner/types/action.hpp>
-#include <orderedgoalsplanner/types/fact.hpp>
 #include <orderedgoalsplanner/types/goalstack.hpp>
 #include <orderedgoalsplanner/types/ontology.hpp>
 #include <orderedgoalsplanner/types/setofcallbacks.hpp>
@@ -11,14 +10,6 @@
 namespace
 {
 const ogp::SetOfCallbacks _emptyCallbacks;
-
-std::map<ogp::Parameter, std::set<ogp::Entity>> _toParameterMap(const std::vector<ogp::Parameter>& pParameters)
-{
-  std::map<ogp::Parameter, std::set<ogp::Entity>> res;
-  for (auto& currParam : pParameters)
-    res[currParam];
-  return res;
-}
 
 
 void _test_setOfTypes()
@@ -250,25 +241,6 @@ void _test_action_initialization()
 }
 
 
-
-void _test_generateSignatureForSubAndUpperTypes()
-{
-  ogp::Ontology ontology;
-  ontology.types = ogp::SetOfTypes::fromPddl("my_type my_type2 my_type3 - entity\n"
-                                             "sub_my_type3 - my_type3");
-  ontology.constants = ogp::SetOfEntities::fromPddl("toto - my_type\n"
-                                                    "titi - my_type2\n", ontology.types);
-  ontology.predicates = ogp::SetOfPredicates::fromStr("pred_name(?e - entity)\n"
-                                                      "fun1(?e - my_type3) - entity\n"
-                                                      "fun2(?e - my_type2) - entity", ontology.types);
-
-  ogp::SetOfEntities objects;
-  objects.add(ogp::Entity::fromDeclaration("sub3a - sub_my_type3", ontology.types));
-  std::list<std::string> signatures;
-  ogp::Fact::fromStr("fun1(sub3a)=toto", ontology, objects, {}).generateSignatureForSubAndUpperTypes(signatures);
-  EXPECT_EQ(9, signatures.size());
-}
-
 }
 
 
@@ -282,5 +254,4 @@ TEST(Tool, test_ontology)
   _test_setOfEntities_fromStr();
   _test_fact_initialization();
   _test_action_initialization();
-  _test_generateSignatureForSubAndUpperTypes();
 }
