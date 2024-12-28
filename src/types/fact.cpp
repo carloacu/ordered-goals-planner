@@ -1061,7 +1061,6 @@ std::set<std::string> Fact::generateSignatureForSubAndUpperTypes2() const
   {
     const auto& currArg = _arguments[i];
     std::set<std::shared_ptr<Type>> relatedTypes;
-    //_gatherRelatedTypes(currArg.type, relatedTypes);
     relatedTypes.insert(currArg.type);
     _gatherParentRelatedTypes(currArg.type, relatedTypes);
     allRelatedTypes.push_back(std::move(relatedTypes));
