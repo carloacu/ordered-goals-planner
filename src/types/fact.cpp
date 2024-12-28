@@ -1055,23 +1055,14 @@ void _gatherParentRelatedTypes(const std::shared_ptr<Type>& type,
 
 std::set<std::string> Fact::generateSignatureForSubAndUpperTypes2() const
 {
-  // Caches for subtypes and parent types
-  std::map<std::shared_ptr<Type>, std::shared_ptr<Type>> parentTypeCache;
-
-  // Prepopulate the caches
-  for (std::size_t i = 0; i < _arguments.size(); ++i)
-  {
-    const auto& currArg = _arguments[i];
-    parentTypeCache[currArg.type] = currArg.type->parent;
-  }
-
   // Gather all related types for each type in orderedTypes
   std::vector<std::set<std::shared_ptr<Type>>> allRelatedTypes;
   for (std::size_t i = 0; i < _arguments.size(); ++i)
   {
     const auto& currArg = _arguments[i];
     std::set<std::shared_ptr<Type>> relatedTypes;
-    _gatherRelatedTypes(currArg.type, relatedTypes);
+    //_gatherRelatedTypes(currArg.type, relatedTypes);
+    relatedTypes.insert(currArg.type);
     _gatherParentRelatedTypes(currArg.type, relatedTypes);
     allRelatedTypes.push_back(std::move(relatedTypes));
   }
