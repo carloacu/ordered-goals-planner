@@ -118,7 +118,7 @@ void SetOfFacts::add(const Fact& pFact,
   }
 
 
-  auto factSignatures = pFact.generateSignatureForSubAndUpperTypes2();
+  auto factSignatures = pFact.generateSignatureForUpperTypes2();
   for (auto& currSignature : factSignatures)
   {
     auto& factArguments = pFact.arguments();
@@ -188,7 +188,7 @@ bool SetOfFacts::_erase(const Fact& pFact)
       }
     }
 
-    auto factSignatures = pFact.generateSignatureForSubAndUpperTypes2();
+    auto factSignatures = pFact.generateSignatureForUpperTypes2();
     for (auto itSignature = factSignatures.rbegin(); itSignature != factSignatures.rend(); ++itSignature)
     {
       auto& currSignature = *itSignature;

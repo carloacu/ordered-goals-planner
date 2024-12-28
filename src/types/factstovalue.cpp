@@ -80,8 +80,7 @@ void FactsToValue::add(const Fact& pFact,
     }
   }
 
-  std::list<std::string> factSignatures;
-  pFact.generateSignatureForSubAndUpperTypes(factSignatures);
+  auto factSignatures = pFact.generateSignatureForSubAndUpperTypes2();
   for (auto& currSignature : factSignatures)
   {
     auto& factArguments = pFact.arguments();
@@ -145,8 +144,7 @@ void FactsToValue::_erase(const Fact& pFact,
       }
     }
 
-    std::list<std::string> factSignatures;
-    pFact.generateSignatureForSubAndUpperTypes(factSignatures);
+    auto factSignatures = pFact.generateSignatureForSubAndUpperTypes2();
     for (auto& currSignature : factSignatures)
     {
       auto& factArguments = pFact.arguments();
@@ -284,7 +282,7 @@ typename FactsToValue::ConstMapOfFactIterator FactsToValue::find(const Fact& pFa
     return {};
   };
 
-  auto itParameterToValues = _signatureToLists.find(pFact.factSignature());
+  auto itParameterToValues = _signatureToLists.find(pFact.factSignature2());
   if (itParameterToValues != _signatureToLists.end())
   {
     const ParameterToValues& parameterToValues = itParameterToValues->second;

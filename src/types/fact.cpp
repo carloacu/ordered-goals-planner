@@ -1061,6 +1061,46 @@ std::set<std::string> Fact::generateSignatureForSubAndUpperTypes2() const
   {
     const auto& currArg = _arguments[i];
     std::set<std::shared_ptr<Type>> relatedTypes;
+    _gatherRelatedTypes(currArg.type, relatedTypes);
+    _gatherParentRelatedTypes(currArg.type, relatedTypes);
+    allRelatedTypes.push_back(std::move(relatedTypes));
+  }
+
+  // Generate all combinations
+  std::set<std::string> combinations;
+  std::vector<std::shared_ptr<Type>> currentCombination(allRelatedTypes.size());
+
+  std::function<void(size_t)> backtrack = [&](size_t index) {
+    if (index == allRelatedTypes.size()) {
+      std::string newRes;
+      for (const auto& currElt : currentCombination)
+      {
+        if (!newRes.empty())
+          newRes += ", ";
+        newRes += currElt->name;
+      }
+      combinations.insert(_name + "(" + newRes + ")");
+      return;
+    }
+
+    for (const auto& type : allRelatedTypes[index]) {
+      currentCombination[index] = type;
+      backtrack(index + 1);
+    }
+  };
+
+  backtrack(0);
+  return combinations;
+}
+
+std::set<std::string> Fact::generateSignatureForUpperTypes2() const
+{
+  // Gather all related types for each type in orderedTypes
+  std::vector<std::set<std::shared_ptr<Type>>> allRelatedTypes;
+  for (std::size_t i = 0; i < _arguments.size(); ++i)
+  {
+    const auto& currArg = _arguments[i];
+    std::set<std::shared_ptr<Type>> relatedTypes;
     relatedTypes.insert(currArg.type);
     _gatherParentRelatedTypes(currArg.type, relatedTypes);
     allRelatedTypes.push_back(std::move(relatedTypes));

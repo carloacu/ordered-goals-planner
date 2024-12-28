@@ -18,7 +18,7 @@ std::string _printSignatures(const std::set<std::string>& pSignatures)
 }
 
 
-void _test_generateSignatureForSubAndUpperTypes()
+void _test_generateSignatureForUpperTypes()
 {
   ogp::Ontology ontology;
   ontology.types = ogp::SetOfTypes::fromPddl("my_type my_type2 my_type3 - entity\n"
@@ -31,7 +31,7 @@ void _test_generateSignatureForSubAndUpperTypes()
 
   ogp::SetOfEntities objects;
   objects.add(ogp::Entity::fromDeclaration("sub3a - sub_my_type3", ontology.types));
-  auto signatures = ogp::Fact::fromStr("fun1(sub3a)=toto", ontology, objects, {}).generateSignatureForSubAndUpperTypes2();
+  auto signatures = ogp::Fact::fromStr("fun1(sub3a)=toto", ontology, objects, {}).generateSignatureForUpperTypes2();
   EXPECT_EQ("fun1(entity)\n"
             "fun1(my_type3)\n"
             "fun1(sub_my_type3)",
@@ -44,5 +44,5 @@ void _test_generateSignatureForSubAndUpperTypes()
 
 TEST(Tool, test_fact)
 {
-  _test_generateSignatureForSubAndUpperTypes();
+  _test_generateSignatureForUpperTypes();
 }

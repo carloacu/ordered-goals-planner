@@ -268,6 +268,7 @@ struct ORDEREDGOALSPLANNER_API Fact
   void generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) const;
 
   std::set<std::string> generateSignatureForSubAndUpperTypes2() const;
+  std::set<std::string> generateSignatureForUpperTypes2() const;
 
 
   void setArgumentType(std::size_t pIndex, const std::shared_ptr<Type>& pType);
