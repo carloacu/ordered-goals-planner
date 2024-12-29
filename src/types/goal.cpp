@@ -175,8 +175,15 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
     {
       const FactsToValue& invertedFactsToValue = pFactOptional.isFactNegated ?
             conditionsToValue.factsToValue() : conditionsToValue.notFactsToValue();
-      if (!invertedFactsToValue.find(pFactOptional.fact, true).empty())
-        return ContinueOrBreak::BREAK;
+      for (const auto& currMatch : invertedFactsToValue.find(pFactOptional.fact, true))
+      {
+        if (!currMatch.fact.value())
+           return ContinueOrBreak::BREAK;
+        if (pFactOptional.fact.value()->isAParameterToFill() ||
+            currMatch.fact.value()->isAParameterToFill() ||
+            pFactOptional.fact.value()->value != currMatch.fact.value()->value)
+           return ContinueOrBreak::BREAK;
+      }
     }
 
     return ContinueOrBreak::CONTINUE;

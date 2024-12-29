@@ -26,9 +26,9 @@ void Successions::addSuccesionsOptFact(const FactOptional& pFactOptional,
   {
     auto& preconditionToActions = !pFactOptional.isFactNegated ? pDomain.preconditionToActions() : pDomain.notPreconditionToActions();
     auto actionsFromPreconditions = preconditionToActions.find(pFactOptional.fact);
-    for (const auto& currActionId : actionsFromPreconditions)
-      if (!pContainerId.isAction(currActionId))
-        actions.insert(currActionId);
+    for (const auto& currAction : actionsFromPreconditions)
+      if (!pContainerId.isAction(currAction.id))
+        actions.insert(currAction.id);
 
     auto& setOfEvents = pDomain.getSetOfEvents();
     for (auto& currSetOfEvents : setOfEvents)
@@ -39,13 +39,13 @@ void Successions::addSuccesionsOptFact(const FactOptional& pFactOptional,
             currSetOfEvents.second.reachableEventLinks().notConditionToEvents;
 
       auto eventsFromCondtion = conditionToReachableEvents.find(pFactOptional.fact);
-      for (const auto& currEventId : eventsFromCondtion)
+      for (const auto& currEvent : eventsFromCondtion)
       {
-        if (!pContainerId.isEvent(currSetOfEvents.first, currEventId))
+        if (!pContainerId.isEvent(currSetOfEvents.first, currEvent.id))
         {
           if (eventsPtr == nullptr)
             eventsPtr = &events[currSetOfEvents.first];
-          eventsPtr->insert(currEventId);
+          eventsPtr->insert(currEvent.id);
         }
       }
     }

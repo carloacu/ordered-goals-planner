@@ -65,14 +65,14 @@ void FactsToValue::add(const Fact& pFact,
     auto exactCallStr = _getExactCall(pFact);
     if (!_exactCallWithoutValueToListsOpt)
       _exactCallWithoutValueToListsOpt.emplace();
-    (*_exactCallWithoutValueToListsOpt)[exactCallStr].emplace_back(factWithId.id);
+    (*_exactCallWithoutValueToListsOpt)[exactCallStr].emplace_back(factWithId);
 
     if (!pIgnoreValue && pFact.value())
     {
       _addValueToExactCall(exactCallStr, pFact);
       if (!_exactCallToListsOpt)
         _exactCallToListsOpt.emplace();
-      (*_exactCallToListsOpt)[exactCallStr].emplace_back(factWithId.id);
+      (*_exactCallToListsOpt)[exactCallStr].emplace_back(factWithId);
     }
   }
 
@@ -83,20 +83,20 @@ void FactsToValue::add(const Fact& pFact,
     auto insertionRes = _signatureToLists.try_emplace(currSignature, factArguments.size());
     ParameterToValues& parameterToValues = insertionRes.first->second;
 
-    parameterToValues.all.emplace_back(factWithId.id);
+    parameterToValues.all.emplace_back(factWithId);
     for (std::size_t i = 0; i < factArguments.size(); ++i)
     {
       if (!factArguments[i].isAParameterToFill())
-        parameterToValues.argIdToArgValueToValues[i][factArguments[i].value].emplace_back(factWithId.id);
+        parameterToValues.argIdToArgValueToValues[i][factArguments[i].value].emplace_back(factWithId);
       else
-        parameterToValues.argIdToArgValueToValues[i][""].emplace_back(factWithId.id);
+        parameterToValues.argIdToArgValueToValues[i][""].emplace_back(factWithId);
     }
     if (pIgnoreValue || pFact.value())
     {
       if (!pIgnoreValue && !pFact.value()->isAParameterToFill() && !pFact.isValueNegated())
-        parameterToValues.fluentValueToValues[pFact.value()->value].emplace_back(factWithId.id);
+        parameterToValues.fluentValueToValues[pFact.value()->value].emplace_back(factWithId);
       else
-        parameterToValues.fluentValueToValues[""].emplace_back(factWithId.id);
+        parameterToValues.fluentValueToValues[""].emplace_back(factWithId);
     }
   }
 }
@@ -111,7 +111,7 @@ bool FactsToValue::empty() const
 typename FactsToValue::ConstMapOfFactIterator FactsToValue::find(const Fact& pFact,
                                                                  bool pIgnoreValue) const
 {
-  const std::list<std::string>* exactMatchPtr = nullptr;
+  const std::list<FactWithId>* exactMatchPtr = nullptr;
 
   if (!pFact.hasAParameter(pIgnoreValue) && !pFact.isValueNegated())
   {
@@ -127,8 +127,8 @@ typename FactsToValue::ConstMapOfFactIterator FactsToValue::find(const Fact& pFa
     }
   }
 
-  const std::list<std::string>* resPtr = nullptr;
-  auto _matchArg = [&](const std::map<std::string, std::list<std::string>>& pArgValueToValues,
+  const std::list<FactWithId>* resPtr = nullptr;
+  auto _matchArg = [&](const std::map<std::string, std::list<FactWithId>>& pArgValueToValues,
                        const std::string& pArgValue) -> std::optional<typename FactsToValue::ConstMapOfFactIterator> {
     auto itForThisValue = pArgValueToValues.find(pArgValue);
     if (itForThisValue != pArgValueToValues.end())
@@ -216,8 +216,8 @@ void FactsToValue::_removeAValueForList(std::list<std::string>& pList,
 }
 
 
-const std::list<std::string>* FactsToValue::_findAnExactCall(
-    const std::optional<std::map<std::string, std::list<std::string>>>& pExactCalls,
+const std::list<FactWithId>* FactsToValue::_findAnExactCall(
+    const std::optional<std::map<std::string, std::list<FactWithId>>>& pExactCalls,
     const std::string& pExactCall) const
 {
   if (pExactCalls)

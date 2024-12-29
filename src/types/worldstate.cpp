@@ -503,12 +503,12 @@ bool WorldState::_tryToApplyEvent(std::set<EventId>& pEventsAlreadyApplied,
 {
   const bool canFactsBeRemoved = true;
   bool somethingChanged = false;
-  for (const auto& currEventId : pEventIds)
+  for (const auto& currEvent : pEventIds)
   {
-    if (pEventsAlreadyApplied.count(currEventId) == 0)
+    if (pEventsAlreadyApplied.count(currEvent.id) == 0)
     {
-      pEventsAlreadyApplied.insert(currEventId);
-      auto itEvent = pEvents.find(currEventId);
+      pEventsAlreadyApplied.insert(currEvent.id);
+      auto itEvent = pEvents.find(currEvent.id);
       if (itEvent != pEvents.end())
       {
         const Event& currEvent = itEvent->second;
@@ -575,11 +575,11 @@ void WorldState::_tryToCallCallbacks(std::set<CallbackId>& pCallbackAlreadyCalle
                                      const FactsToValue::ConstMapOfFactIterator& pCallbackIds,
                                      const std::map<CallbackId, ConditionToCallback>& pCallbacks)
 {
-  for (const auto& currCallbackId : pCallbackIds)
+  for (const auto& currCallbackMatched : pCallbackIds)
   {
-    if (pCallbackAlreadyCalled.count(currCallbackId) == 0)
+    if (pCallbackAlreadyCalled.count(currCallbackMatched.id) == 0)
     {
-      auto itCallback = pCallbacks.find(currCallbackId);
+      auto itCallback = pCallbacks.find(currCallbackMatched.id);
       if (itCallback != pCallbacks.end())
       {
         const ConditionToCallback& currCallback = itCallback->second;
@@ -591,7 +591,7 @@ void WorldState::_tryToCallCallbacks(std::set<CallbackId>& pCallbackAlreadyCalle
                                                                      pWhatChanged.punctualFacts, pWhatChanged.removedFacts,
                                                                      &parametersToValues))
         {
-          pCallbackAlreadyCalled.insert(currCallbackId);
+          pCallbackAlreadyCalled.insert(currCallbackMatched.id);
           currCallback.callback();
         }
       }

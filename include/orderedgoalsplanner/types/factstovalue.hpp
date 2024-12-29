@@ -24,6 +24,10 @@ struct ORDEREDGOALSPLANNER_API FactWithId
 
   Fact fact;
   std::string id;
+
+  bool operator==(const FactWithId& pOther) const {
+    return fact == pOther.fact && id == pOther.id;
+  }
 };
 
 
@@ -37,42 +41,28 @@ struct ORDEREDGOALSPLANNER_API FactsToValue
 
   bool empty() const;
 
-  struct FactWithValuePtr
-  {
-    FactWithValuePtr(const Fact* pFactPtr,
-                     const std::string* pValuePtr)
-     : factPtr(pFactPtr),
-       valuePtr(pValuePtr)
-    {
-    }
-    bool operator==(const FactWithValuePtr& pOther) const {
-      return factPtr == pOther.factPtr && valuePtr == pOther.valuePtr;
-    }
-    const Fact* factPtr;
-    const std::string* valuePtr;
-  };
   class ConstMapOfFactIterator {
      public:
          // Constructor accepting reference to std::list<Toto*>
-         ConstMapOfFactIterator(const std::list<std::string>* listPtr)
+         ConstMapOfFactIterator(const std::list<FactWithId>* listPtr)
            : _listPtr(listPtr),
              _list()
          {}
 
-         ConstMapOfFactIterator(std::list<std::string>&& list)
+         ConstMapOfFactIterator(std::list<FactWithId>&& list)
            : _listPtr(nullptr),
              _list(std::move(list))
          {}
 
          // Custom iterator class for non-const access
          class Iterator {
-             typename std::list<std::string>::const_iterator iter;
+             typename std::list<FactWithId>::const_iterator iter;
 
          public:
-             Iterator(typename std::list<std::string>::const_iterator it) : iter(it) {}
+             Iterator(typename std::list<FactWithId>::const_iterator it) : iter(it) {}
 
              // Overload the dereference operator to return Toto& instead of Toto*
-             const std::string& operator*() const { return *iter; }
+             const FactWithId& operator*() const { return *iter; }
 
              // Pre-increment operator
              Iterator& operator++() {
@@ -105,15 +95,15 @@ struct ORDEREDGOALSPLANNER_API FactsToValue
                firstElt = false;
              else
                ss << ", ";
-             ss << currElt;
+             ss << currElt.id;
            }
            ss << "]";
            return ss.str();
          }
 
      private:
-         const std::list<std::string>* _listPtr;
-         std::list<std::string> _list;
+         const std::list<FactWithId>* _listPtr;
+         std::list<FactWithId> _list;
   };
 
   ConstMapOfFactIterator find(const Fact& pFact,
@@ -121,8 +111,8 @@ struct ORDEREDGOALSPLANNER_API FactsToValue
 
 
 private:
-  std::optional<std::map<std::string, std::list<std::string>>> _exactCallToListsOpt;
-  std::optional<std::map<std::string, std::list<std::string>>> _exactCallWithoutValueToListsOpt;
+  std::optional<std::map<std::string, std::list<FactWithId>>> _exactCallToListsOpt;
+  std::optional<std::map<std::string, std::list<FactWithId>>> _exactCallWithoutValueToListsOpt;
   struct ParameterToValues
   {
     ParameterToValues(std::size_t pNbOfArgs)
@@ -131,9 +121,9 @@ private:
        fluentValueToValues()
     {
     }
-    std::list<std::string> all;
-    std::vector<std::map<std::string, std::list<std::string>>> argIdToArgValueToValues;
-    std::map<std::string, std::list<std::string>> fluentValueToValues;
+    std::list<FactWithId> all;
+    std::vector<std::map<std::string, std::list<FactWithId>>> argIdToArgValueToValues;
+    std::map<std::string, std::list<FactWithId>> fluentValueToValues;
   };
   std::map<std::string, ParameterToValues> _signatureToLists;
 
@@ -141,8 +131,8 @@ private:
   void _removeAValueForList(std::list<std::string>& pList,
                             const std::string& pValue) const;
 
-  const std::list<std::string>* _findAnExactCall(const std::optional<std::map<std::string, std::list<std::string>>>& pExactCalls,
-                                                 const std::string& pExactCall) const;
+  const std::list<FactWithId>* _findAnExactCall(const std::optional<std::map<std::string, std::list<FactWithId>>>& pExactCalls,
+                                                const std::string& pExactCall) const;
 
 };
 
