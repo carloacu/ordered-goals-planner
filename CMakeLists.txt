@@ -63,6 +63,7 @@ set(ORDERED_GOALS_PLANNER_HPPS
     include/orderedgoalsplanner/util/observableunsafe.hpp
     include/orderedgoalsplanner/util/replacevariables.hpp
     include/orderedgoalsplanner/util/util.hpp
+
     include/orderedgoalsplanner/orderedgoalsplanner.hpp
 )
 

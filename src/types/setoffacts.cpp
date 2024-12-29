@@ -96,10 +96,11 @@ std::string SetOfFacts::toPddl(std::size_t pIdentation, bool pPrintTimeLessFacts
 
 
 
-void SetOfFacts::add(const Fact& pFact,
+bool SetOfFacts::add(const Fact& pFact,
                      bool pCanBeRemoved)
 {
-  auto insertionResult = _facts.emplace(pFact, pCanBeRemoved);
+  if (!_facts.try_emplace(pFact, pCanBeRemoved).second)
+    return false;
 
   if (!pFact.hasAParameter())
   {
@@ -141,6 +142,7 @@ void SetOfFacts::add(const Fact& pFact,
         parameterToValues.fluentValueToValues[""].emplace_back(pFact);
     }
   }
+  return true;
 }
 
 
@@ -268,21 +270,15 @@ void SetOfFacts::clear()
 typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
                                                         bool pIgnoreValue) const
 {
-  const std::list<Fact>* exactMatchPtr = nullptr;
-
   if (!pFact.hasAParameter(pIgnoreValue) && !pFact.isValueNegated())
   {
     auto exactCallStr = _getExactCall(pFact);
     if (!pIgnoreValue && pFact.value())
     {
       _addValueToExactCall(exactCallStr, pFact);
-      exactMatchPtr = _findAnExactCall(_exactCallToListsOpt, exactCallStr);
+      return SetOfFactIterator(_findAnExactCall(_exactCallToListsOpt, exactCallStr));
     }
-    else
-    {
-      exactMatchPtr = _findAnExactCall(_exactCallWithoutValueToListsOpt, exactCallStr);
-    }
-    return SetOfFactIterator(exactMatchPtr);
+    return SetOfFactIterator(_findAnExactCall(_exactCallWithoutValueToListsOpt, exactCallStr));
   }
 
   const std::list<Fact>* resPtr = nullptr;
@@ -291,12 +287,9 @@ typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
     auto itForThisValue = pArgValueToValues.find(pArgValue);
     if (itForThisValue != pArgValueToValues.end())
     {
-      if (exactMatchPtr == nullptr)
-      {
-        if (resPtr != nullptr)
-          return SetOfFactIterator(intersectTwoLists(*resPtr, itForThisValue->second));
-        resPtr = &itForThisValue->second;
-      }
+      if (resPtr != nullptr)
+        return SetOfFactIterator(intersectTwoLists(*resPtr, itForThisValue->second));
+      resPtr = &itForThisValue->second;
     }
     return {};
   };
@@ -337,7 +330,7 @@ typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
 
   if (resPtr != nullptr)
     return SetOfFactIterator(resPtr);
-  return SetOfFactIterator(exactMatchPtr);
+  return SetOfFactIterator(nullptr);
 }
 
 std::optional<Entity> SetOfFacts::getFluentValue(const ogp::Fact& pFact) const

@@ -301,15 +301,12 @@ typename FactsToValue::ConstMapOfFactIterator FactsToValue::find(const Fact& pFa
     }
 
     const auto& fluentValue = pFact.value();
-    if (!pIgnoreValue && fluentValue)
+    if (!pIgnoreValue && fluentValue && !fluentValue->isAParameterToFill() && !pFact.isValueNegated())
     {
-      if (!fluentValue->isAParameterToFill() && !pFact.isValueNegated())
-      {
-        hasOnlyParameters = false;
-        auto subRes = _matchArg(parameterToValues.fluentValueToValues, fluentValue->value);
-        if (subRes)
-          return *subRes;
-      }
+      hasOnlyParameters = false;
+      auto subRes = _matchArg(parameterToValues.fluentValueToValues, fluentValue->value);
+      if (subRes)
+        return *subRes;
     }
 
     if (hasOnlyParameters)

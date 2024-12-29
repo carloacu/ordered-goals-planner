@@ -10,7 +10,6 @@
 #include <vector>
 #include <sstream>
 
-
 namespace ogp
 {
 struct Fact;
@@ -82,6 +81,12 @@ struct ORDEREDGOALSPLANNER_API FactsToValue
          Iterator begin() const { return Iterator(_listPtr != nullptr ? _listPtr->begin() : _list.begin()); }
          Iterator end() const { return Iterator(_listPtr != nullptr ? _listPtr->end() : _list.end()); }
          bool empty() const { return begin() == end(); }
+         std::size_t size() const {
+           std::size_t res = 0;
+           for (const auto& _ : *this)
+             ++res;
+           return res;
+         }
 
          std::string toStr() const {
            std::stringstream ss;
@@ -103,7 +108,6 @@ struct ORDEREDGOALSPLANNER_API FactsToValue
          const std::list<std::string>* _listPtr;
          std::list<std::string> _list;
   };
-
 
   ConstMapOfFactIterator find(const Fact& pFact,
                               bool pIgnoreValue = false) const;

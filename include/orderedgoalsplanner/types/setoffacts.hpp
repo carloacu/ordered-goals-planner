@@ -31,7 +31,7 @@ struct ORDEREDGOALSPLANNER_API SetOfFacts
 
   std::string toPddl(std::size_t pIdentation, bool pPrintTimeLessFactsToo) const;
 
-  void add(const Fact& pFact,
+  bool add(const Fact& pFact,
            bool pCanBeRemoved = true);
 
   bool erase(const Fact& pValue);

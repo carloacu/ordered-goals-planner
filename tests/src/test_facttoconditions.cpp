@@ -21,7 +21,8 @@ TEST(Tool, test_factToConditions)
                                                      "pred_name3(?p1 - my_type, ?p2 - my_type2)\n"
                                                      "pred_name4(?p1 - my_type, ?p2 - my_type2)\n"
                                                      "pred_name5(?p1 - my_type) - my_type2\n"
-                                                     "pred_name6(?e - entity)\n",
+                                                     "pred_name6(?e - entity)\n"
+                                                     "pred_name7(?e - entity) - entity",
                                                      ontology.types);
 
   auto entities = ogp::SetOfEntities::fromPddl("toto3 - my_type\n"
@@ -179,6 +180,19 @@ TEST(Tool, test_factToConditions)
     auto factWithParam = ogp::Fact::fromStr("pred_name5(toto)=titi_const", ontology, entities, {});
     EXPECT_EQ("[action12, action13]", factToActions.find(factWithParam).toStr());
   }
+
+/*
+  {
+    std::vector<ogp::Parameter> fact4bParameters(1, ogp::Parameter::fromStr("?p - my_type", ontology.types));
+    factToActions.add(ogp::Fact::fromStr("pred_name7(?p)=titi2", ontology, entities, fact4bParameters),
+                      "action14");
+  }
+
+  {
+    auto factWithParam = ogp::Fact::fromStr("pred_name7(toto3)=titi2", ontology, entities, {});
+    EXPECT_EQ("[]", factToActions.find(factWithParam, ValueMatchingStrategy::DIFFERENT).toStr());
+  }
+*/
 
   /*
   {

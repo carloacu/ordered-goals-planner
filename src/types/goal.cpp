@@ -160,7 +160,7 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
   auto optFactIteration = [&](const FactOptional& pFactOptional,
                               const std::unique_ptr<Condition>& pPreCondition,
                               const std::unique_ptr<Condition>& pConditionOverAll) -> ContinueOrBreak {
-    // Check that pFactOptional is not in the condtions
+    // Check that pFactOptional is not in the conditions
     if (pPreCondition && pPreCondition->isOptFactMandatory(pFactOptional))
       return ContinueOrBreak::CONTINUE;
     if (pConditionOverAll && pConditionOverAll->isOptFactMandatory(pFactOptional))
@@ -175,8 +175,13 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
     {
       const FactsToValue& invertedFactsToValue = pFactOptional.isFactNegated ?
             conditionsToValue.factsToValue() : conditionsToValue.notFactsToValue();
-      if (!invertedFactsToValue.find(pFactOptional.fact, true).empty())
-        return ContinueOrBreak::BREAK;
+      auto sizeIgnoringingValue = invertedFactsToValue.find(pFactOptional.fact, true).size();
+      if (sizeIgnoringingValue > 0)
+      {
+        auto sizeNotIgnoringingValue = invertedFactsToValue.find(pFactOptional.fact).size();
+        if (sizeIgnoringingValue > sizeNotIgnoringingValue)
+          return ContinueOrBreak::BREAK;
+      }
     }
 
     return ContinueOrBreak::CONTINUE;
