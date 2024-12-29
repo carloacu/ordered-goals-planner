@@ -175,13 +175,8 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
     {
       const FactsToValue& invertedFactsToValue = pFactOptional.isFactNegated ?
             conditionsToValue.factsToValue() : conditionsToValue.notFactsToValue();
-      auto sizeIgnoringingValue = invertedFactsToValue.find(pFactOptional.fact, true).size();
-      if (sizeIgnoringingValue > 0)
-      {
-        auto sizeNotIgnoringingValue = invertedFactsToValue.find(pFactOptional.fact).size();
-        if (sizeIgnoringingValue > sizeNotIgnoringingValue)
-          return ContinueOrBreak::BREAK;
-      }
+      if (!invertedFactsToValue.find(pFactOptional.fact, true).empty())
+        return ContinueOrBreak::BREAK;
     }
 
     return ContinueOrBreak::CONTINUE;

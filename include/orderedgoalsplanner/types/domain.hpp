@@ -66,8 +66,6 @@ struct ORDEREDGOALSPLANNER_API Domain
   const FactsToValue& preconditionToActions() const { return _conditionsToActions.factsToValue(); }
   /// All negationed facts in precondition to action identifiers.
   const FactsToValue& notPreconditionToActions() const { return _conditionsToActions.notFactsToValue(); }
-  /// All action identifiers of the actions without precondtion.
-  const FactsToValue& actionsWithoutFactToAddInPrecondition() const { return _actionsWithoutFactToAddInPrecondition; }
 
 
 
@@ -128,8 +126,6 @@ private:
   std::map<ActionId, Action> _actions;
   /// Conditions to action identifiers.
   ConditionsToValue _conditionsToActions;
-  /// Set of action identifiers of the actions without precondtion.
-  FactsToValue _actionsWithoutFactToAddInPrecondition;
   /// Map set of events identifiers to the set of events.
   std::map<SetOfEventsId, SetOfEvents> _setOfEvents;
   std::set<std::string> _requirements;

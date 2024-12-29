@@ -9,24 +9,31 @@
 #include <string>
 #include <vector>
 #include <sstream>
+#include <orderedgoalsplanner/types/fact.hpp>
 
 namespace ogp
 {
-struct Fact;
+
+struct ORDEREDGOALSPLANNER_API FactWithId
+{
+  FactWithId(const Fact& pFact,
+             const std::string& pId)
+    : fact(pFact),
+      id(pId)
+  {}
+
+  Fact fact;
+  std::string id;
+};
+
 
 struct ORDEREDGOALSPLANNER_API FactsToValue
 {
   FactsToValue();
 
   void add(const Fact& pFact,
-           const std::string& pValue,
+           const std::string& pId,
            bool pIgnoreValue = false);
-
-  void addValueWithoutFact(const std::string& pValue);
-
-  void erase(const std::string& pValue);
-
-  void clear();
 
   bool empty() const;
 
@@ -112,12 +119,8 @@ struct ORDEREDGOALSPLANNER_API FactsToValue
   ConstMapOfFactIterator find(const Fact& pFact,
                               bool pIgnoreValue = false) const;
 
-  ConstMapOfFactIterator valuesWithoutFact() const;
-
 
 private:
-  std::set<std::string> _values;
-  std::map<std::string, std::list<Fact>> _valueToFacts;
   std::optional<std::map<std::string, std::list<std::string>>> _exactCallToListsOpt;
   std::optional<std::map<std::string, std::list<std::string>>> _exactCallWithoutValueToListsOpt;
   struct ParameterToValues
@@ -133,10 +136,6 @@ private:
     std::map<std::string, std::list<std::string>> fluentValueToValues;
   };
   std::map<std::string, ParameterToValues> _signatureToLists;
-  std::list<std::string> _valuesWithoutFact;
-
-  void _erase(const Fact& pFact,
-              const std::string& pValue);
 
   // TODO: can be static
   void _removeAValueForList(std::list<std::string>& pList,

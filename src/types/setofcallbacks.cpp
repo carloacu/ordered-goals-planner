@@ -3,18 +3,12 @@
 
 namespace ogp
 {
-
-CallbackId SetOfCallbacks::add(const ConditionToCallback& pConditionToCallback,
-                               const CallbackId& pCallbackId)
+namespace
 {
-  auto isIdOkForInsertion = [this](const std::string& pId)
-  {
-    return _callbacks.count(pId) == 0;
-  };
-  auto newId = incrementLastNumberUntilAConditionIsSatisfied(pCallbackId, isIdOkForInsertion);
-
-  _callbacks.emplace(newId, pConditionToCallback);
-
+void _addLinks(SetOfCallbacks::CallbackLinks& pLinks,
+               const ConditionToCallback& pConditionToCallback,
+               const CallbackId& pCallbackId)
+{
   if (pConditionToCallback.condition)
   {
     pConditionToCallback.condition->forAll(
@@ -22,30 +16,51 @@ CallbackId SetOfCallbacks::add(const ConditionToCallback& pConditionToCallback,
           bool pIgnoreValue)
     {
       if (pFactOptional.isFactNegated)
-        _reachableCallbackLinks.notConditionToCallbacks.add(pFactOptional.fact, newId, pIgnoreValue);
+        pLinks.notConditionToCallbacks.add(pFactOptional.fact, pCallbackId, pIgnoreValue);
       else
-        _reachableCallbackLinks.conditionToCallbacks.add(pFactOptional.fact, newId, pIgnoreValue);
+        pLinks.conditionToCallbacks.add(pFactOptional.fact, pCallbackId, pIgnoreValue);
       return ContinueOrBreak::CONTINUE;
     }
     );
   }
+}
+
+}
+
+
+
+CallbackId MutableSetOfCallbacks::add(const ConditionToCallback& pConditionToCallback,
+                                      const CallbackId& pCallbackId)
+{
+  _setOfCallbacks.reset();
+
+  auto isIdOkForInsertion = [this](const std::string& pId)
+  {
+    return _callbacks.count(pId) == 0;
+  };
+  auto newId = incrementLastNumberUntilAConditionIsSatisfied(pCallbackId, isIdOkForInsertion);
+  _callbacks.try_emplace(newId, pConditionToCallback);
   return newId;
 }
 
 
-void SetOfCallbacks::remove(const CallbackId& pCallbackId)
+void MutableSetOfCallbacks::remove(const CallbackId& pCallbackId)
 {
   auto it = _callbacks.find(pCallbackId);
-  if (it == _callbacks.end())
-    return;
-  auto& callbackThatWillBeRemoved = it->second;
-
-  if (callbackThatWillBeRemoved.condition)
+  if (it != _callbacks.end())
   {
-    _reachableCallbackLinks.notConditionToCallbacks.erase(pCallbackId);
-    _reachableCallbackLinks.conditionToCallbacks.erase(pCallbackId);
+    _callbacks.erase(it);
+    _setOfCallbacks.reset();
   }
-  _callbacks.erase(it);
+}
+
+
+SetOfCallbacks::SetOfCallbacks(const std::map<CallbackId, ConditionToCallback>& pCallbacks)
+  : _callbacks(pCallbacks),
+    _reachableCallbackLinks()
+{
+  for (const auto& currCallback : _callbacks)
+    _addLinks(_reachableCallbackLinks, currCallback.second, currCallback.first);
 }
 
 

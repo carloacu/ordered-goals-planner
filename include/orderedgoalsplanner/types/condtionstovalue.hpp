@@ -16,8 +16,6 @@ public:
   bool add(const Condition& pCondition,
            const std::string& pValue);
 
-  void erase(const std::string& pValue);
-
   const FactsToValue& factsToValue() const { return _factsToValue; }
   const FactsToValue& notFactsToValue() const { return _notFactsToValue; }
 

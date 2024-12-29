@@ -142,7 +142,7 @@ std::list<Goal> extractSatisfiedGoals(
 {
   std::list<Goal> res;
   auto& setOfEvents = pDomain.getSetOfEvents();
-  const SetOfCallbacks callbacks;
+  const SetOfCallbacks emptyCallbacks;
   const auto& ontology = pDomain.getOntology();
   LookForAnActionOutputInfos lookForAnActionOutputInfos;
   while (pCurrItInPlan != pPlan.end())
@@ -160,7 +160,7 @@ std::list<Goal> extractSatisfiedGoals(
       auto* worldStateModificationAtStartWithoutParameterPtr = currAction.getWorldStateModificationAtStartWithoutParameterPtr();
       if (worldStateModificationAtStartWithoutParameterPtr != nullptr)
         pProblem.worldState.modify(worldStateModificationAtStartWithoutParameterPtr, pProblem.goalStack, setOfEvents,
-                                   callbacks, ontology, pProblem.objects, pNow);
+                                   emptyCallbacks, ontology, pProblem.objects, pNow);
       actionsInParallel.emplace_back(&currAction);
 
       bool somethingChanged = false;
@@ -168,12 +168,12 @@ std::list<Goal> extractSatisfiedGoals(
       const auto* worldStateModificationWithoutParameterPtr = currAction.getWorldStateModificationWithoutParameterPtr();
       if (worldStateModificationWithoutParameterPtr != nullptr)
         somethingChanged = pProblem.worldState.modify(worldStateModificationWithoutParameterPtr, pProblem.goalStack, setOfEvents,
-                                                      callbacks, ontology, pProblem.objects, pNow);
+                                                      emptyCallbacks, ontology, pProblem.objects, pNow);
 
       const auto* potentialWorldStateModificationWithoutParameterPtr = currAction.getPotentialWorldStateModificationWithoutParameterPtr();
       if (potentialWorldStateModificationWithoutParameterPtr != nullptr)
         somethingChanged = pProblem.worldState.modify(potentialWorldStateModificationWithoutParameterPtr, pProblem.goalStack, setOfEvents,
-                                                      callbacks, ontology, pProblem.objects, pNow) || somethingChanged;
+                                                      emptyCallbacks, ontology, pProblem.objects, pNow) || somethingChanged;
 
       if (!somethingChanged)
         return {};

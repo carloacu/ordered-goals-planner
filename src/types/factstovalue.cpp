@@ -47,36 +47,32 @@ void _addValueToExactCall(std::string& pRes,
 
 
 FactsToValue::FactsToValue()
- : _values(),
-   _valueToFacts(),
-   _exactCallToListsOpt(),
+ : _exactCallToListsOpt(),
    _exactCallWithoutValueToListsOpt(),
-   _signatureToLists(),
-   _valuesWithoutFact()
+   _signatureToLists()
 {
 }
 
 
 void FactsToValue::add(const Fact& pFact,
-                       const std::string& pValue,
+                       const std::string& pId,
                        bool pIgnoreValue)
 {
-  auto insertionResult = _values.insert(pValue);
-  _valueToFacts[pValue].emplace_back(pFact);
+  auto factWithId = FactWithId(pFact, pId);
 
   if (!pFact.hasAParameter())
   {
     auto exactCallStr = _getExactCall(pFact);
     if (!_exactCallWithoutValueToListsOpt)
       _exactCallWithoutValueToListsOpt.emplace();
-    (*_exactCallWithoutValueToListsOpt)[exactCallStr].emplace_back(pValue);
+    (*_exactCallWithoutValueToListsOpt)[exactCallStr].emplace_back(factWithId.id);
 
     if (!pIgnoreValue && pFact.value())
     {
       _addValueToExactCall(exactCallStr, pFact);
       if (!_exactCallToListsOpt)
         _exactCallToListsOpt.emplace();
-      (*_exactCallToListsOpt)[exactCallStr].emplace_back(pValue);
+      (*_exactCallToListsOpt)[exactCallStr].emplace_back(factWithId.id);
     }
   }
 
@@ -84,145 +80,31 @@ void FactsToValue::add(const Fact& pFact,
   for (auto& currSignature : factSignatures)
   {
     auto& factArguments = pFact.arguments();
-    auto insertionRes = _signatureToLists.emplace(currSignature, factArguments.size());
+    auto insertionRes = _signatureToLists.try_emplace(currSignature, factArguments.size());
     ParameterToValues& parameterToValues = insertionRes.first->second;
 
-    parameterToValues.all.emplace_back(pValue);
+    parameterToValues.all.emplace_back(factWithId.id);
     for (std::size_t i = 0; i < factArguments.size(); ++i)
     {
       if (!factArguments[i].isAParameterToFill())
-        parameterToValues.argIdToArgValueToValues[i][factArguments[i].value].emplace_back(pValue);
+        parameterToValues.argIdToArgValueToValues[i][factArguments[i].value].emplace_back(factWithId.id);
       else
-        parameterToValues.argIdToArgValueToValues[i][""].emplace_back(pValue);
+        parameterToValues.argIdToArgValueToValues[i][""].emplace_back(factWithId.id);
     }
     if (pIgnoreValue || pFact.value())
     {
       if (!pIgnoreValue && !pFact.value()->isAParameterToFill() && !pFact.isValueNegated())
-        parameterToValues.fluentValueToValues[pFact.value()->value].emplace_back(pValue);
+        parameterToValues.fluentValueToValues[pFact.value()->value].emplace_back(factWithId.id);
       else
-        parameterToValues.fluentValueToValues[""].emplace_back(pValue);
+        parameterToValues.fluentValueToValues[""].emplace_back(factWithId.id);
     }
   }
-}
-
-
-void FactsToValue::addValueWithoutFact(const std::string& pValue)
-{
-  auto insertionResult = _values.insert(pValue);
-  // pValue well added and did not already exists
-  if (insertionResult.second)
-  {
-    _valuesWithoutFact.emplace_back(pValue);
-  }
-}
-
-
-void FactsToValue::_erase(const Fact& pFact,
-                          const std::string& pValue)
-{
-  auto it = _values.find(pValue);
-  if (it != _values.end())
-  {
-    if (!pFact.hasAParameter())
-    {
-      auto exactCallStr = _getExactCall(pFact);
-      if (_exactCallWithoutValueToListsOpt)
-      {
-        std::list<std::string>& listOfTypes = (*_exactCallWithoutValueToListsOpt)[exactCallStr];
-        _removeAValueForList(listOfTypes, pValue);
-        if (listOfTypes.empty())
-          _exactCallWithoutValueToListsOpt->erase(exactCallStr);
-      }
-
-      if (_exactCallToListsOpt && pFact.value())
-      {
-        _addValueToExactCall(exactCallStr, pFact);
-        std::list<std::string>& listWithValueOfTypes = (*_exactCallToListsOpt)[exactCallStr];
-        _removeAValueForList(listWithValueOfTypes, pValue);
-        if (listWithValueOfTypes.empty())
-          _exactCallToListsOpt->erase(exactCallStr);
-      }
-    }
-
-    auto factSignatures = pFact.generateSignatureForSubAndUpperTypes2();
-    for (auto& currSignature : factSignatures)
-    {
-      auto& factArguments = pFact.arguments();
-      auto itParameterToValues = _signatureToLists.find(currSignature);
-      if (itParameterToValues != _signatureToLists.end())
-      {
-        ParameterToValues& parameterToValues = itParameterToValues->second;
-
-        _removeAValueForList(parameterToValues.all, pValue);
-        if (parameterToValues.all.empty())
-        {
-          _signatureToLists.erase(currSignature);
-        }
-        else
-        {
-          for (std::size_t i = 0; i < factArguments.size(); ++i)
-          {
-            const std::string& argKey = !factArguments[i].isAParameterToFill() ? factArguments[i].value : _emptyString;
-            std::list<std::string>& listOfValues = parameterToValues.argIdToArgValueToValues[i][argKey];
-            _removeAValueForList(listOfValues, pValue);
-            if (listOfValues.empty())
-               parameterToValues.argIdToArgValueToValues[i].erase(argKey);
-          }
-          if (pFact.value())
-          {
-            const std::string& fluentKey = !pFact.value()->isAParameterToFill() ? pFact.value()->value : _emptyString;
-            std::list<std::string>& listOfValues = parameterToValues.fluentValueToValues[fluentKey];
-            _removeAValueForList(listOfValues, pValue);
-            if (listOfValues.empty())
-               parameterToValues.fluentValueToValues.erase(fluentKey);
-          }
-        }
-      }
-      else
-      {
-        throw std::runtime_error("Errur while deleteing a fact link");
-      }
-    }
-  }
-}
-
-
-void FactsToValue::erase(const std::string& pValue)
-{
-  auto it = _valueToFacts.find(pValue);
-  if (it != _valueToFacts.end())
-  {
-    for (auto& currFact : it->second)
-    {
-      _erase(currFact, pValue);
-    }
-    _valueToFacts.erase(it);
-
-    auto itVal = _values.find(pValue);
-    if (itVal != _values.end())
-    {
-      _removeAValueForList(_valuesWithoutFact, pValue);
-      _values.erase(itVal);
-    }
-  }
-}
-
-
-void FactsToValue::clear()
-{
-  _values.clear();
-  _valueToFacts.clear();
-  if (_exactCallToListsOpt)
-    _exactCallToListsOpt.reset();
-  if (_exactCallWithoutValueToListsOpt)
-    _exactCallWithoutValueToListsOpt.reset();
-  _signatureToLists.clear();
 }
 
 
 bool FactsToValue::empty() const
 {
-  return _values.empty();
+  return _signatureToLists.empty();
 }
 
 
@@ -316,11 +198,6 @@ typename FactsToValue::ConstMapOfFactIterator FactsToValue::find(const Fact& pFa
   if (resPtr != nullptr)
     return ConstMapOfFactIterator(resPtr);
   return ConstMapOfFactIterator(exactMatchPtr);
-}
-
-typename FactsToValue::ConstMapOfFactIterator FactsToValue::valuesWithoutFact() const
-{
-  return ConstMapOfFactIterator(&_valuesWithoutFact);
 }
 
 

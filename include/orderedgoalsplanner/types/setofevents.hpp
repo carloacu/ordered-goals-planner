@@ -26,14 +26,6 @@ struct ORDEREDGOALSPLANNER_API SetOfEvents
   EventId add(const Event& pEvent,
               const EventId& pEventId = "event");
 
-  /**
-   * @brief Remove an event.
-   * @param pEventId Identifier of the action to remove.
-   *
-   * If the event is not found, this function will have no effect.
-   * No exception will be raised.
-   */
-  void remove(const EventId& pEventId);
 
 
   /// Links to point to event identifiers.

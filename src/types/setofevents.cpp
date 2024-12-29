@@ -41,20 +41,4 @@ EventId SetOfEvents::add(const Event& pEvent,
 }
 
 
-void SetOfEvents::remove(const EventId& pEventId)
-{
-  auto it = _events.find(pEventId);
-  if (it == _events.end())
-    return;
-  auto& eventThatWillBeRemoved = it->second;
-
-  if (eventThatWillBeRemoved.precondition)
-  {
-    _reachableEventLinks.notConditionToEvents.erase(pEventId);
-    _reachableEventLinks.conditionToEvents.erase(pEventId);
-  }
-  _events.erase(it);
-}
-
-
 } // !ogp

@@ -10,15 +10,11 @@
 namespace ogp
 {
 
+
 /// Container of a set of conditions to callback.
 struct ORDEREDGOALSPLANNER_API SetOfCallbacks
 {
-  SetOfCallbacks() = default;
-
-  CallbackId add(const ConditionToCallback& pConditionToCallback,
-                 const CallbackId& pCallbackId = "callback");
-
-  void remove(const CallbackId& pCallbackId);
+  SetOfCallbacks(const std::map<CallbackId, ConditionToCallback>& pCallbacks = {});
 
 
   struct CallbackLinks
@@ -31,7 +27,7 @@ struct ORDEREDGOALSPLANNER_API SetOfCallbacks
     bool empty() const { return conditionToCallbacks.empty() && notConditionToCallbacks.empty(); }
   };
 
-  bool empty() const { return _callbacks.empty() && _reachableCallbackLinks.empty(); }
+  bool empty() const { return _callbacks.empty(); }
   const std::map<CallbackId, ConditionToCallback>& callbacks() const { return _callbacks; }
   std::map<CallbackId, ConditionToCallback>& callbacks() { return _callbacks; }
   const CallbackLinks& reachableCallbackLinks() const { return _reachableCallbackLinks; }
@@ -39,8 +35,32 @@ struct ORDEREDGOALSPLANNER_API SetOfCallbacks
 
 private:
   std::map<CallbackId, ConditionToCallback> _callbacks{};
-  CallbackLinks _reachableCallbackLinks{};
+  CallbackLinks _reachableCallbackLinks;
 };
+
+
+
+/// Container of a set of conditions to callback, with this possibility to add or remove callbacks.
+struct ORDEREDGOALSPLANNER_API MutableSetOfCallbacks
+{
+  MutableSetOfCallbacks() = default;
+
+  CallbackId add(const ConditionToCallback& pConditionToCallback,
+                 const CallbackId& pCallbackId = "callback");
+
+  void remove(const CallbackId& pCallbackId);
+
+
+  bool empty() const { return _callbacks.empty(); }
+  const std::map<CallbackId, ConditionToCallback>& callbacks() const { return _callbacks; }
+  std::map<CallbackId, ConditionToCallback>& callbacks() { return _callbacks; }
+
+
+private:
+  std::map<CallbackId, ConditionToCallback> _callbacks{};
+  std::optional<SetOfCallbacks> _setOfCallbacks{};
+};
+
 
 } // !ogp
 

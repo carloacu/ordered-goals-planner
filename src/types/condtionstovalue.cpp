@@ -30,13 +30,6 @@ bool ConditionsToValue::add(const Condition& pCondition,
 }
 
 
-void ConditionsToValue::erase(const std::string& pValue)
-{
-  _factsToValue.erase(pValue);
-  _notFactsToValue.erase(pValue);
-}
-
-
 
 } // !ogp
 
