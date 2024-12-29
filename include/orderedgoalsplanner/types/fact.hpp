@@ -261,14 +261,8 @@ struct ORDEREDGOALSPLANNER_API Fact
   void setValueNegated(bool pIsValueNegated) { _isValueNegated = pIsValueNegated; }
 
   std::string factSignature() const;
-  std::string factSignature2() const;
-  std::string generateFactSignature() const;
-  std::string generateFactSignature2() const;
-  void generateSignatureForAllUpperTypes(std::list<std::string>& pRes) const;
-  void generateSignatureForSubAndUpperTypes(std::list<std::string>& pRes) const;
-
-  std::set<std::string> generateSignatureForSubAndUpperTypes2() const;
-  std::set<std::string> generateSignatureForUpperTypes2() const;
+  std::set<std::string> generateSignaturesWithRelatedTypes(bool pIncludeSubTypes,
+                                                             bool pIncludeParentTypes) const;
 
 
   void setArgumentType(std::size_t pIndex, const std::shared_ptr<Type>& pType);
@@ -296,9 +290,8 @@ private:
   /// Is the value of the fact negated.
   bool _isValueNegated;
   std::string _factSignature;
-  std::string _factSignature2;
 
-  void _generateSignatureForAllSubTypes(std::list<std::string>& pRes) const;
+  std::string _generateFactSignature() const;
 
   bool _updateParameters(std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
                          std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,

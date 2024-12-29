@@ -76,7 +76,7 @@ void FactsToValue::add(const Fact& pFact,
     }
   }
 
-  auto factSignatures = pFact.generateSignatureForSubAndUpperTypes2();
+  auto factSignatures = pFact.generateSignaturesWithRelatedTypes(true, true);
   for (auto& currSignature : factSignatures)
   {
     auto& factArguments = pFact.arguments();
@@ -164,7 +164,7 @@ typename FactsToValue::ConstMapOfFactIterator FactsToValue::find(const Fact& pFa
     return {};
   };
 
-  auto itParameterToValues = _signatureToLists.find(pFact.factSignature2());
+  auto itParameterToValues = _signatureToLists.find(pFact.factSignature());
   if (itParameterToValues != _signatureToLists.end())
   {
     const ParameterToValues& parameterToValues = itParameterToValues->second;
@@ -198,21 +198,6 @@ typename FactsToValue::ConstMapOfFactIterator FactsToValue::find(const Fact& pFa
   if (resPtr != nullptr)
     return ConstMapOfFactIterator(resPtr);
   return ConstMapOfFactIterator(exactMatchPtr);
-}
-
-
-
-void FactsToValue::_removeAValueForList(std::list<std::string>& pList,
-                                            const std::string& pValue) const
-{
-  for (auto it = pList.begin(); it != pList.end(); ++it)
-  {
-    if (*it == pValue)
-    {
-      pList.erase(it);
-      return;
-    }
-  }
 }
 
 

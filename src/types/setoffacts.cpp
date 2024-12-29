@@ -119,7 +119,7 @@ bool SetOfFacts::add(const Fact& pFact,
   }
 
 
-  auto factSignatures = pFact.generateSignatureForUpperTypes2();
+  auto factSignatures = pFact.generateSignaturesWithRelatedTypes(false, true);
   for (auto& currSignature : factSignatures)
   {
     auto& factArguments = pFact.arguments();
@@ -190,7 +190,7 @@ bool SetOfFacts::_erase(const Fact& pFact)
       }
     }
 
-    auto factSignatures = pFact.generateSignatureForUpperTypes2();
+    auto factSignatures = pFact.generateSignaturesWithRelatedTypes(false, true);
     for (auto itSignature = factSignatures.rbegin(); itSignature != factSignatures.rend(); ++itSignature)
     {
       auto& currSignature = *itSignature;
@@ -294,7 +294,7 @@ typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
     return {};
   };
 
-  auto itParameterToValues = _signatureToLists.find(pFact.factSignature2());
+  auto itParameterToValues = _signatureToLists.find(pFact.factSignature());
   if (itParameterToValues != _signatureToLists.end())
   {
     const ParameterToValues& parameterToValues = itParameterToValues->second;

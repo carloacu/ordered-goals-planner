@@ -37,7 +37,7 @@ void _test_generateSignatureForUpperTypes()
   EXPECT_EQ("fun1(entity)\n"
             "fun1(my_type3)\n"
             "fun1(sub_my_type3)",
-            _printSignatures(ogp::Fact::fromStr("fun1(sub3a)=toto", ontology, objects, {}).generateSignatureForUpperTypes2()));
+            _printSignatures(ogp::Fact::fromStr("fun1(sub3a)=toto", ontology, objects, {}).generateSignaturesWithRelatedTypes(false, true)));
 
   EXPECT_EQ("fun2(entity, entity)\n"
             "fun2(entity, my_type3)\n"
@@ -45,7 +45,7 @@ void _test_generateSignatureForUpperTypes()
             "fun2(my_type2, entity)\n"
             "fun2(my_type2, my_type3)\n"
             "fun2(my_type2, sub_my_type3)",
-            _printSignatures(ogp::Fact::fromStr("fun2(titi, sub3b)", ontology, objects, {}).generateSignatureForUpperTypes2()));
+            _printSignatures(ogp::Fact::fromStr("fun2(titi, sub3b)", ontology, objects, {}).generateSignaturesWithRelatedTypes(false, true)));
 
   EXPECT_EQ("fun3(entity, entity)\n"
             "fun3(entity, my_type3)\n"
@@ -53,10 +53,10 @@ void _test_generateSignatureForUpperTypes()
             "fun3(my_type2, entity)\n"
             "fun3(my_type2, my_type3)\n"
             "fun3(my_type2, sub_my_type3)",
-            _printSignatures(ogp::Fact::fromStr("fun3(titi, sub3b)", ontology, objects, {}).generateSignatureForUpperTypes2()));
+            _printSignatures(ogp::Fact::fromStr("fun3(titi, sub3b)", ontology, objects, {}).generateSignaturesWithRelatedTypes(false, true)));
 
   EXPECT_EQ("fun3(entity, entity)",
-            _printSignatures(ogp::Fact::fromStr("fun3(e1, e1)", ontology, objects, {}).generateSignatureForUpperTypes2()));
+            _printSignatures(ogp::Fact::fromStr("fun3(e1, e1)", ontology, objects, {}).generateSignaturesWithRelatedTypes(false, true)));
 }
 
 }

@@ -56,6 +56,30 @@ bool Type::operator<(const Type& pOther) const
 }
 
 
+void Type::getSubTypesRecursively(std::set<std::shared_ptr<Type>>& pResult) const
+{
+  for (const auto& subtype : subTypes)
+  {
+    if (pResult.count(subtype) == 0)
+    {
+      pResult.insert(subtype);
+      subtype->getSubTypesRecursively(pResult);
+    }
+  }
+}
+
+
+void Type::getParentTypesRecursively(std::set<std::shared_ptr<Type>>& pResult) const
+{
+  auto parentType = parent;
+  while (parentType)
+  {
+    pResult.insert(parentType);
+    parentType = parentType->parent;
+  }
+}
+
+
 std::shared_ptr<Type> Type::getSmallerType(const std::shared_ptr<Type>& pType1,
                                            const std::shared_ptr<Type>& pType2)
 {

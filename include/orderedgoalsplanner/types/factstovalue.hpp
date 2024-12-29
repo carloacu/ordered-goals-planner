@@ -127,10 +127,6 @@ private:
   };
   std::map<std::string, ParameterToValues> _signatureToLists;
 
-  // TODO: can be static
-  void _removeAValueForList(std::list<std::string>& pList,
-                            const std::string& pValue) const;
-
   const std::list<FactWithId>* _findAnExactCall(const std::optional<std::map<std::string, std::list<FactWithId>>>& pExactCalls,
                                                 const std::string& pExactCall) const;
 
