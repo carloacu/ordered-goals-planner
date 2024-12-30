@@ -166,6 +166,7 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
     if (pConditionOverAll && pConditionOverAll->isOptFactMandatory(pFactOptional))
       return ContinueOrBreak::CONTINUE;
 
+    TODO: wrap this factOptional find in conditionsToValue struct
     const FactsToValue& factsToValue = pFactOptional.isFactNegated ?
           conditionsToValue.notFactsToValue() : conditionsToValue.factsToValue();
     if (!factsToValue.find(pFactOptional.fact).empty())

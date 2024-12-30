@@ -892,6 +892,7 @@ std::string Fact::_generateFactSignature() const
 }
 
 
+TODO: add a callback instead of returning a set and better test this function
 std::set<std::string> Fact::generateSignaturesWithRelatedTypes(bool pIncludeSubTypes,
                                                                bool pIncludeParentTypes) const
 {

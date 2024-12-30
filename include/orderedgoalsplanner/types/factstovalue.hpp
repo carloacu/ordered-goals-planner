@@ -31,6 +31,7 @@ struct ORDEREDGOALSPLANNER_API FactWithId
 };
 
 
+TODO: rename to FactsToKey
 struct ORDEREDGOALSPLANNER_API FactsToValue
 {
   FactsToValue();
