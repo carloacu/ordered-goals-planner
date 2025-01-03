@@ -38,12 +38,14 @@ std::unique_ptr<Condition> pddlToCondition(const std::string& pStr,
                                            std::size_t& pPos,
                                            const Ontology& pOntology,
                                            const SetOfEntities& pObjects,
-                                           const std::vector<Parameter>& pParameters);
+                                           const std::vector<Parameter>& pParameters,
+                                           const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
 
 std::unique_ptr<Condition> strToCondition(const std::string& pStr,
                                           const Ontology& pOntology,
                                           const SetOfEntities& pObjects,
-                                          const std::vector<Parameter>& pParameters);
+                                          const std::vector<Parameter>& pParameters,
+                                          const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
 
 std::unique_ptr<Goal> pddlToGoal(const std::string& pStr,
                                  std::size_t& pPos,
@@ -57,7 +59,8 @@ std::unique_ptr<Goal> strToGoal(const std::string& pStr,
                                 const Ontology& pOntology,
                                 const SetOfEntities& pObjects,
                                 int pMaxTimeToKeepInactive = -1,
-                                const std::string& pGoalGroupId = "");
+                                const std::string& pGoalGroupId = "",
+                                const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
 
 std::unique_ptr<WorldStateModification> pddlToWsModification(const std::string& pStr,
                                                              std::size_t& pPos,
@@ -79,7 +82,8 @@ std::vector<Parameter> pddlToParameters(const std::string& pStr,
 FactOptional pddlToFactOptional(const std::string& pStr,
                                 const Ontology& pOntology,
                                 const SetOfEntities& pObjects,
-                                const std::vector<Parameter>& pParameters = {});
+                                const std::vector<Parameter>& pParameters = {},
+                                const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
 
 } // End of namespace ogp
 

@@ -1149,23 +1149,25 @@ std::unique_ptr<Condition> pddlToCondition(const std::string& pStr,
                                            std::size_t& pPos,
                                            const Ontology& pOntology,
                                            const SetOfEntities& pObjects,
-                                           const std::vector<Parameter>& pParameters)
+                                           const std::vector<Parameter>& pParameters,
+                                           const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
 {
   auto expressionParsed = ExpressionParsed::fromPddl(pStr, pPos, false);
-  return _expressionParsedToCondition(expressionParsed, pOntology, pObjects, pParameters, false, nullptr);
+  return _expressionParsedToCondition(expressionParsed, pOntology, pObjects, pParameters, false, pParameterNamesToEntityPtr);
 }
 
 
 std::unique_ptr<Condition> strToCondition(const std::string& pStr,
                                           const Ontology& pOntology,
                                           const SetOfEntities& pObjects,
-                                          const std::vector<Parameter>& pParameters)
+                                          const std::vector<Parameter>& pParameters,
+                                          const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
 {
   if (pStr.empty())
     return {};
   std::size_t pos = 0;
   auto expressionParsed = ExpressionParsed::fromStr(pStr, pos);
-  return _expressionParsedToCondition(expressionParsed, pOntology, pObjects, pParameters, false, nullptr);
+  return _expressionParsedToCondition(expressionParsed, pOntology, pObjects, pParameters, false, pParameterNamesToEntityPtr);
 }
 
 
@@ -1188,14 +1190,15 @@ std::unique_ptr<Goal> strToGoal(const std::string& pStr,
                                 const Ontology& pOntology,
                                 const SetOfEntities& pObjects,
                                 int pMaxTimeToKeepInactive,
-                                const std::string& pGoalGroupId)
+                                const std::string& pGoalGroupId,
+                                const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
 {
   if (pStr.empty())
     return {};
   std::size_t pos = 0;
   auto expressionParsed = ExpressionParsed::fromStr(pStr, pos);
   return _expressionParsedToGoal(expressionParsed, pOntology, pObjects,
-                                 pMaxTimeToKeepInactive, pGoalGroupId, nullptr);
+                                 pMaxTimeToKeepInactive, pGoalGroupId, pParameterNamesToEntityPtr);
 }
 
 std::unique_ptr<WorldStateModification> pddlToWsModification(const std::string& pStr,
@@ -1233,11 +1236,12 @@ std::vector<Parameter> pddlToParameters(const std::string& pStr,
 FactOptional pddlToFactOptional(const std::string& pStr,
                                 const Ontology& pOntology,
                                 const SetOfEntities& pObjects,
-                                const std::vector<Parameter>& pParameters)
+                                const std::vector<Parameter>& pParameters,
+                                const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
 {
   std::size_t pos = 0;
   auto expressionParsed = ExpressionParsed::fromPddl(pStr, pos, false);
-  return expressionParsed.toFact(pOntology, pObjects, pParameters, false, nullptr);
+  return expressionParsed.toFact(pOntology, pObjects, pParameters, false, pParameterNamesToEntityPtr);
 }
 
 }

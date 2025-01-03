@@ -108,6 +108,15 @@ void _test_pddlSerializationParts()
 
   {
     std::size_t pos = 0;
+    std::map<std::string, ogp::Entity> parameterNamesToEntity{{"?e", ogp::Entity::fromUsage("toto", ontology, {}, {})}};
+    std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(exists (?p - entity) (= (pred_d ?p) ?e))", pos, ontology, {}, {}, &parameterNamesToEntity);
+    if (!cond)
+      FAIL();
+    EXPECT_EQ("(exists (?p - entity) (= (pred_d ?p) toto))", ogp::conditionToPddl(*cond, 0));
+  }
+
+  {
+    std::size_t pos = 0;
     std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(decrease (battery-amount toto) 4)", pos, ontology, {}, {});
     if (!ws)
       FAIL();
