@@ -177,7 +177,7 @@ bool WorldState::removeFacts(const FACTS& pFacts,
 }
 
 
-bool WorldState::removeFactsHoldingAnEntity(const std::set<std::string>& pEntityIdsofFactsToRemove,
+bool WorldState::removeFactsHoldingEntities(const std::set<std::string>& pEntityIdsofFactsToRemove,
                                             GoalStack& pGoalStack,
                                             const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                                             const SetOfCallbacks& pCallbacks,

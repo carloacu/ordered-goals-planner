@@ -91,17 +91,17 @@ TEST(Tool, test_remove_fact_with_an_entity)
             worldstate.factsMapping().toPddl(0, true));
   {
     GoalStack goalStack;
-    EXPECT_TRUE(worldstate.removeFactsHoldingAnEntity({"toto"}, goalStack, {}, {}, ontology, objects, {}));
+    EXPECT_TRUE(worldstate.removeFactsHoldingEntities({"toto"}, goalStack, {}, {}, ontology, objects, {}));
   }
   EXPECT_EQ("(pred_a ent_a)\n(pred_a ent_b)\n(pred_a ent_c)\n(pred_b)\n(pred_c toto2)", worldstate.factsMapping().toPddl(0, true));
   {
     GoalStack goalStack;
-    EXPECT_TRUE(worldstate.removeFactsHoldingAnEntity({"toto", "toto2", "ent_a"}, goalStack, {}, {}, ontology, objects, {}));
+    EXPECT_TRUE(worldstate.removeFactsHoldingEntities({"toto", "toto2", "ent_a"}, goalStack, {}, {}, ontology, objects, {}));
   }
   EXPECT_EQ("(pred_a ent_b)\n(pred_a ent_c)\n(pred_b)", worldstate.factsMapping().toPddl(0, true));
   {
     GoalStack goalStack;
-    EXPECT_FALSE(worldstate.removeFactsHoldingAnEntity({"ent_c"}, goalStack, {}, {}, ontology, objects, {}));
+    EXPECT_FALSE(worldstate.removeFactsHoldingEntities({"ent_c"}, goalStack, {}, {}, ontology, objects, {}));
   }
   EXPECT_EQ("(pred_a ent_b)\n(pred_a ent_c)\n(pred_b)", worldstate.factsMapping().toPddl(0, true));
 }

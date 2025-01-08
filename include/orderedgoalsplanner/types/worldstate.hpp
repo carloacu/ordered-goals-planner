@@ -152,7 +152,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
                    const SetOfEntities& pObjects,
                    const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow);
 
-  bool removeFactsHoldingAnEntity(const std::set<std::string>& pEntityIdsofFactsToRemove,
+  bool removeFactsHoldingEntities(const std::set<std::string>& pEntityIdsofFactsToRemove,
                                   GoalStack& pGoalStack,
                                   const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
                                   const SetOfCallbacks& pCallbacks,
