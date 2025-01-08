@@ -508,6 +508,15 @@ bool Fact::hasAParameter(bool pIgnoreValue) const
 }
 
 
+bool Fact::hasEntity(const std::string& pEntityId) const
+{
+  for (const auto& currArg : _arguments)
+    if (currArg.value == pEntityId && !currArg.isAParameterToFill())
+      return true;
+  return _value && _value->value == pEntityId && !_value->isAParameterToFill();
+}
+
+
 std::optional<Entity> Fact::tryToExtractArgumentFromExample(const Parameter& pParameter,
                                                             const Fact& pExampleFact) const
 {

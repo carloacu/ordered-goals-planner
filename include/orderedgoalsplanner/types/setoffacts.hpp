@@ -36,6 +36,8 @@ struct ORDEREDGOALSPLANNER_API SetOfFacts
 
   bool erase(const Fact& pValue);
 
+  std::map<Fact, bool>::iterator eraseFactIt(std::map<Fact, bool>::iterator pFactIt);
+
   void clear();
 
   class SetOfFactIterator {
@@ -87,6 +89,7 @@ struct ORDEREDGOALSPLANNER_API SetOfFacts
                          bool pIgnoreValue = false) const;
 
   const std::map<Fact, bool>& facts() const { return _facts; }
+  std::map<Fact, bool>& facts() { return _facts; }
 
   /**
    * @brief Get the value of a fact in the world state.

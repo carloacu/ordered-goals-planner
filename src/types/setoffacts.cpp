@@ -158,75 +158,84 @@ bool SetOfFacts::erase(const Fact& pFact)
 }
 
 
+std::map<Fact, bool>::iterator SetOfFacts::eraseFactIt(std::map<Fact, bool>::iterator pFactIt)
+{
+  // Do not allow to remove if this fact is marked as cannot be removed
+  if (!pFactIt->second)
+    throw std::runtime_error("Cannot erase this fact iterator because it is constant");
+  const Fact& fact = pFactIt->first;
+
+  if (!fact.hasAParameter())
+  {
+    auto exactCallStr = _getExactCall(fact);
+    if (_exactCallWithoutValueToListsOpt)
+    {
+      std::list<Fact>& listOfTypes = (*_exactCallWithoutValueToListsOpt)[exactCallStr];
+      _removeAValueForList(listOfTypes, fact);
+      if (listOfTypes.empty())
+        _exactCallWithoutValueToListsOpt->erase(exactCallStr);
+    }
+
+    if (_exactCallToListsOpt && fact.value())
+    {
+      _addValueToExactCall(exactCallStr, fact);
+      std::list<Fact>& listWithValueOfTypes = (*_exactCallToListsOpt)[exactCallStr];
+      _removeAValueForList(listWithValueOfTypes, fact);
+      if (listWithValueOfTypes.empty())
+        _exactCallToListsOpt->erase(exactCallStr);
+    }
+  }
+
+  fact.generateSignaturesWithRelatedTypes([&](const std::string& pSignature) {
+    auto& factArguments = fact.arguments();
+    auto itParameterToValues = _signatureToLists.find(pSignature);
+    if (itParameterToValues != _signatureToLists.end())
+    {
+      ParameterToValues& parameterToValues = itParameterToValues->second;
+
+      _removeAValueForList(parameterToValues.all, fact);
+      if (parameterToValues.all.empty())
+      {
+        _signatureToLists.erase(pSignature);
+      }
+      else
+      {
+        for (std::size_t i = 0; i < factArguments.size(); ++i)
+        {
+          const std::string argKey = !factArguments[i].isAParameterToFill() ? factArguments[i].value : "";
+          std::list<Fact>& listOfValues = parameterToValues.argIdToArgValueToValues[i][argKey];
+          _removeAValueForList(listOfValues, fact);
+          if (listOfValues.empty())
+             parameterToValues.argIdToArgValueToValues[i].erase(argKey);
+        }
+        if (fact.value())
+        {
+          const std::string valueKey = !fact.value()->isAParameterToFill() ? fact.value()->value : "";
+          std::list<Fact>& listOfValues = parameterToValues.fluentValueToValues[valueKey];
+          _removeAValueForList(listOfValues, fact);
+          if (listOfValues.empty())
+             parameterToValues.fluentValueToValues.erase(valueKey);
+        }
+      }
+    }
+    else
+    {
+      throw std::runtime_error("Errur while deleteing a fact link");
+    }
+  }, false, true);
+
+  return _facts.erase(pFactIt);
+}
+
+
 bool SetOfFacts::_erase(const Fact& pFact)
 {
   auto it = _facts.find(pFact);
   if (it != _facts.end())
   {
-    // Do not allow to remove if this fact is marked as cannot be removed
     if (!it->second)
       return false;
-
-    if (!pFact.hasAParameter())
-    {
-      auto exactCallStr = _getExactCall(pFact);
-      if (_exactCallWithoutValueToListsOpt)
-      {
-        std::list<Fact>& listOfTypes = (*_exactCallWithoutValueToListsOpt)[exactCallStr];
-        _removeAValueForList(listOfTypes, pFact);
-        if (listOfTypes.empty())
-          _exactCallWithoutValueToListsOpt->erase(exactCallStr);
-      }
-
-      if (_exactCallToListsOpt && pFact.value())
-      {
-        _addValueToExactCall(exactCallStr, pFact);
-        std::list<Fact>& listWithValueOfTypes = (*_exactCallToListsOpt)[exactCallStr];
-        _removeAValueForList(listWithValueOfTypes, pFact);
-        if (listWithValueOfTypes.empty())
-          _exactCallToListsOpt->erase(exactCallStr);
-      }
-    }
-
-    pFact.generateSignaturesWithRelatedTypes([&](const std::string& pSignature) {
-      auto& factArguments = pFact.arguments();
-      auto itParameterToValues = _signatureToLists.find(pSignature);
-      if (itParameterToValues != _signatureToLists.end())
-      {
-        ParameterToValues& parameterToValues = itParameterToValues->second;
-
-        _removeAValueForList(parameterToValues.all, pFact);
-        if (parameterToValues.all.empty())
-        {
-          _signatureToLists.erase(pSignature);
-        }
-        else
-        {
-          for (std::size_t i = 0; i < factArguments.size(); ++i)
-          {
-            const std::string argKey = !factArguments[i].isAParameterToFill() ? factArguments[i].value : "";
-            std::list<Fact>& listOfValues = parameterToValues.argIdToArgValueToValues[i][argKey];
-            _removeAValueForList(listOfValues, pFact);
-            if (listOfValues.empty())
-               parameterToValues.argIdToArgValueToValues[i].erase(argKey);
-          }
-          if (pFact.value())
-          {
-            const std::string valueKey = !pFact.value()->isAParameterToFill() ? pFact.value()->value : "";
-            std::list<Fact>& listOfValues = parameterToValues.fluentValueToValues[valueKey];
-            _removeAValueForList(listOfValues, pFact);
-            if (listOfValues.empty())
-               parameterToValues.fluentValueToValues.erase(valueKey);
-          }
-        }
-      }
-      else
-      {
-        throw std::runtime_error("Errur while deleteing a fact link");
-      }
-    }, false, true);
-
-    _facts.erase(it);
+    eraseFactIt(it);
     return true;
   }
   return false;

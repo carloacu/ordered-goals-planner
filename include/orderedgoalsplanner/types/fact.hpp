@@ -129,6 +129,8 @@ struct ORDEREDGOALSPLANNER_API Fact
 
   bool hasAParameter(bool pIgnoreValue = false) const;
 
+  bool hasEntity(const std::string& pEntityId) const;
+
   /**
    * @brief Extract an argument from another instance of this fact.<br/>
    * Another instance of this fact means that the 2 facts have the same name, the same number of arguments and the same polarity (= negationed or not).

@@ -177,6 +177,45 @@ bool WorldState::removeFacts(const FACTS& pFacts,
 }
 
 
+bool WorldState::removeFactsHoldingAnEntity(const std::set<std::string>& pEntityIdsofFactsToRemove,
+                                            GoalStack& pGoalStack,
+                                            const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
+                                            const SetOfCallbacks& pCallbacks,
+                                            const Ontology& pOntology,
+                                            const SetOfEntities& pObjects,
+                                            const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow)
+{
+  WhatChanged whatChanged;
+  auto& facts = _factsMapping.facts();
+  for (auto factIt = facts.begin(); factIt != facts.end(); )
+  {
+    bool factRemoved = false;
+    const Fact& currFact = factIt->first;
+    for (const auto& currEntityId : pEntityIdsofFactsToRemove)
+    {
+      if (currFact.hasEntity(currEntityId))
+      {
+        if (!factIt->second)
+          return false;
+
+        whatChanged.removedFacts.insert(currFact);
+        factIt = _factsMapping.eraseFactIt(factIt);
+        factRemoved = true;
+        break;
+      }
+    }
+    if (factRemoved)
+      continue;
+    ++factIt;
+  }
+
+  pGoalStack._removeNoStackableGoalsAndNotifyGoalsChanged(*this, pOntology.constants, pObjects, pNow);
+  bool goalChanged = false;
+  _notifyWhatChanged(whatChanged, goalChanged, pGoalStack, pSetOfEvents, pCallbacks, pOntology, pObjects, pNow);
+  return whatChanged.hasFactsToModifyInTheWorldForSure();
+}
+
+
 template<typename FACTS>
 void WorldState::_addFacts(WhatChanged& pWhatChanged,
                            const FACTS& pFacts,
