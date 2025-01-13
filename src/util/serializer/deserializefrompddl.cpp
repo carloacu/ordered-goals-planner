@@ -498,8 +498,8 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
     ++itWhenArg;
     auto& secondWhenArg = *itWhenArg;
     res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::WHEN,
-                                                       std::make_unique<WorldStateModificationFact>(firstWhenArg.toFact(pOntology, pObjects, {}, false, nullptr)),
-                                                       _expressionParsedToWsModification(secondWhenArg, pOntology, pObjects, {}, false));
+                                                       std::make_unique<WorldStateModificationFact>(firstWhenArg.toFact(pOntology, pObjects, pParameters, false, nullptr)),
+                                                       _expressionParsedToWsModification(secondWhenArg, pOntology, pObjects, pParameters, false));
   }
   else
   {

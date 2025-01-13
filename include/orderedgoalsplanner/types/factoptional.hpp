@@ -69,8 +69,7 @@ struct ORDEREDGOALSPLANNER_API FactOptional
   std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr = nullptr,
                     bool pPrintAnyValue = true) const;
 
-  std::string toPddl(bool pInEffectContext,
-                     bool pPrintAnyValue = true) const;
+  std::string toPddl(bool pInEffectContext) const;
 
   bool doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const FactOptional& pOptFact) const;
 

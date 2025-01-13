@@ -216,6 +216,38 @@ void _whenRemoveAFact()
   EXPECT_FALSE(_hasFact(problem.worldState, "fact_b", ontology));
 }
 
+
+void _whenWithParam()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("t1 t2");
+  ontology.constants = ogp::SetOfEntities::fromPddl("val1 val2 - t1\n"
+                                                    "val1_2 val2_2 - t2", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_a(?t - t1) - t2\n"
+                                                      "fact_b - t2", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{_parameter("?v - t1", ontology)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(when (not (= (fact_a ?v) undefined)) (assign (fact_b) (fact_a ?v)))", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_b) val1_2)", ontology)}, ontology.constants);
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  _addFact(problem.worldState, "fact_a(val2)=val1_2", problem.goalStack, ontology, setOfEventsMap, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_b) val1_2)", ontology)}, ontology.constants);
+  EXPECT_FALSE(_hasFact(problem.worldState,  "fact_b=val1_2", ontology));
+  EXPECT_EQ("action1(?v -> val2)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_TRUE(_hasFact(problem.worldState,  "fact_b=val1_2", ontology));
+}
+
+
 }
 
 
@@ -227,4 +259,5 @@ TEST(Planner, test_contionalEffectsRequirement)
   _whenToSatisfyThenGoal();
   _useWhenEffectInsideAPath();
   _whenRemoveAFact();
+  _whenWithParam();
 }

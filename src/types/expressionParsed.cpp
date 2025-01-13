@@ -79,7 +79,16 @@ FactOptional ExpressionParsed::toFact(const Ontology& pOntology,
     auto it = arguments.begin();
     auto newFactOpt = it->toFact(pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr);
     ++it;
-    newFactOpt.fact.setValue(Entity::fromUsage(it->name, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
+    if (it->name == Fact::getUndefinedEntity().value)
+    {
+      newFactOpt.isFactNegated = !newFactOpt.isFactNegated;
+      newFactOpt.fact.setValue(Entity::createAnyEntity());
+    }
+    else
+    {
+      newFactOpt.fact.setValue(Entity::fromUsage(it->name, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
+    }
+
     return newFactOpt;
   }
   else if (name == "not" && arguments.size() == 1)

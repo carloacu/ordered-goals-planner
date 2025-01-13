@@ -78,10 +78,9 @@ std::string FactOptional::toStr(const std::function<std::string (const Fact&)>* 
   return polarityStr + fact.toStr(pPrintAnyValue);
 }
 
-std::string FactOptional::toPddl(bool pInEffectContext,
-                                 bool pPrintAnyValue) const
+std::string FactOptional::toPddl(bool pInEffectContext) const
 {
-  auto res = fact.toPddl(pInEffectContext, pPrintAnyValue);
+  auto res = fact.toPddl(pInEffectContext, false);
   if (isFactNegated)
   {
     if (fact.value() && fact.value()->isAnyEntity())

@@ -175,7 +175,7 @@ std::string _effectToPddl(
 
   const auto* wsmFactPtr = toWmFact(pWsModif);
   if (wsmFactPtr != nullptr)
-    return wsmFactPtr->factOptional.toPddl(true, false);
+    return wsmFactPtr->factOptional.toPddl(true);
 
   const auto* wsmNbPtr = toWmNumber(pWsModif);
   if (wsmNbPtr != nullptr)
@@ -616,7 +616,7 @@ std::string conditionToPddl(const Condition& pCondition,
 
   const ConditionFact* condFactPtr = pCondition.fcFactPtr();
   if (condFactPtr != nullptr)
-    return condFactPtr->factOptional.toPddl(false, false);
+    return condFactPtr->factOptional.toPddl(false);
 
   const ConditionNumber* condNbPtr = pCondition.fcNbPtr();
   if (condNbPtr != nullptr)
