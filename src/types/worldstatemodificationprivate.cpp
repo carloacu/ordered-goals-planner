@@ -138,11 +138,12 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
   }
   else if (nodeType == WorldStateModificationNodeType::FOR_ALL)
   {
+    std::map<Parameter, std::set<Entity>> parameters;
     _forAllInstruction(
           [&](const WorldStateModification& pWsModification)
     {
       pWsModification.forAll(pFactCallback, pSetOfFact);
-    }, pSetOfFact);
+    }, pSetOfFact, parameters);
   }
   else if (nodeType == WorldStateModificationNodeType::INCREASE && leftOperand && rightOperand)
   {
@@ -263,7 +264,7 @@ bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (c
     {
       if (!res)
         res = pWsModification.canSatisfyObjective(pFactCallback, pParameters, pWorldState, pFromDeductionId);
-    }, setOfFacts);
+    }, setOfFacts, pParameters);
     return res;
   }
 
@@ -348,7 +349,7 @@ bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (
     {
       if (!res)
         res = pWsModification.iterateOnSuccessions(pCallback, pParameters, pWorldState, pCanSatisfyThisGoal, pFromDeductionId);
-    }, setOfFacts);
+    }, setOfFacts, pParameters);
     return res;
   }
 
@@ -540,7 +541,8 @@ std::optional<Entity> WorldStateModificationNode::getValue(const SetOfFacts& pSe
 
 
 void WorldStateModificationNode::_forAllInstruction(const std::function<void (const WorldStateModification &)>& pCallback,
-                                                    const SetOfFacts& pSetOfFact) const
+                                                    const SetOfFacts& pSetOfFact,
+                                                    std::map<Parameter, std::set<Entity>>& pParameters) const
 {
   if (leftOperand && rightOperand && parameterOpt)
   {
@@ -548,7 +550,9 @@ void WorldStateModificationNode::_forAllInstruction(const std::function<void (co
     if (leftFactPtr != nullptr)
     {
       std::set<Entity> parameterValues;
-      pSetOfFact.extractPotentialArgumentsOfAFactParameter(parameterValues, leftFactPtr->factOptional.fact, parameterOpt->name);
+      std::map<Parameter, std::set<Entity>> potentialNewParameters;
+      pSetOfFact.extractPotentialArgumentsOfAFactParameter(parameterValues, leftFactPtr->factOptional.fact, parameterOpt->name,
+                                                           pParameters, &potentialNewParameters);
       if (!parameterValues.empty())
       {
         for (const auto& paramValue : parameterValues)
@@ -556,6 +560,15 @@ void WorldStateModificationNode::_forAllInstruction(const std::function<void (co
           auto newWsModif = rightOperand->clone(nullptr);
           newWsModif->replaceArgument(parameterOpt->toEntity(), paramValue);
           pCallback(*newWsModif);
+        }
+
+        for (auto& currParam : potentialNewParameters)
+        {
+          auto& entities = pParameters[currParam.first];
+          if (entities.empty())
+            entities = std::move(currParam.second);
+          else
+            entities.insert(currParam.second.begin(), currParam.second.end());
         }
       }
     }

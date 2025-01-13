@@ -350,7 +350,9 @@ std::optional<Entity> SetOfFacts::getFluentValue(const ogp::Fact& pFact) const
 void SetOfFacts::extractPotentialArgumentsOfAFactParameter(
     std::set<Entity>& pPotentialArgumentsOfTheParameter,
     const Fact& pFact,
-    const std::string& pParameter) const
+    const std::string& pParameter,
+    const std::map<Parameter, std::set<Entity>>& pParameters,
+    std::map<Parameter, std::set<Entity>>* pPotentialNewParametersPtr) const
 {
   auto factMatchingInWs = find(pFact);
   for (const auto& currFact : factMatchingInWs)
@@ -358,19 +360,44 @@ void SetOfFacts::extractPotentialArgumentsOfAFactParameter(
     if (currFact.arguments().size() == pFact.arguments().size())
     {
       std::set<Entity> potentialNewValues;
+
+      auto onEntity = [&](const Entity& pFactEntity, const Entity& pCurrFactEntity)
+      {
+        if (pFactEntity.value == pParameter)
+        {
+          potentialNewValues.insert(pCurrFactEntity);
+          return true;
+        }
+        if (pFactEntity == pCurrFactEntity)
+          return true;
+
+        bool res = false;
+        for (const auto& currParam : pParameters)
+        {
+          if (pFactEntity.value == currParam.first.name)
+          {
+            if (pPotentialNewParametersPtr != nullptr)
+              (*pPotentialNewParametersPtr)[currParam.first].insert(pCurrFactEntity);
+            res = true;
+            break;
+          }
+        }
+        return res;
+      };
+
       bool doesItMatch = true;
       for (auto i = 0; i < pFact.arguments().size(); ++i)
       {
-        if (pFact.arguments()[i].value == pParameter)
+        if (!onEntity(pFact.arguments()[i], currFact.arguments()[i]))
         {
-          potentialNewValues.insert(currFact.arguments()[i]);
-          continue;
+          doesItMatch = false;
+          break;
         }
-        if (pFact.arguments()[i] == currFact.arguments()[i])
-          continue;
-        doesItMatch = false;
-        break;
       }
+
+      if (pFact.value() && currFact.value() && !onEntity(*pFact.value(), *currFact.value()))
+        doesItMatch = false;
+
       if (doesItMatch)
       {
         if (pPotentialArgumentsOfTheParameter.empty())

@@ -332,7 +332,7 @@ bool _fillParameter(const Parameter& pParameter,
 
         // remove the ones that are already in the world state for this fact
         std::set<Entity> parameterValues;
-        pContext.problem.worldState.factsMapping().extractPotentialArgumentsOfAFactParameter(parameterValues, pFact, pParameter.name);
+        pContext.problem.worldState.factsMapping().extractPotentialArgumentsOfAFactParameter(parameterValues, pFact, pParameter.name, {}, nullptr);
         for (const auto& elem : parameterValues)
           newParamValues.erase(elem);
       }

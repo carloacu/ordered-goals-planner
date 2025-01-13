@@ -121,7 +121,8 @@ private:
   Successions _successions;
 
   void _forAllInstruction(const std::function<void (const WorldStateModification&)>& pCallback,
-                          const SetOfFacts& pSetOfFact) const;
+                          const SetOfFacts& pSetOfFact,
+                          std::map<Parameter, std::set<Entity>>& pParameters) const;
 };
 
 
