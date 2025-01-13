@@ -119,72 +119,6 @@ struct WorldStateModificationWithPartInfo
 };
 
 
-std::string _effectToPddl(
-    const WorldStateModification& pWsModif,
-    std::size_t pIdentation)
-{
-  const auto* wsmNodePtr = toWmNode(pWsModif);
-  if (wsmNodePtr != nullptr)
-  {
-    const auto& wsmNode = *wsmNodePtr;
-    std::string leftOperandStr;
-    if (wsmNode.leftOperand)
-      leftOperandStr = _effectToPddl(*wsmNode.leftOperand, pIdentation);
-    std::string rightOperandStr;
-    bool isRightOperandAFactWithoutParameter = false;
-    if (wsmNode.rightOperand)
-    {
-      const auto* rightOperandFactPtr = toWmFact(*wsmNode.rightOperand);
-      if (rightOperandFactPtr != nullptr && rightOperandFactPtr->factOptional.fact.arguments().empty() &&
-          !rightOperandFactPtr->factOptional.fact.value())
-        isRightOperandAFactWithoutParameter = true;
-      rightOperandStr = _effectToPddl(*wsmNode.rightOperand, pIdentation);
-    }
-
-    switch (wsmNode.nodeType)
-    {
-    case WorldStateModificationNodeType::AND:
-      return "(and " + leftOperandStr + " " + rightOperandStr + ")";
-    case WorldStateModificationNodeType::ASSIGN:
-    {
-      if (isRightOperandAFactWithoutParameter)
-        rightOperandStr += "()"; // To significate it is a fact
-      return "(assign " + leftOperandStr + " " + rightOperandStr + ")";
-    }
-    case WorldStateModificationNodeType::FOR_ALL:
-      if (!wsmNode.parameterOpt)
-        throw std::runtime_error("for all statement without a parameter detected");
-      return "(forall (" + wsmNode.parameterOpt->toStr() + ") (when " +
-          leftOperandStr + " " + rightOperandStr + "))";
-    case WorldStateModificationNodeType::INCREASE:
-      return "(increase " + leftOperandStr + " " + rightOperandStr + ")";
-    case WorldStateModificationNodeType::DECREASE:
-      return "(decrease " + leftOperandStr + " " + rightOperandStr + ")";
-    case WorldStateModificationNodeType::MULTIPLY:
-      return "(* " + leftOperandStr + " " + rightOperandStr + ")";
-    case WorldStateModificationNodeType::PLUS:
-      return "(+ " + leftOperandStr + " " + rightOperandStr + ")";
-    case WorldStateModificationNodeType::MINUS:
-      return "(- " + leftOperandStr + " " + rightOperandStr + ")";
-    case WorldStateModificationNodeType::WHEN:
-      return "(when " + leftOperandStr + " " + rightOperandStr + ")";
-    }
-
-    throw std::runtime_error("Unkown WorldStateModificationNodeType type");
-  }
-
-  const auto* wsmFactPtr = toWmFact(pWsModif);
-  if (wsmFactPtr != nullptr)
-    return wsmFactPtr->factOptional.toPddl(true);
-
-  const auto* wsmNbPtr = toWmNumber(pWsModif);
-  if (wsmNbPtr != nullptr)
-    return numberToString(wsmNbPtr->getNb());
-
-  throw std::runtime_error("Unknown WorldStateModification children struct");
-}
-
-
 std::string _effectsToPddl(
     const std::list<WorldStateModificationWithPartInfo>& pWorldStateModificationWithPartInfos,
     std::size_t pIdentation)
@@ -204,7 +138,7 @@ std::string _effectsToPddl(
         auto subIndentation = _identationOffset;
         std::string leftOperandStr;
         if (wsmNode.leftOperand)
-          leftOperandStr = _effectToPddl(*wsmNode.leftOperand, subIndentation);
+          leftOperandStr = effectToPddl(*wsmNode.leftOperand, subIndentation);
 
         subResults.emplace_back(leftOperandStr);
         auto* nodePtr = wsmNodePtr;
@@ -214,18 +148,18 @@ std::string _effectsToPddl(
           auto* newNodePtr = toWmNode(*nodePtr->rightOperand);
           if (newNodePtr == nullptr || newNodePtr->nodeType != wsmNode.nodeType)
           {
-            subResults.emplace_back(_effectToPddl(*nodePtr->rightOperand, subIndentation));
+            subResults.emplace_back(effectToPddl(*nodePtr->rightOperand, subIndentation));
             break;
           }
 
-          subResults.emplace_back(_effectToPddl(*newNodePtr->leftOperand, subIndentation));
+          subResults.emplace_back(effectToPddl(*newNodePtr->leftOperand, subIndentation));
           nodePtr = newNodePtr;
         }
       }
     }
 
     if (subResults.empty())
-      subResults.emplace_back(_effectToPddl(currElt.wsModif, 0));
+      subResults.emplace_back(effectToPddl(currElt.wsModif, 0));
 
     for (const auto& currSubResult : subResults)
     {
@@ -351,7 +285,7 @@ std::string domainToPddl(const Domain& pDomain)
             eventContent += "\n";
           eventContent += std::string(subIdentation, ' ') + ":effect\n";
           eventContent += std::string(subSubIdentation, ' ') +
-              _effectToPddl(*currEvent.factsToModify, subSubIdentation);
+              effectToPddl(*currEvent.factsToModify, subSubIdentation);
         }
 
         res += eventContent;
@@ -623,6 +557,80 @@ std::string conditionToPddl(const Condition& pCondition,
     return numberToString(condNbPtr->nb);
 
   throw std::runtime_error("Unknown conditon type");
+}
+
+
+
+std::string effectToPddl(
+    const WorldStateModification& pWsModif,
+    std::size_t pIdentation,
+    bool pActuallyItIsACondition)
+{
+  const auto* wsmNodePtr = toWmNode(pWsModif);
+  if (wsmNodePtr != nullptr)
+  {
+    const auto& wsmNode = *wsmNodePtr;
+    std::string leftOperandStr;
+    if (wsmNode.leftOperand)
+    {
+      bool actuallyItIsACondition = wsmNode.nodeType == WorldStateModificationNodeType::FOR_ALL ||
+          wsmNode.nodeType == WorldStateModificationNodeType::WHEN;
+      leftOperandStr = effectToPddl(*wsmNode.leftOperand, pIdentation, actuallyItIsACondition);
+    }
+    std::string rightOperandStr;
+    bool isRightOperandAFactWithoutParameter = false;
+    if (wsmNode.rightOperand)
+    {
+      const auto* rightOperandFactPtr = toWmFact(*wsmNode.rightOperand);
+      if (rightOperandFactPtr != nullptr && rightOperandFactPtr->factOptional.fact.arguments().empty() &&
+          !rightOperandFactPtr->factOptional.fact.value())
+        isRightOperandAFactWithoutParameter = true;
+      rightOperandStr = effectToPddl(*wsmNode.rightOperand, pIdentation);
+    }
+
+    switch (wsmNode.nodeType)
+    {
+    case WorldStateModificationNodeType::AND:
+      return "(and " + leftOperandStr + " " + rightOperandStr + ")";
+    case WorldStateModificationNodeType::ASSIGN:
+    {
+      if (isRightOperandAFactWithoutParameter)
+        rightOperandStr += "()"; // To significate it is a fact
+      if (pActuallyItIsACondition)
+        return "(= " + leftOperandStr + " " + rightOperandStr + ")";
+      return "(assign " + leftOperandStr + " " + rightOperandStr + ")";
+    }
+    case WorldStateModificationNodeType::FOR_ALL:
+      if (!wsmNode.parameterOpt)
+        throw std::runtime_error("for all statement without a parameter detected");
+      return "(forall (" + wsmNode.parameterOpt->toStr() + ") (when " +
+          leftOperandStr + " " + rightOperandStr + "))";
+    case WorldStateModificationNodeType::INCREASE:
+      return "(increase " + leftOperandStr + " " + rightOperandStr + ")";
+    case WorldStateModificationNodeType::DECREASE:
+      return "(decrease " + leftOperandStr + " " + rightOperandStr + ")";
+    case WorldStateModificationNodeType::MULTIPLY:
+      return "(* " + leftOperandStr + " " + rightOperandStr + ")";
+    case WorldStateModificationNodeType::PLUS:
+      return "(+ " + leftOperandStr + " " + rightOperandStr + ")";
+    case WorldStateModificationNodeType::MINUS:
+      return "(- " + leftOperandStr + " " + rightOperandStr + ")";
+    case WorldStateModificationNodeType::WHEN:
+      return "(when " + leftOperandStr + " " + rightOperandStr + ")";
+    }
+
+    throw std::runtime_error("Unkown WorldStateModificationNodeType type");
+  }
+
+  const auto* wsmFactPtr = toWmFact(pWsModif);
+  if (wsmFactPtr != nullptr)
+    return wsmFactPtr->factOptional.toPddl(!pActuallyItIsACondition);
+
+  const auto* wsmNbPtr = toWmNumber(pWsModif);
+  if (wsmNbPtr != nullptr)
+    return numberToString(wsmNbPtr->getNb());
+
+  throw std::runtime_error("Unknown WorldStateModification children struct");
 }
 
 }

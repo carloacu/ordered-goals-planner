@@ -17,7 +17,7 @@ void _test_pddlSerializationParts()
 {
   ogp::Ontology ontology;
   ontology.types = ogp::SetOfTypes::fromPddl("type1 type2 - entity");
-  ontology.constants = ogp::SetOfEntities::fromPddl("toto - type1\n"
+  ontology.constants = ogp::SetOfEntities::fromPddl("toto toto2 toto3 - type1\n"
                                                    "titi - type2", ontology.types);
 
   ogp::Predicate pred("(pred_a ?e - entity)", true, ontology.types);
@@ -135,6 +135,24 @@ void _test_pddlSerializationParts()
     if (!ws)
       FAIL();
     EXPECT_EQ("forall(?e - entity, when(pred_a(?e), pred_c(?e)))", ws->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(forall (?e - entity) (when (= (pred_d ?e) toto) (pred_c ?e))", pos, ontology, {}, {});
+    if (!ws)
+      FAIL();
+    EXPECT_EQ("forall(?e - entity, when(pred_d(?e)=toto, pred_c(?e)))", ws->toStr());
+    EXPECT_EQ("(forall (?e - entity) (when (= (pred_d ?e) toto) (pred_c ?e)))", ogp::effectToPddl(*ws, 0));
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(when (= (pred_d toto2) toto) (pred_c toto3)", pos, ontology, {}, {});
+    if (!ws)
+      FAIL();
+    EXPECT_EQ("when(pred_d(toto2)=toto, pred_c(toto3))", ws->toStr());
+    EXPECT_EQ("(when (= (pred_d toto2) toto) (pred_c toto3))", ogp::effectToPddl(*ws, 0));
   }
 
   {
