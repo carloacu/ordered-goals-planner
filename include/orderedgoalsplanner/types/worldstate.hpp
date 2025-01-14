@@ -208,6 +208,9 @@ struct ORDEREDGOALSPLANNER_API WorldState
   bool isOptionalFactSatisfied(const FactOptional& pFactOptional) const;
 
 
+  bool canBeModifiedBy(const FactOptional& pFactOptional,
+                       std::map<Parameter, std::set<Entity>>& pArgumentsToFilter) const;
+
   /**
    * @brief Is an optional fact satisfied in a specific context.
    * @param[in] pFactOptional Input optional fact.

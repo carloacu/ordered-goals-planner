@@ -389,6 +389,65 @@ bool WorldState::isOptionalFactSatisfied(const FactOptional& pFactOptional) cons
 }
 
 
+bool WorldState::canBeModifiedBy(const FactOptional& pFactOptional,
+                                 std::map<Parameter, std::set<Entity>>& pArgumentsToFilter) const
+{
+  std::map<Parameter, std::set<Entity>> newParameters;
+  if (pFactOptional.isFactNegated)
+  {
+    if (pFactOptional.fact.value() && pFactOptional.fact.value()->isAParameterToFill())
+    {
+      auto factMatchingInWs = _factsMapping.find(pFactOptional.fact, true);
+      if (!factMatchingInWs.empty())
+      {
+        std::list<std::map<Parameter, Entity>> paramPossibilities;
+        unfoldMapWithSet(paramPossibilities, pArgumentsToFilter);
+
+        for (auto& currParamPoss : paramPossibilities)
+        {
+          auto factToCompare = pFactOptional.fact;
+          factToCompare.replaceArguments(currParamPoss);
+          if (factToCompare.value() && factToCompare.value()->isAnyEntity())
+          {
+            for (const auto& currFact : factMatchingInWs)
+            {
+              if (currFact.areEqualExceptAnyEntities(factToCompare))
+              {
+                if (currFact.value())
+                  newParameters = {{pFactOptional.fact.value()->toParameter(), {*currFact.value()}}};
+                applyNewParams(pArgumentsToFilter, newParameters);
+                return true;
+              }
+            }
+            return false;
+          }
+        }
+        if (pFactOptional.fact.value() && pFactOptional.fact.value()->isAnyEntity())
+          return true;
+
+        std::map<Parameter, std::set<Entity>> newPotentialParameters;
+        std::map<Parameter, std::set<Entity>> newPotentialParametersInPlace;
+
+        for (const auto& currFact : factMatchingInWs)
+          if (pFactOptional.fact.isInOtherFact(currFact, newPotentialParameters, &pArgumentsToFilter,
+                                               newPotentialParametersInPlace, nullptr))
+            return true;
+        return false;
+      }
+    }
+
+    if (pFactOptional.fact.isInOtherFactsMap(_factsMapping, &newParameters, true, &pArgumentsToFilter, &pArgumentsToFilter))
+    {
+      applyNewParams(pArgumentsToFilter, newParameters);
+      return true;
+    }
+    return false;
+  }
+
+  return pFactOptional.fact.canModifySetOfFacts(_factsMapping, pArgumentsToFilter);
+}
+
+
 bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& pFactOptional,
                                                            const std::set<Fact>& pPunctualFacts,
                                                            const std::set<Fact>& pRemovedFacts,

@@ -226,6 +226,9 @@ struct ORDEREDGOALSPLANNER_API Fact
                          std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr = nullptr,
                          bool* pTriedToModifyParametersPtr = nullptr) const;
 
+  bool canModifySetOfFacts(const SetOfFacts& pOtherFacts,
+                           std::map<Parameter, std::set<Entity> >& pArgumentsToFilter) const;
+
   bool updateParameters(std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,
                         std::map<Parameter, std::set<Entity>>& pNewPotentialParametersInPlace,
                         std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
@@ -233,6 +236,10 @@ struct ORDEREDGOALSPLANNER_API Fact
                         const std::map<Parameter, std::set<Entity>>* pParametersPtr,
                         std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr,
                         bool* pTriedToModifyParametersPtr) const;
+
+  bool filterPossibilities(const Fact& pOtherFact,
+                           std::map<Parameter, std::set<Entity>>& pNewParameters,
+                           std::map<Parameter, std::set<Entity>>& pParameters) const;
 
   /**
    * @brief Does the fact matches the other fact.
