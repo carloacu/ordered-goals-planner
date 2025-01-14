@@ -89,3 +89,8 @@ TEST_F(PlannerUsingExternalData, test_problemsInData_ordered_goals)
 {
   _test_dataDirectory(PlannerUsingExternalData::dataPath, "ordered_goals");
 }
+
+TEST_F(PlannerUsingExternalData, test_problemsInData_move_and_tell)
+{
+  _test_dataDirectory(PlannerUsingExternalData::dataPath, "move_and_tell");
+}

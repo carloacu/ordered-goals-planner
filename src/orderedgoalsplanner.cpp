@@ -43,6 +43,7 @@ struct PlanCost
   std::size_t nbOfGoalsNotSatisfied = 0;
   std::size_t nbOfGoalsSatisfied = 0;
   std::size_t nbOfActionDones = 0;
+  std::size_t nbOfActionDonesForFirstGoal = 0;
 
   bool isBetterThan(const PlanCost& pOther) const
   {
@@ -52,6 +53,8 @@ struct PlanCost
       return nbOfGoalsNotSatisfied > pOther.nbOfGoalsNotSatisfied;
     if (nbOfGoalsSatisfied != pOther.nbOfGoalsSatisfied)
       return nbOfGoalsSatisfied > pOther.nbOfGoalsSatisfied;
+    if (nbOfActionDonesForFirstGoal != pOther.nbOfActionDonesForFirstGoal)
+      return nbOfActionDonesForFirstGoal < pOther.nbOfActionDonesForFirstGoal;
     return nbOfActionDones < pOther.nbOfActionDones;
   }
 };
@@ -733,6 +736,8 @@ PlanCost _extractPlanCost(
       break;
     for (const auto& currActionInSubPlan : subPlan)
     {
+      if (pLookForAnActionOutputInfos.nbOfNotSatisfiedGoals() == 0 && pLookForAnActionOutputInfos.nbOfSatisfiedGoals() == 0)
+        ++res.nbOfActionDonesForFirstGoal;
       ++res.nbOfActionDones;
       const auto& actionToDoStr = currActionInSubPlan.actionInvocation.toStr();
       if (actionAlreadyInPlan.count(actionToDoStr) > 0)
