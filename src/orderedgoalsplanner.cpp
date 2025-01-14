@@ -375,9 +375,9 @@ PossibleEffect _checkConditionAndFillParameters(const Condition& pCondition,
   applyNewParams(pParentParameters, newParentParameters);
 
   // Check that the new fact pattern is not already satisfied
-  if (pContext.problem.worldState.isOptionalFactSatisfiedInASpecificContext(pFactOptional, {}, {}, true, &pParentParameters, pTmpParentParametersPtr))
-     return PossibleEffect::SATISFIED_BUT_DOES_NOT_MODIFY_THE_WORLD;
-  return PossibleEffect::SATISFIED;
+  if (pContext.problem.worldState.canBeModifiedBy(pFactOptional, pParentParameters))
+    return PossibleEffect::SATISFIED;
+  return PossibleEffect::SATISFIED_BUT_DOES_NOT_MODIFY_THE_WORLD;
 }
 
 

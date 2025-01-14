@@ -13,6 +13,45 @@
 
 namespace ogp
 {
+namespace
+{
+std::optional<bool> _isPresentWithAnotherValue(const Fact& pFact,
+                                               const SetOfFacts::SetOfFactIterator& pSetOfFacts,
+                                               std::map<Parameter, std::set<Entity>>& pArgumentsToFilter)
+{
+  std::map<Parameter, std::set<Entity>> newParameters;
+  std::list<std::map<Parameter, Entity>> paramPossibilities;
+  unfoldMapWithSet(paramPossibilities, pArgumentsToFilter);
+
+  for (auto& currParamPoss : paramPossibilities)
+  {
+    auto factToCompare = pFact;
+    factToCompare.replaceArguments(currParamPoss);
+    if (factToCompare.value() && factToCompare.value()->isAnyEntity())
+    {
+      for (const auto& currFact : pSetOfFacts)
+      {
+        if (currFact.areEqualExceptAnyEntities(factToCompare))
+        {
+          if (currFact.value())
+          {
+            if (currFact.value() == pFact.value())
+              return std::optional<bool>(false);
+            newParameters = {{pFact.value()->toParameter(), {*currFact.value()}}};
+          }
+          applyNewParams(pArgumentsToFilter, newParameters);
+          return std::optional<bool>(true);
+        }
+      }
+      return std::optional<bool>(false);
+    }
+  }
+  if (pFact.value()->isAnyEntity())
+    return std::optional<bool>(true);
+  return std::optional<bool>();
+}
+}
+
 
 WorldState::WorldState(const SetOfFacts* pFactsPtr)
   : onFactsChanged(),
@@ -389,10 +428,30 @@ bool WorldState::isOptionalFactSatisfied(const FactOptional& pFactOptional) cons
 }
 
 
+bool WorldState::canBeModifiedBy(const FactOptional& pFactOptional,
+                                 std::map<Parameter, std::set<Entity>>& pArgumentsToFilter) const
+{
+  if (pFactOptional.isFactNegated && pFactOptional.fact.value() && pFactOptional.fact.value()->isAParameterToFill())
+  {
+    auto factMatchingInWs = _factsMapping.find(pFactOptional.fact, true);
+    if (!factMatchingInWs.empty())
+    {
+      auto resOpt = _isPresentWithAnotherValue(pFactOptional.fact, factMatchingInWs, pArgumentsToFilter);
+      if (resOpt)
+        return *resOpt;
+    }
+  }
+
+  bool res= pFactOptional.fact.canModifySetOfFacts(_factsMapping, pArgumentsToFilter);
+  if (pFactOptional.isFactNegated)
+    return !res;
+  return res;
+}
+
+
 bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& pFactOptional,
                                                            const std::set<Fact>& pPunctualFacts,
                                                            const std::set<Fact>& pRemovedFacts,
-                                                           bool pCheckAllPossibilities,
                                                            std::map<Parameter, std::set<Entity>>* pParametersToPossibleArgumentsPtr,
                                                            std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const
 {
@@ -402,7 +461,7 @@ bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& p
   std::map<Parameter, std::set<Entity>> newParameters;
   if (pFactOptional.isFactNegated)
   {
-    bool res = pFactOptional.fact.isInOtherFacts(pRemovedFacts, &newParameters, pCheckAllPossibilities, pParametersToPossibleArgumentsPtr, pParametersToModifyInPlacePtr);
+    bool res = pFactOptional.fact.isInOtherFacts(pRemovedFacts, &newParameters, pParametersToPossibleArgumentsPtr, pParametersToModifyInPlacePtr);
     if (res)
     {
       if (pParametersToPossibleArgumentsPtr != nullptr)
@@ -417,72 +476,33 @@ bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& p
       {
         if (pParametersToPossibleArgumentsPtr != nullptr)
         {
-          std::list<std::map<Parameter, Entity>> paramPossibilities;
-          unfoldMapWithSet(paramPossibilities, *pParametersToPossibleArgumentsPtr);
-
-          for (auto& currParamPoss : paramPossibilities)
-          {
-            auto factToCompare = pFactOptional.fact;
-            factToCompare.replaceArguments(currParamPoss);
-            if (factToCompare.value() && factToCompare.value()->isAnyEntity())
-            {
-              for (const auto& currFact : factMatchingInWs)
-              {
-                if (currFact.areEqualExceptAnyEntities(factToCompare))
-                {
-                  if (currFact.value())
-                    newParameters = {{pFactOptional.fact.value()->toParameter(), {*currFact.value()}}};
-                  applyNewParams(*pParametersToPossibleArgumentsPtr, newParameters);
-                  return false;
-                }
-              }
-              return true;
-            }
-          }
-          if (pFactOptional.fact.value() && pFactOptional.fact.value()->isAnyEntity())
-            return false;
+          auto resOpt = _isPresentWithAnotherValue(pFactOptional.fact, factMatchingInWs, *pParametersToPossibleArgumentsPtr);
+          if (resOpt)
+            return !*resOpt;
         }
 
         std::map<Parameter, std::set<Entity>> newPotentialParameters;
         std::map<Parameter, std::set<Entity>> newPotentialParametersInPlace;
+        res = true;
+        for (const auto& currFact : factMatchingInWs)
+          if (pFactOptional.fact.isInOtherFact(currFact, newPotentialParameters, pParametersToPossibleArgumentsPtr,
+                                               newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
+            res = false;
 
-        if (pCheckAllPossibilities)
-        {
-          for (const auto& currFact : factMatchingInWs)
-            if (pFactOptional.fact.isInOtherFact(currFact, newPotentialParameters, pParametersToPossibleArgumentsPtr,
-                                                 newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
-              return false;
+        if (res)
           return true;
-        }
-        else
-        {
-          res = true;
-          for (const auto& currFact : factMatchingInWs)
-            if (pFactOptional.fact.isInOtherFact(currFact, newPotentialParameters, pParametersToPossibleArgumentsPtr,
-                                                 newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
-              res = false;
-
-          if (res)
-            return true;
-          return !pFactOptional.fact.updateParameters(newPotentialParameters, newPotentialParametersInPlace, &newParameters, true,
-                                                      pParametersToPossibleArgumentsPtr, pParametersToModifyInPlacePtr, nullptr);
-        }
+        return !pFactOptional.fact.updateParameters(newPotentialParameters, newPotentialParametersInPlace, &newParameters, true,
+                                                    pParametersToPossibleArgumentsPtr, pParametersToModifyInPlacePtr, nullptr);
       }
     }
-
-    if (pFactOptional.fact.isInOtherFactsMap(_factsMapping, &newParameters, pCheckAllPossibilities, pParametersToPossibleArgumentsPtr, pParametersToModifyInPlacePtr))
-    {
-      if (pParametersToPossibleArgumentsPtr != nullptr)
-        applyNewParams(*pParametersToPossibleArgumentsPtr, newParameters);
-      return false;
-    }
-    return true;
   }
 
-  auto res = pFactOptional.fact.isInOtherFactsMap(_factsMapping, &newParameters, pCheckAllPossibilities, pParametersToPossibleArgumentsPtr,
+  auto res = pFactOptional.fact.isInOtherFactsMap(_factsMapping, &newParameters, pParametersToPossibleArgumentsPtr,
                                                   pParametersToModifyInPlacePtr);
   if (pParametersToPossibleArgumentsPtr != nullptr)
     applyNewParams(*pParametersToPossibleArgumentsPtr, newParameters);
+  if (pFactOptional.isFactNegated)
+    return !res;
   return res;
 }
 

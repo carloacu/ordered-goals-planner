@@ -117,7 +117,7 @@ bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
   auto* factOfConditionPtr = pCondition.fcFactPtr();
   if (factOfConditionPtr != nullptr)
   {
-    bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(factOfConditionPtr->factOptional, pPunctualFacts, pRemovedFacts, pMustBeTrueForAllParameters,
+    bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(factOfConditionPtr->factOptional, pPunctualFacts, pRemovedFacts,
                                                                      pConditionParametersToPossibleArguments, &pLocalParamToValue);
     if (pMustBeTrueForAllParameters && !factOfConditionPtr->factOptional.isFactNegated)
     {
@@ -267,7 +267,7 @@ void _extractParamForNotLoopRec(std::map<Parameter, std::set<Entity>>& pLocalPar
         !factOfConditionOpt.fact.areEqualWithoutAnArgConsideration(pFactFromEffect, pParameter.name))
     {
       std::map<Parameter, std::set<Entity>> newParameters;
-      factOfConditionOpt.fact.isInOtherFactsMap(pFacts, &newParameters, false, &pConditionParametersToPossibleArguments, &pLocalParamToValue);
+      factOfConditionOpt.fact.isInOtherFactsMap(pFacts, &newParameters, &pConditionParametersToPossibleArguments, &pLocalParamToValue);
     }
     return;
   }
@@ -566,7 +566,7 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
           if (factToCheck.isPunctual())
             subRes = pPunctualFacts.count(factToCheck) != 0;
           else
-            subRes = factToCheck.isInOtherFactsMap(factAccessorsToFacts, &newParameters, false, pConditionParametersToPossibleArguments);
+            subRes = factToCheck.isInOtherFactsMap(factAccessorsToFacts, &newParameters, pConditionParametersToPossibleArguments);
 
           // Try to resolve the parameters
           if (subRes && pFromFactPtr != nullptr &&
@@ -1188,7 +1188,7 @@ bool ConditionFact::isTrue(const WorldState& pWorldState,
                            std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
                            bool pIsWrappingExpressionNegated) const
 {
-  bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(factOptional, pPunctualFacts, pRemovedFacts, false, pConditionParametersToPossibleArguments, nullptr);
+  bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(factOptional, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, nullptr);
   if (!pIsWrappingExpressionNegated)
     return res;
   return !res;
