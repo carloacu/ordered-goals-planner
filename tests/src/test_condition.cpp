@@ -143,6 +143,43 @@ void _test_fluent_value_equality_with_sub_types()
   EXPECT_FALSE(_isTrue("(exists (?cz - charging_zone) (= (declared_location self) (declared_location ?cz))", ontology, worldState, objects));
 }
 
+
+void _test_exists_with_and_list_inside()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("my_type my_type2 my_type3 - entity\n"
+                                             "sub_my_type3 - my_type3");
+  ontology.constants = ogp::SetOfEntities::fromPddl("toto toto2 - my_type\n"
+                                                    "titi - my_type2\n"
+                                                    "v3 - my_type3", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("pred_name(?e - entity)\n"
+                                                      "fun1(?e - my_type3) - entity\n"
+                                                      "fun2(?e - my_type2) - entity\n"
+                                                      "fun3(?e - my_type3) - entity\n"
+                                                      "nb - number", ontology.types);
+
+  ogp::WorldState worldState;
+  ogp::GoalStack goalStack;
+  ogp::SetOfEntities objects;
+  std::map<ogp::SetOfEventsId, ogp::SetOfEvents> setOfEvents;
+
+
+  EXPECT_FALSE(_isTrue("(exists (?p - entity) (= (fun1 ?p) toto))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun1(v3)=toto", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_TRUE(_isTrue("(exists (?p - entity) (= (fun1 ?p) toto))", ontology, worldState, objects));
+  EXPECT_FALSE(_isTrue("(exists (?p - entity) (and (= (fun1 ?p) toto) (= (fun2 ?p) toto2)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun2(titi)=toto", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(exists (?p - entity) (and (= (fun1 ?p) toto) (= (fun2 ?p) toto2)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun2(titi)=toto2", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(exists (?p - entity) (and (= (fun1 ?p) toto) (= (fun2 ?p) toto2)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun3(v3)=toto2", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_TRUE(_isTrue("(exists (?p - entity) (and (= (fun1 ?p) toto) (= (fun3 ?p) toto2)))", ontology, worldState, objects));
+  EXPECT_TRUE(_isTrue("(exists (?p - entity) (and (= (fun1 ?p) toto) (not (pred_name ?p))))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("pred_name(v3)", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(exists (?p - entity) (and (= (fun1 ?p) toto) (not (pred_name ?p))))", ontology, worldState, objects));
+  EXPECT_TRUE(_isTrue("(exists (?p - entity) (and (= (fun1 ?p) toto) (pred_name ?p)))", ontology, worldState, objects));
+}
+
 }
 
 
@@ -151,4 +188,5 @@ TEST(Tool, test_condition)
 {
   _test_checkConditionWithOntology();
   _test_fluent_value_equality_with_sub_types();
+  _test_exists_with_and_list_inside();
 }

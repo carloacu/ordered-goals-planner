@@ -21,8 +21,9 @@ static const std::vector<ogp::Parameter> _emptyParameters;
 
 ogp::Fact _fact(const std::string& pStr,
                 const ogp::Ontology& pOntology,
+                const ogp::SetOfEntities& pObjects,
                 const std::vector<ogp::Parameter>& pParameters = {}) {
-  return ogp::Fact(pStr, false, pOntology, {}, pParameters);
+  return ogp::Fact(pStr, false, pOntology, pObjects, pParameters);
 }
 
 ogp::Parameter _parameter(const std::string& pStr,
@@ -87,8 +88,9 @@ void _addFact(ogp::WorldState& pWorldState,
               ogp::GoalStack& pGoalStack,
               const ogp::Ontology& pOntology,
               const std::map<ogp::SetOfEventsId, ogp::SetOfEvents>& pSetOfEvents = _emptySetOfEvents,
-              const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {}) {
-  pWorldState.addFact(_fact(pFactStr, pOntology), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, ogp::SetOfEntities(), pNow);
+              const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
+              const ogp::SetOfEntities& pObjects = ogp::SetOfEntities()) {
+  pWorldState.addFact(_fact(pFactStr, pOntology, pObjects), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, pObjects, pNow);
 }
 
 
@@ -97,14 +99,16 @@ void _removeFact(ogp::WorldState& pWorldState,
                  ogp::GoalStack& pGoalStack,
                  const ogp::Ontology& pOntology,
                  const std::map<ogp::SetOfEventsId, ogp::SetOfEvents>& pSetOfEvents = _emptySetOfEvents,
-                 const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {}) {
-  pWorldState.removeFact(_fact(pFactStr, pOntology), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, ogp::SetOfEntities(), pNow);
+                 const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
+                 const ogp::SetOfEntities& pObjects = ogp::SetOfEntities()) {
+  pWorldState.removeFact(_fact(pFactStr, pOntology, pObjects), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, pObjects, pNow);
 }
 
 bool _hasFact(ogp::WorldState& pWorldState,
               const std::string& pFactStr,
-              const ogp::Ontology& pOntology) {
-  return pWorldState.hasFact(_fact(pFactStr, pOntology));
+              const ogp::Ontology& pOntology,
+              const ogp::SetOfEntities& pObjects = ogp::SetOfEntities()) {
+  return pWorldState.hasFact(_fact(pFactStr, pOntology, pObjects));
 }
 
 ogp::ActionInvocationWithGoal _lookForAnActionToDo(ogp::Problem& pProblem,
@@ -602,7 +606,7 @@ void _actionToSatisfyANotExists()
   _setGoalsForAPriority(problem, {_goal(_fact_b, ontology)}, ontology.constants);
   _addFact(problem.worldState, "busy(spec_rec)", problem.goalStack, ontology, setOfEventsMap, _now);
 
-  EXPECT_EQ(action3 + "(?r -> spec_rec)", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action3 + "(?r -> spec_rec)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
   _addFact(problem.worldState, _fact_a + "(self, kitchen)", problem.goalStack, ontology, setOfEventsMap, _now);
   EXPECT_EQ(action2 + "(?loc -> kitchen)", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
 }
@@ -635,6 +639,32 @@ void _existsInsideAPath()
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
 }
 
+
+void _checkExistsInGoalWithAndListWithANotStatement()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("user");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("pred_1(?u - user)\n"
+                                                      "pred_2(?u - user)", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{_parameter("?u - user", ontology)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(pred_1 ?u)", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("u1 u2 - user", ontology.types);
+  _addFact(problem.worldState, "pred_2(u2)", problem.goalStack, ontology, setOfEventsMap, _now, problem.objects);
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(exists (?u - user) (and (pred_1 ?u) (not (pred_2 ?u))))", ontology)}, ontology.constants);
+  EXPECT_EQ("action1(?u -> u1)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
 }
 
 
@@ -656,4 +686,5 @@ TEST(Planner, test_existentialPreconditionsRequirement)
   _notExists();
   _actionToSatisfyANotExists();
   _existsInsideAPath();
+  _checkExistsInGoalWithAndListWithANotStatement();
 }

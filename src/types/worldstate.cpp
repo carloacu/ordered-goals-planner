@@ -470,7 +470,7 @@ bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& p
       }
     }
 
-    if (pFactOptional.fact.isInOtherFactsMap(_factsMapping, &newParameters, pCheckAllPossibilities, pParametersToPossibleArgumentsPtr, pParametersToPossibleArgumentsPtr))
+    if (pFactOptional.fact.isInOtherFactsMap(_factsMapping, &newParameters, pCheckAllPossibilities, pParametersToPossibleArgumentsPtr, pParametersToModifyInPlacePtr))
     {
       if (pParametersToPossibleArgumentsPtr != nullptr)
         applyNewParams(*pParametersToPossibleArgumentsPtr, newParameters);

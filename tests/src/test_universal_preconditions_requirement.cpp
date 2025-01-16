@@ -16,8 +16,9 @@ static const std::vector<ogp::Parameter> _emptyParameters;
 
 ogp::Fact _fact(const std::string& pStr,
                 const ogp::Ontology& pOntology,
+                const ogp::SetOfEntities& pObjects,
                 const std::vector<ogp::Parameter>& pParameters = {}) {
-  return ogp::Fact(pStr, false, pOntology, {}, pParameters);
+  return ogp::Fact(pStr, false, pOntology, pObjects, pParameters);
 }
 
 ogp::Parameter _parameter(const std::string& pStr,
@@ -59,8 +60,9 @@ void _setGoalsForAPriority(ogp::Problem& pProblem,
 
 bool _hasFact(ogp::WorldState& pWorldState,
               const std::string& pFactStr,
-              const ogp::Ontology& pOntology) {
-  return pWorldState.hasFact(_fact(pFactStr, pOntology));
+              const ogp::Ontology& pOntology,
+              const ogp::SetOfEntities& pObjects) {
+  return pWorldState.hasFact(_fact(pFactStr, pOntology, pObjects));
 }
 
 
@@ -68,9 +70,10 @@ void _addFact(ogp::WorldState& pWorldState,
               const std::string& pFactStr,
               ogp::GoalStack& pGoalStack,
               const ogp::Ontology& pOntology,
+              const ogp::SetOfEntities& pObjects,
               const std::map<ogp::SetOfEventsId, ogp::SetOfEvents>& pSetOfEvents = _emptySetOfEvents,
               const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {}) {
-  pWorldState.addFact(_fact(pFactStr, pOntology), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, ogp::SetOfEntities(), pNow);
+  pWorldState.addFact(_fact(pFactStr, pOntology, pObjects), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, pObjects, pNow);
 }
 
 
@@ -78,9 +81,10 @@ void _removeFact(ogp::WorldState& pWorldState,
                  const std::string& pFactStr,
                  ogp::GoalStack& pGoalStack,
                  const ogp::Ontology& pOntology,
+                 const ogp::SetOfEntities& pObjects,
                  const std::map<ogp::SetOfEventsId, ogp::SetOfEvents>& pSetOfEvents = _emptySetOfEvents,
                  const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {}) {
-  pWorldState.removeFact(_fact(pFactStr, pOntology), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, ogp::SetOfEntities(), pNow);
+  pWorldState.removeFact(_fact(pFactStr, pOntology, pObjects), pGoalStack, pSetOfEvents, _emptyCallbacks, pOntology, pObjects, pNow);
 }
 
 
@@ -125,12 +129,12 @@ void _forallConditions()
   _setGoalsForAPriority(problem, {_pddlGoal("(fact_b)", ontology)}, ontology.constants);
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
 
-  _addFact(problem.worldState, "fact_a(v1a)", problem.goalStack, ontology, setOfEventsMap, _now);
+  _addFact(problem.worldState, "fact_a(v1a)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
   _setGoalsForAPriority(problem, {_pddlGoal("(fact_b)", ontology)}, ontology.constants);
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-  _removeFact(problem.worldState, "fact_b", problem.goalStack, ontology, setOfEventsMap, _now);
+  _removeFact(problem.worldState, "fact_b", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
 
-  _addFact(problem.worldState, "fact_a(v1b)", problem.goalStack, ontology, setOfEventsMap, _now);
+  _addFact(problem.worldState, "fact_a(v1b)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
   _setGoalsForAPriority(problem, {_pddlGoal("(fact_b)", ontology)}, ontology.constants);
   EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
 }
@@ -185,8 +189,8 @@ void _forallGoalWithAnd()
   auto& setOfEventsMap = domain.getSetOfEvents();
   ogp::Problem problem;
   _setGoalsForAPriority(problem, {_pddlGoal("(forall (?t - t1) (and (fact_a ?t) (fact_b ?t)))", ontology)}, ontology.constants);
-  _addFact(problem.worldState, "fact_b(v1a)", problem.goalStack, ontology, setOfEventsMap, _now);
-  _addFact(problem.worldState, "fact_b(v1b)", problem.goalStack, ontology, setOfEventsMap, _now);
+  _addFact(problem.worldState, "fact_b(v1a)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  _addFact(problem.worldState, "fact_b(v1b)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
 
   auto res1 = _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr();
   auto res2 = _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr();
@@ -231,6 +235,40 @@ void _forallInsideAPath()
 }
 
 
+
+void _actionToSatisfyANotForall()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("location");
+  ontology.constants = ogp::SetOfEntities::fromPddl("l1 - location", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_a(?l - location)\n"
+                                                      "fact_b", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Action actionObj1(_condition_fromPddl("(not (forall (?l - location) (fact_a ?l)))", ontology),
+                         _worldStateModification_fromPddl("(fact_b)", ontology));
+  actions.emplace(action1, actionObj1);
+
+  std::vector<ogp::Parameter> act2Parameters{_parameter("?loc - location", ontology)};
+  ogp::Action actionObj2({}, _worldStateModification_fromPddl("(not (fact_a ?loc))", ontology, act2Parameters));
+  actionObj2.parameters = std::move(act2Parameters);
+  actions.emplace(action2, actionObj2);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("l2 - location", ontology.types);
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_b)", ontology)}, ontology.constants);
+
+  _addFact(problem.worldState, "fact_a(l1)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  _addFact(problem.worldState, "fact_a(l2)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  EXPECT_EQ("action2(?loc -> l1)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("action1", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
 }
 
 
@@ -241,4 +279,5 @@ TEST(Planner, test_universalPreconditionsRequirement)
   _forallGoal();
   _forallGoalWithAnd();
   _forallInsideAPath();
+  _actionToSatisfyANotForall();
 }
