@@ -42,8 +42,8 @@ struct PlanCost
   bool success = true;
   std::size_t nbOfGoalsNotSatisfied = 0;
   std::size_t nbOfGoalsSatisfied = 0;
-  std::size_t nbOfActionDones = 0;
-  std::size_t nbOfActionDonesForFirstGoal = 0;
+  Number totalCost = 0;
+  Number costForFirstGoal = 0;
 
   bool isBetterThan(const PlanCost& pOther) const
   {
@@ -53,9 +53,9 @@ struct PlanCost
       return nbOfGoalsNotSatisfied > pOther.nbOfGoalsNotSatisfied;
     if (nbOfGoalsSatisfied != pOther.nbOfGoalsSatisfied)
       return nbOfGoalsSatisfied > pOther.nbOfGoalsSatisfied;
-    if (nbOfActionDonesForFirstGoal != pOther.nbOfActionDonesForFirstGoal)
-      return nbOfActionDonesForFirstGoal < pOther.nbOfActionDonesForFirstGoal;
-    return nbOfActionDones < pOther.nbOfActionDones;
+    if (costForFirstGoal != pOther.costForFirstGoal)
+      return costForFirstGoal < pOther.costForFirstGoal;
+    return totalCost < pOther.totalCost;
   }
 };
 
@@ -721,6 +721,12 @@ PlanCost _extractPlanCost(
     const ActionPtrWithGoal* pPreviousActionPtr)
 {
   PlanCost res;
+  if (pPreviousActionPtr != nullptr && pPreviousActionPtr->actionPtr != nullptr)
+  {
+    res.costForFirstGoal += pPreviousActionPtr->actionPtr->duration;
+    res.totalCost += pPreviousActionPtr->actionPtr->duration;
+  }
+
   std::set<std::string> actionAlreadyInPlan;
   bool shouldBreak = false;
   while (!pProblem.goalStack.goals().empty())
@@ -730,15 +736,23 @@ PlanCost _extractPlanCost(
       res.success = false;
       break;
     }
+
     auto subPlan = _planForMoreImportantGoalPossible(pProblem, pDomain, false,
                                                      pNow, pGlobalHistorical, &pLookForAnActionOutputInfos, pPreviousActionPtr);
     if (subPlan.empty())
       break;
+    const auto& actions = pDomain.getActions();
     for (const auto& currActionInSubPlan : subPlan)
     {
-      if (pLookForAnActionOutputInfos.nbOfNotSatisfiedGoals() == 0 && pLookForAnActionOutputInfos.nbOfSatisfiedGoals() == 0)
-        ++res.nbOfActionDonesForFirstGoal;
-      ++res.nbOfActionDones;
+      auto itAction = actions.find(currActionInSubPlan.actionInvocation.actionId);
+      if (itAction != actions.end())
+      {
+        const auto& actionCost = itAction->second.duration;
+        if (pLookForAnActionOutputInfos.nbOfNotSatisfiedGoals() == 0 && pLookForAnActionOutputInfos.nbOfSatisfiedGoals() == 0)
+          res.costForFirstGoal += actionCost;
+        res.totalCost += actionCost;
+      }
+
       const auto& actionToDoStr = currActionInSubPlan.actionInvocation.toStr();
       if (actionAlreadyInPlan.count(actionToDoStr) > 0)
         shouldBreak = true;

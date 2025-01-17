@@ -107,6 +107,14 @@ bool operator==(const Number& lhs, const Number& rhs) {
     }, lhs, rhs);
 }
 
+// Overloaded operator for addition assignment of two Number objects
+Number& operator+=(Number& lhs, const Number& rhs) {
+    lhs = std::visit([](auto&& l, auto&& r) -> Number {
+        return l + r;
+    }, lhs, rhs);
+    return lhs;
+}
+
 // Function to convert a Number to a std::string
 std::string numberToString(const Number& num) {
     return std::visit([](auto&& value) -> std::string {

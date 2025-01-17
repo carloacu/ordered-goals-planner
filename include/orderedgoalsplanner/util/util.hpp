@@ -40,6 +40,9 @@ Number operator*(const Number& lhs, const Number& rhs);
 // Overloaded operator for equality comparison of two Number objects
 bool operator==(const Number& lhs, const Number& rhs);
 
+// Overloaded operator for addition assignment of two Number objects
+Number& operator+=(Number& lhs, const Number& rhs);
+
 // Function to convert a Number to a std::string
 std::string numberToString(const Number& num);
 

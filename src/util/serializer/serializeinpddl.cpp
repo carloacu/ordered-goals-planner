@@ -312,7 +312,7 @@ std::string domainToPddl(const Domain& pDomain)
     {
       if (!actionContent.empty())
         actionContent += "\n";
-      actionContent += std::string(subIdentation, ' ') + ":duration (= ?duration 1)\n";
+      actionContent += std::string(subIdentation, ' ') + ":duration (= ?duration " + numberToString(currAction.duration) + ")\n";
     }
 
     if (currAction.precondition || currAction.overAllCondition)

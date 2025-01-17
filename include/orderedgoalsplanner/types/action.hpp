@@ -34,7 +34,8 @@ struct ORDEREDGOALSPLANNER_API Action
       canThisActionBeUsedByThePlanner(true),
       actionsSuccessionsWithoutInterestCache(),
       actionsPredecessorsCache(),
-      eventsPredecessorsCache()
+      eventsPredecessorsCache(),
+      duration(1)
   {
   }
 
@@ -51,7 +52,8 @@ struct ORDEREDGOALSPLANNER_API Action
       canThisActionBeUsedByThePlanner(true),
       actionsSuccessionsWithoutInterestCache(),
       actionsPredecessorsCache(),
-      eventsPredecessorsCache()
+      eventsPredecessorsCache(),
+      duration(1)
   {
   }
 
@@ -66,7 +68,8 @@ struct ORDEREDGOALSPLANNER_API Action
       canThisActionBeUsedByThePlanner(pAction.canThisActionBeUsedByThePlanner),
       actionsSuccessionsWithoutInterestCache(pAction.actionsSuccessionsWithoutInterestCache),
       actionsPredecessorsCache(pAction.actionsPredecessorsCache),
-      eventsPredecessorsCache(pAction.eventsPredecessorsCache)
+      eventsPredecessorsCache(pAction.eventsPredecessorsCache),
+      duration(pAction.duration)
   {
   }
 
@@ -83,6 +86,7 @@ struct ORDEREDGOALSPLANNER_API Action
     actionsSuccessionsWithoutInterestCache = pAction.actionsSuccessionsWithoutInterestCache;
     actionsPredecessorsCache = pAction.actionsPredecessorsCache;
     eventsPredecessorsCache = pAction.eventsPredecessorsCache;
+    duration = pAction.duration;
   }
 
   /// Check equality with another action.
@@ -134,8 +138,8 @@ struct ORDEREDGOALSPLANNER_API Action
   std::set<ActionId> actionsPredecessorsCache;
   std::set<FullEventId> eventsPredecessorsCache;
 
-  // TODO: manage durations
-  std::size_t duration() const { return 1; }
+  /// Duration of the action.
+  Number duration;
 
 private:
   void _throwIfNotValidForACondition(const std::unique_ptr<Condition>& pPrecondition);

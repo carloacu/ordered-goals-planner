@@ -4,6 +4,7 @@
 #include <orderedgoalsplanner/types/domain.hpp>
 #include <orderedgoalsplanner/types/problem.hpp>
 #include <orderedgoalsplanner/types/setofcallbacks.hpp>
+#include <orderedgoalsplanner/util/util.hpp>
 #include "../../types/expressionParsed.hpp"
 #include "../../types/worldstatemodificationprivate.hpp"
 
@@ -829,6 +830,7 @@ Action _durativeActionPddlToAction(const std::string& pStr,
   std::unique_ptr<WorldStateModification> effectAtStart;
   std::unique_ptr<WorldStateModification> effectAtEnd;
   std::unique_ptr<WorldStateModification> effectAtEndPotentially;
+  Number duration = 1;
 
   auto strSize = pStr.size();
   while (pPos < strSize && pStr[pPos] != ')')
@@ -848,7 +850,27 @@ Action _durativeActionPddlToAction(const std::string& pStr,
     }
     else if (subToken == ":duration")
     {
+      // Extract duration
+      auto startPos = pPos;
       ExpressionParsed::moveUntilClosingParenthesis(pStr, pPos);
+
+      if (pPos > startPos)
+      {
+        auto textWithDuration = pStr.substr(startPos, pPos - startPos);
+        std::vector<std::string> textSplitted;
+        ogp::split(textSplitted, textWithDuration, " ");
+        if (textSplitted.empty())
+          throw std::invalid_argument("No token found to extract duration: " + textWithDuration);
+        try {
+          duration = stringToNumber(textSplitted.back());
+        } catch (const std::exception& e) {
+          throw std::invalid_argument("Bad action duration: " + std::string(e.what()));
+        }
+      }
+      else
+      {
+        throw std::invalid_argument("Cannot parse a duration in: " + pStr);
+      }
       ++pPos;
     }
     else if (subToken == ":condition")
@@ -895,6 +917,7 @@ Action _durativeActionPddlToAction(const std::string& pStr,
   if (effectAtEndPotentially)
     res.effect.potentialWorldStateModification = std::move(effectAtEndPotentially);
   res.parameters = std::move(parameters);
+  res.duration = duration;
   return res;
 }
 

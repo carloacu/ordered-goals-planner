@@ -12,7 +12,8 @@ bool Action::operator==(const Action& pOther) const
       areUPtrEqual(overAllCondition, pOther.overAllCondition) &&
       areUPtrEqual(preferInContext, pOther.preferInContext) &&
       effect == pOther.effect &&
-      highImportanceOfNotRepeatingIt == pOther.highImportanceOfNotRepeatingIt;
+      highImportanceOfNotRepeatingIt == pOther.highImportanceOfNotRepeatingIt &&
+      duration == pOther.duration;
 }
 
 
@@ -25,6 +26,7 @@ Action Action::clone(const SetOfDerivedPredicates& pDerivedPredicates) const
     res.overAllCondition = overAllCondition->clone(nullptr, false, &pDerivedPredicates);
   res.parameters = parameters;
   res.highImportanceOfNotRepeatingIt = highImportanceOfNotRepeatingIt;
+  res.duration = duration;
   return res;
 }
 

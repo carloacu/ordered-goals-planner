@@ -23,6 +23,7 @@ add_executable(
   src/test_conditional_effects_requirement.cpp
   src/test_evaluate.cpp
   src/test_existential_preconditions_requirement.cpp
+  src/test_duration.cpp
   src/test_fact.cpp
   src/test_factoptionalstoid.cpp
   src/test_fluent_requirement.cpp

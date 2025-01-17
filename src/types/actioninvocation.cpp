@@ -68,7 +68,7 @@ std::string ActionInvocation::toPddl(const Domain& pDomain) const
       ss << " " + itParamToValues->second.value;
     }
   }
-  ss << ") [" << action.duration() << "]";
+  ss << ") [" << numberToString(action.duration) << "]";
   return ss.str();
 }
 

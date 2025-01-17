@@ -319,7 +319,7 @@ void _test_loadPddlDomain()
           (?s - site ?b - bricks)
 
         :duration
-            (= ?duration 1)
+            (= ?duration 12)
 
         :condition
           (and
@@ -463,7 +463,7 @@ void _test_loadPddlDomain()
         :parameters
             (?s - site ?b - bricks)
 
-        :duration (= ?duration 1)
+        :duration (= ?duration 12)
 
         :condition
             (and
