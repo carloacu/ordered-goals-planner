@@ -231,7 +231,6 @@ struct ORDEREDGOALSPLANNER_API GoalStack
 
   std::set<ActionId> getEventsPredecessors() const;
 
-  bool hasEntity(const std::string& pEntityId) const;
 
 private:
   /// Map of priority to goals.

@@ -500,16 +500,6 @@ std::set<ActionId> GoalStack::getEventsPredecessors() const
 }
 
 
-bool GoalStack::hasEntity(const std::string& pEntityId) const
-{
-  for (const auto& currGoalsGroup : _goals)
-    for (const Goal& currGoal : currGoalsGroup.second)
-      if (currGoal.objective().hasEntity(pEntityId))
-        return true;
-  return false;
-}
-
-
 void GoalStack::_removeNoStackableGoalsAndNotifyGoalsChanged(
     const WorldState& pWorldState,
     const SetOfEntities& pConstants,

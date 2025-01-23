@@ -10,7 +10,7 @@
 
 namespace ogp
 {
-struct GoalStack;
+struct Goal;
 struct SetOfTypes;
 struct WorldState;
 
@@ -38,7 +38,7 @@ struct ORDEREDGOALSPLANNER_API SetOfEntities
   bool empty() const { return _valueToEntity.empty(); }
 
   void removeUnusedEntitiesOfTypes(const WorldState& pWorldState,
-                                   const GoalStack& pGoalStack,
+                                   const std::vector<Goal>& pGoals,
                                    const std::vector<std::shared_ptr<Type>>& pTypes);
 
 private:

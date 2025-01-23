@@ -43,37 +43,39 @@ void _testRemoveUnusedEntitiesOfTypes()
   auto t4Type = ontology.types.nameToType("t4");
 
   ogp::WorldState worldState;
-  ogp::GoalStack goalStack;
   ogp::SetOfEntities objects;
+  std::vector<ogp::Goal> goals;
 
   objects = ogp::SetOfEntities::fromPddl("v1a v1b v1c - t1\n"
                                          "v2a v2b - t2\n"
                                          "v3a v3b - t3\n"
                                          "v4a v4b - t4\n", ontology.types);
 
-  worldState.addFact(_fact("(fact_a v1a)", ontology, objects), goalStack, _emptySetOfEvents, _emptyCallbacks, ontology, objects, _now);
-  worldState.addFact(_fact("(fact_b v2b)", ontology, objects), goalStack, _emptySetOfEvents, _emptyCallbacks, ontology, objects, _now);
-  worldState.addFact(_fact("(fact_c v3a)", ontology, objects), goalStack, _emptySetOfEvents, _emptyCallbacks, ontology, objects, _now);
-  worldState.addFact(_fact("(fact_c v3b)", ontology, objects), goalStack, _emptySetOfEvents, _emptyCallbacks, ontology, objects, _now);
-  goalStack.setGoals({_pddlGoal("(fact_a v1c)", ontology, objects)}, worldState, ontology.constants, objects, _now);
+  {
+    ogp::GoalStack goalStack;
+    worldState.addFact(_fact("(fact_a v1a)", ontology, objects), goalStack, _emptySetOfEvents, _emptyCallbacks, ontology, objects, _now);
+    worldState.addFact(_fact("(fact_b v2b)", ontology, objects), goalStack, _emptySetOfEvents, _emptyCallbacks, ontology, objects, _now);
+    worldState.addFact(_fact("(fact_c v3a)", ontology, objects), goalStack, _emptySetOfEvents, _emptyCallbacks, ontology, objects, _now);
+    worldState.addFact(_fact("(fact_c v3b)", ontology, objects), goalStack, _emptySetOfEvents, _emptyCallbacks, ontology, objects, _now);
+  }
+  goals.emplace_back(_pddlGoal("(fact_a v1c)", ontology, objects));
 
   EXPECT_EQ("v1a v1b v1c - t1\n"
             "v2a v2b - t2\n"
             "v3a v3b - t3\n"
             "v4a v4b - t4", objects.toStr());
-  objects.removeUnusedEntitiesOfTypes(worldState, goalStack, {t1Type, t2Type});
+  objects.removeUnusedEntitiesOfTypes(worldState, goals, {t1Type, t2Type});
   EXPECT_EQ("v1a v1c - t1\n"
             "v2b - t2\n"
             "v3a v3b - t3\n"
             "v4a v4b - t4", objects.toStr());
-  objects.removeUnusedEntitiesOfTypes(worldState, goalStack, {t3Type, t4Type});
+  objects.removeUnusedEntitiesOfTypes(worldState, goals, {t3Type, t4Type});
   EXPECT_EQ("v1a v1c - t1\n"
             "v2b - t2\n"
             "v3a v3b - t3", objects.toStr());
 }
 
 }
-
 
 
 TEST(Planner, test_setofentities)

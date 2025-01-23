@@ -128,7 +128,7 @@ std::string SetOfEntities::toStr(std::size_t pIdentation) const
 
 
 void SetOfEntities::removeUnusedEntitiesOfTypes(const WorldState& pWorldState,
-                                                const GoalStack& pGoalStack,
+                                                const std::vector<Goal>& pGoals,
                                                 const std::vector<std::shared_ptr<Type>>& pTypes)
 {
   std::list<Entity> entitiesToRemove;
@@ -139,8 +139,23 @@ void SetOfEntities::removeUnusedEntitiesOfTypes(const WorldState& pWorldState,
     {
       auto& entities = itToEntities->second;
       for (const Entity& entity : entities)
-        if (!pWorldState.hasEntity(entity.value) && !pGoalStack.hasEntity(entity.value))
-          entitiesToRemove.emplace_back(entity);
+      {
+        if (!pWorldState.hasEntity(entity.value))
+        {
+          bool isInGoals = false;
+          for (const Goal& currGoal : pGoals)
+          {
+            if (currGoal.objective().hasEntity(entity.value))
+            {
+              isInGoals = true;
+              break;
+            }
+          }
+
+          if (!isInGoals)
+            entitiesToRemove.emplace_back(entity);
+        }
+      }
     }
   }
 
