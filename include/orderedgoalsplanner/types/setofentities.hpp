@@ -37,9 +37,9 @@ struct ORDEREDGOALSPLANNER_API SetOfEntities
 
   bool empty() const { return _valueToEntity.empty(); }
 
-  void removeUnusedEntitiesOfTypes(const WorldState& pWorldState,
-                                   const std::vector<Goal>& pGoals,
-                                   const std::vector<std::shared_ptr<Type>>& pTypes);
+  std::list<Entity> getUnusedEntitiesOfTypes(const WorldState& pWorldState,
+                                             const std::vector<Goal>& pGoals,
+                                             const std::vector<std::shared_ptr<Type>>& pTypes) const;
 
 private:
   std::map<std::string, Entity> _valueToEntity;

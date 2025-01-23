@@ -64,12 +64,14 @@ void _testRemoveUnusedEntitiesOfTypes()
             "v2a v2b - t2\n"
             "v3a v3b - t3\n"
             "v4a v4b - t4", objects.toStr());
-  objects.removeUnusedEntitiesOfTypes(worldState, goals, {t1Type, t2Type});
+  for (const auto& currEntity : objects.getUnusedEntitiesOfTypes(worldState, goals, {t1Type, t2Type}))
+    objects.remove(currEntity);
   EXPECT_EQ("v1a v1c - t1\n"
             "v2b - t2\n"
             "v3a v3b - t3\n"
             "v4a v4b - t4", objects.toStr());
-  objects.removeUnusedEntitiesOfTypes(worldState, goals, {t3Type, t4Type});
+  for (const auto& currEntity : objects.getUnusedEntitiesOfTypes(worldState, goals, {t3Type, t4Type}))
+    objects.remove(currEntity);
   EXPECT_EQ("v1a v1c - t1\n"
             "v2b - t2\n"
             "v3a v3b - t3", objects.toStr());

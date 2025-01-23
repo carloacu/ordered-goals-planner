@@ -127,11 +127,11 @@ std::string SetOfEntities::toStr(std::size_t pIdentation) const
 }
 
 
-void SetOfEntities::removeUnusedEntitiesOfTypes(const WorldState& pWorldState,
-                                                const std::vector<Goal>& pGoals,
-                                                const std::vector<std::shared_ptr<Type>>& pTypes)
+std::list<Entity> SetOfEntities::getUnusedEntitiesOfTypes(const WorldState& pWorldState,
+                                                          const std::vector<Goal>& pGoals,
+                                                          const std::vector<std::shared_ptr<Type>>& pTypes) const
 {
-  std::list<Entity> entitiesToRemove;
+  std::list<Entity> res;
   for (const auto& currType : pTypes)
   {
     auto itToEntities = _typeNameToEntities.find(currType->name);
@@ -153,14 +153,13 @@ void SetOfEntities::removeUnusedEntitiesOfTypes(const WorldState& pWorldState,
           }
 
           if (!isInGoals)
-            entitiesToRemove.emplace_back(entity);
+            res.emplace_back(entity);
         }
       }
     }
   }
 
-  for (const auto& currEntity : entitiesToRemove)
-    remove(currEntity);
+  return res;
 }
 
 
