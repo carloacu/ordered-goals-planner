@@ -1,8 +1,10 @@
 #include <orderedgoalsplanner/types/setofentities.hpp>
 #include <vector>
 #include <orderedgoalsplanner/util/util.hpp>
+#include <orderedgoalsplanner/types/goalstack.hpp>
 #include <orderedgoalsplanner/types/setoftypes.hpp>
 #include <orderedgoalsplanner/types/type.hpp>
+#include <orderedgoalsplanner/types/worldstate.hpp>
 namespace ogp
 {
 
@@ -123,6 +125,29 @@ std::string SetOfEntities::toStr(std::size_t pIdentation) const
   }
   return res;
 }
+
+
+void SetOfEntities::removeUnusedEntitiesOfTypes(const WorldState& pWorldState,
+                                                const GoalStack& pGoalStack,
+                                                const std::vector<std::shared_ptr<Type>>& pTypes)
+{
+  std::list<Entity> entitiesToRemove;
+  for (const auto& currType : pTypes)
+  {
+    auto itToEntities = _typeNameToEntities.find(currType->name);
+    if (itToEntities != _typeNameToEntities.end())
+    {
+      auto& entities = itToEntities->second;
+      for (const Entity& entity : entities)
+        if (!pWorldState.hasEntity(entity.value) && !pGoalStack.hasEntity(entity.value))
+          entitiesToRemove.emplace_back(entity);
+    }
+  }
+
+  for (const auto& currEntity : entitiesToRemove)
+    remove(currEntity);
+}
+
 
 
 } // !ogp

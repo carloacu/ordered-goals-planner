@@ -34,6 +34,8 @@ add_executable(
   src/test_ontology.cpp
   src/test_parallelplan.cpp
   src/test_pddl_serialization.cpp
+  src/test_problems_in_data.cpp
+  src/test_setofentities.cpp
   src/test_setoffacts.cpp
   src/test_successionscache.cpp
   src/test_universal_preconditions_requirement.cpp
@@ -44,7 +46,6 @@ add_executable(
   src/docexamples/test_planningExampleWithAPreconditionSolve.cpp
   src/test_util.cpp
   src/test_pddl_serialization.cpp
-  src/test_problems_in_data.cpp
   src/main.cpp
 )
 

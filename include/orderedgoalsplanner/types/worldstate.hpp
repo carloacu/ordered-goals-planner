@@ -261,6 +261,8 @@ struct ORDEREDGOALSPLANNER_API WorldState
                               const std::map<Parameter, std::set<Entity>>* pParametersToConsiderAsAnyValuePtr = nullptr) const;
 
 
+  bool hasEntity(const std::string& pEntityId) const;
+
 
 private:
   /// Facts of the world state.

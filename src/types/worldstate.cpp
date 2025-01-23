@@ -544,6 +544,14 @@ void WorldState::iterateOnMatchingFacts
 }
 
 
+bool WorldState::hasEntity(const std::string& pEntityId) const
+{
+  for (const auto& currFact : _factsMapping.facts())
+    if (currFact.first.hasEntity(pEntityId))
+      return true;
+  return false;
+}
+
 
 bool WorldState::_tryToApplyEvent(std::set<EventId>& pEventsAlreadyApplied,
                                   WhatChanged& pWhatChanged,

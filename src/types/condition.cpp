@@ -378,6 +378,12 @@ bool ConditionNode::hasFact(const Fact& pFact) const
       (rightOperand && rightOperand->hasFact(pFact));
 }
 
+bool ConditionNode::hasEntity(const std::string& pEntityId) const
+{
+  return (leftOperand && leftOperand->hasEntity(pEntityId)) ||
+      (rightOperand && rightOperand->hasEntity(pEntityId));
+}
+
 
 ContinueOrBreak ConditionNode::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                       bool pIsWrappingExpressionNegated,
@@ -746,6 +752,11 @@ bool ConditionExists::hasFact(const Fact& pFact) const
   return condition && condition->hasFact(pFact);
 }
 
+bool ConditionExists::hasEntity(const std::string& pEntityId) const
+{
+  return condition && condition->hasEntity(pEntityId);
+}
+
 
 ContinueOrBreak ConditionExists::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                         bool pIsWrappingExpressionNegated,
@@ -901,6 +912,10 @@ bool ConditionForall::hasFact(const Fact& pFact) const
   return condition && condition->hasFact(pFact);
 }
 
+bool ConditionForall::hasEntity(const std::string& pEntityId) const
+{
+  return condition && condition->hasEntity(pEntityId);
+}
 
 ContinueOrBreak ConditionForall::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                         bool pIsWrappingExpressionNegated,
@@ -1066,6 +1081,10 @@ bool ConditionNot::hasFact(const Fact& pFact) const
   return condition && condition->hasFact(pFact);
 }
 
+bool ConditionNot::hasEntity(const std::string& pEntityId) const
+{
+  return condition && condition->hasEntity(pEntityId);
+}
 
 ContinueOrBreak ConditionNot::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                      bool pIsWrappingExpressionNegated,
@@ -1147,6 +1166,12 @@ bool ConditionFact::hasFact(const Fact& pFact) const
 {
   return factOptional.fact == pFact;
 }
+
+bool ConditionFact::hasEntity(const std::string& pEntityId) const
+{
+  return factOptional.fact.hasEntity(pEntityId);
+}
+
 
 ContinueOrBreak ConditionFact::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                                       bool pIsWrappingExpressionNegated,

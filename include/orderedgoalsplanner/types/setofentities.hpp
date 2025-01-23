@@ -10,7 +10,9 @@
 
 namespace ogp
 {
+struct GoalStack;
 struct SetOfTypes;
+struct WorldState;
 
 
 struct ORDEREDGOALSPLANNER_API SetOfEntities
@@ -34,6 +36,10 @@ struct ORDEREDGOALSPLANNER_API SetOfEntities
   std::string toStr(std::size_t pIdentation = 0) const;
 
   bool empty() const { return _valueToEntity.empty(); }
+
+  void removeUnusedEntitiesOfTypes(const WorldState& pWorldState,
+                                   const GoalStack& pGoalStack,
+                                   const std::vector<std::shared_ptr<Type>>& pTypes);
 
 private:
   std::map<std::string, Entity> _valueToEntity;

@@ -49,6 +49,8 @@ struct ORDEREDGOALSPLANNER_API Condition
   /// Check if this condition contains a fact or the negation of the fact.
   virtual bool hasFact(const Fact& pFact) const = 0;
 
+  virtual bool hasEntity(const std::string& pEntityId) const = 0;
+
   /**
    * @brief Iterate over all the optional facts.
    * @param[in] pFactCallback Callback called for each optional fact of the condition.
@@ -201,6 +203,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
                 std::unique_ptr<Condition> pRightOperand);
 
   bool hasFact(const Fact& pFact) const override;
+  bool hasEntity(const std::string& pEntityId) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreValue,
@@ -264,6 +267,7 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
                     bool pPrintAnyValue) const override;
 
   bool hasFact(const Fact& pFact) const override;
+  bool hasEntity(const std::string& pEntityId) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreValue,
@@ -330,6 +334,7 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
                     bool pPrintAnyValue) const override;
 
   bool hasFact(const Fact& pFact) const override;
+  bool hasEntity(const std::string& pEntityId) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreValue,
@@ -395,6 +400,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
                     bool pPrintAnyValue) const override;
 
   bool hasFact(const Fact& pFact) const override;
+  bool hasEntity(const std::string& pEntityId) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreValue,
@@ -458,6 +464,7 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
                     bool pPrintAnyValue) const override { return factOptional.toStr(pFactWriterPtr, pPrintAnyValue); }
 
   bool hasFact(const Fact& pFact) const override;
+  bool hasEntity(const std::string& pEntityId) const override;
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreValue,
@@ -518,7 +525,8 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
   std::string toStr(const std::function<std::string(const Fact&)>* pFactWriterPtr,
                     bool pPrintAnyValue) const override;
 
-  bool hasFact(const Fact&) const override  { return false; }
+  bool hasFact(const Fact&) const override { return false; }
+  bool hasEntity(const std::string&) const override { return false; }
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>&, bool, bool, bool) const override { return ContinueOrBreak::CONTINUE; }
   bool findConditionCandidateFromFactFromEffect(
       const std::function<bool (const FactOptional&)>&,
