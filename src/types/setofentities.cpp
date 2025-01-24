@@ -32,6 +32,13 @@ void SetOfEntities::add(const Entity& pEntity)
     _typeNameToEntities[pEntity.type->name].insert(pEntity);
 }
 
+void SetOfEntities::addAllIfNotExist(const SetOfEntities& pSetOfEntities)
+{
+  for (const auto& currValToEntity : pSetOfEntities._valueToEntity)
+    if (_valueToEntity.count(currValToEntity.first) == 0)
+       add(currValToEntity.second);
+}
+
 void SetOfEntities::addAllFromPddl(const std::string& pStr,
                                    const SetOfTypes& pSetOfTypes)
 {

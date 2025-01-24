@@ -77,10 +77,30 @@ void _testRemoveUnusedEntitiesOfTypes()
             "v3a v3b - t3", objects.toStr());
 }
 
+
+void _testMergeTwoSetOfEntities()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("t1 t2 t3 - entity");
+
+  ogp::SetOfEntities objects = ogp::SetOfEntities::fromPddl("v1a v1b - t1\n"
+                                                            "v2a - t2\n"
+                                                            "v3a - t3", ontology.types);
+  ogp::SetOfEntities newObjects = ogp::SetOfEntities::fromPddl("v1b v1c - t1\n"
+                                                               "v2b - t2\n"
+                                                               "v3a v3b - t3", ontology.types);
+  objects.addAllIfNotExist(newObjects);
+  EXPECT_EQ("v1a v1b v1c - t1\n"
+            "v2a v2b - t2\n"
+            "v3a v3b - t3", objects.toStr());
+}
+
+
 }
 
 
 TEST(Planner, test_setofentities)
 {
   _testRemoveUnusedEntitiesOfTypes();
+  _testMergeTwoSetOfEntities();
 }

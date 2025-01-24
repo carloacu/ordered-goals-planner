@@ -24,6 +24,8 @@ struct ORDEREDGOALSPLANNER_API SetOfEntities
 
   void add(const Entity& pEntity);
 
+  void addAllIfNotExist(const SetOfEntities& pSetOfEntities);
+
   void addAllFromPddl(const std::string& pStr,
                       const SetOfTypes& pSetOfTypes);
 
