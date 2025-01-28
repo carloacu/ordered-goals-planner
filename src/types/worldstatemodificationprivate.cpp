@@ -65,11 +65,7 @@ bool _isOkWithLocalParameters(const std::map<Parameter, std::set<Entity>>& pLoca
 
 std::string WorldStateModificationNode::toStr(bool pPrintAnyValue) const
 {
-  bool printAnyValue = pPrintAnyValue && nodeType != WorldStateModificationNodeType::ASSIGN &&
-      nodeType != WorldStateModificationNodeType::INCREASE && nodeType != WorldStateModificationNodeType::DECREASE &&
-      nodeType != WorldStateModificationNodeType::MULTIPLY &&
-      nodeType != WorldStateModificationNodeType::PLUS && nodeType != WorldStateModificationNodeType::MINUS &&
-      nodeType != WorldStateModificationNodeType::WHEN;
+  bool printAnyValue = pPrintAnyValue && printAnyValueFor(nodeType);
 
   std::string leftOperandStr;
   if (leftOperand)

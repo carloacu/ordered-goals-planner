@@ -69,6 +69,12 @@ void _test_pddlSerializationParts()
   }
 
   {
+    ogp::FactOptional factOpt = ogp::pddlToFactOptional("(not (= (battery-amount toto) undefined))", ontology, {});
+    EXPECT_EQ("(not (= (battery-amount toto) undefined))", factOpt.toPddl(false));
+    EXPECT_EQ("battery-amount(toto)=*", factOpt.toStr());
+  }
+
+  {
     std::size_t pos = 0;
     try {
         ogp::Fact::fromPddl("(battery-amount toto)", ontology, {}, {}, pos, &pos);
@@ -94,6 +100,14 @@ void _test_pddlSerializationParts()
       EXPECT_EQ("This fact \"(= (pred_b) toto)\" should not have a value. The associated predicate is \"(pred_b)\". The exception was thrown while parsing fact: \"(= (pred_b) toto)\"",
                 std::string(e.what()));
     }
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(>= (battery-amount toto) 4)", pos, ontology, {}, {});
+    if (!cond)
+      FAIL();
+    EXPECT_EQ("(>= (battery-amount toto) 4)", ogp::conditionToPddl(*cond, 0));
   }
 
   {
@@ -127,6 +141,7 @@ void _test_pddlSerializationParts()
     if (!ws)
       FAIL();
     EXPECT_EQ("decrease(battery-amount(toto), 4)", ws->toStr());
+    EXPECT_EQ("(decrease (battery-amount toto) 4)", ogp::effectToPddl(*ws, 0));
   }
 
   {

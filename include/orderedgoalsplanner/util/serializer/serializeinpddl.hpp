@@ -19,11 +19,13 @@ std::string problemToPddl(const Problem& pProblem,
 
 
 std::string conditionToPddl(const Condition& pCondition,
-                            std::size_t pIdentation);
+                            std::size_t pIdentation,
+                            bool pPrintAnyValue = true);
 
 std::string effectToPddl(const WorldStateModification& pWsModif,
                          std::size_t pIdentation,
-                         bool pActuallyItIsACondition = false);
+                         bool pActuallyItIsACondition = false,
+                         bool pPrintAnyValue = true);
 
 } // End of namespace ogp
 

@@ -22,6 +22,17 @@ enum class WorldStateModificationNodeType
   WHEN
 };
 
+
+inline bool printAnyValueFor(WorldStateModificationNodeType pType) {
+  return pType != WorldStateModificationNodeType::ASSIGN &&
+        pType != WorldStateModificationNodeType::INCREASE && pType != WorldStateModificationNodeType::DECREASE &&
+        pType != WorldStateModificationNodeType::MULTIPLY &&
+        pType != WorldStateModificationNodeType::PLUS && pType != WorldStateModificationNodeType::MINUS &&
+        pType != WorldStateModificationNodeType::WHEN;
+}
+
+
+
 enum class WsModificationPart
 {
   AT_START,

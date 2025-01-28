@@ -441,7 +441,8 @@ std::string problemToPddl(const Problem& pProblem,
 
 
 std::string conditionToPddl(const Condition& pCondition,
-                            std::size_t pIdentation)
+                            std::size_t pIdentation,
+                            bool pPrintAnyValue)
 {
   const ConditionNode* condNodePtr = pCondition.fcNodePtr();
   if (condNodePtr != nullptr)
@@ -482,10 +483,10 @@ std::string conditionToPddl(const Condition& pCondition,
 
     std::string leftOperandStr;
     if (condNode.leftOperand)
-      leftOperandStr = conditionToPddl(*condNode.leftOperand, pIdentation);
+      leftOperandStr = conditionToPddl(*condNode.leftOperand, pIdentation, false);
     std::string rightOperandStr;
     if (condNode.rightOperand)
-      rightOperandStr = conditionToPddl(*condNode.rightOperand, pIdentation);
+      rightOperandStr = conditionToPddl(*condNode.rightOperand, pIdentation, false);
 
     std::string res = "(";
     switch (condNode.nodeType)
@@ -550,7 +551,7 @@ std::string conditionToPddl(const Condition& pCondition,
 
   const ConditionFact* condFactPtr = pCondition.fcFactPtr();
   if (condFactPtr != nullptr)
-    return condFactPtr->factOptional.toPddl(false);
+    return condFactPtr->factOptional.toPddl(false, pPrintAnyValue);
 
   const ConditionNumber* condNbPtr = pCondition.fcNbPtr();
   if (condNbPtr != nullptr)
@@ -564,7 +565,8 @@ std::string conditionToPddl(const Condition& pCondition,
 std::string effectToPddl(
     const WorldStateModification& pWsModif,
     std::size_t pIdentation,
-    bool pActuallyItIsACondition)
+    bool pActuallyItIsACondition,
+    bool pPrintAnyValue)
 {
   const auto* wsmNodePtr = toWmNode(pWsModif);
   if (wsmNodePtr != nullptr)
@@ -575,7 +577,8 @@ std::string effectToPddl(
     {
       bool actuallyItIsACondition = wsmNode.nodeType == WorldStateModificationNodeType::FOR_ALL ||
           wsmNode.nodeType == WorldStateModificationNodeType::WHEN;
-      leftOperandStr = effectToPddl(*wsmNode.leftOperand, pIdentation, actuallyItIsACondition);
+      pPrintAnyValue = pPrintAnyValue && printAnyValueFor(wsmNode.nodeType);
+      leftOperandStr = effectToPddl(*wsmNode.leftOperand, pIdentation, actuallyItIsACondition, pPrintAnyValue);
     }
     std::string rightOperandStr;
     bool isRightOperandAFactWithoutParameter = false;
@@ -624,7 +627,7 @@ std::string effectToPddl(
 
   const auto* wsmFactPtr = toWmFact(pWsModif);
   if (wsmFactPtr != nullptr)
-    return wsmFactPtr->factOptional.toPddl(!pActuallyItIsACondition);
+    return wsmFactPtr->factOptional.toPddl(!pActuallyItIsACondition, pPrintAnyValue);
 
   const auto* wsmNbPtr = toWmNumber(pWsModif);
   if (wsmNbPtr != nullptr)

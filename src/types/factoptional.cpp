@@ -78,15 +78,19 @@ std::string FactOptional::toStr(const std::function<std::string (const Fact&)>* 
   return polarityStr + fact.toStr(pPrintAnyValue);
 }
 
-std::string FactOptional::toPddl(bool pInEffectContext) const
+std::string FactOptional::toPddl(bool pInEffectContext,
+                                 bool pPrintAnyValue) const
 {
   auto res = fact.toPddl(pInEffectContext, false);
-  if (isFactNegated)
+  if (pPrintAnyValue && fact.value() && fact.value()->isAnyEntity())
   {
-    if (fact.value() && fact.value()->isAnyEntity())
-      return (pInEffectContext ? "(assign " : "(= ") + res + " undefined)";
+    res = (pInEffectContext ? "(assign " : "(= ") + res + " undefined)";
+    if (isFactNegated)
+      return res;
     return "(not " + res + ")";
   }
+  if (isFactNegated)
+    return "(not " + res + ")";
   return res;
 }
 
