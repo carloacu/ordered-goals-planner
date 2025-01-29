@@ -76,7 +76,7 @@ struct ORDEREDGOALSPLANNER_API Condition
    * @return True if one callback returned true, false otherwise.
    */
   virtual bool findConditionCandidateFromFactFromEffect(
-      const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+      const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
       const WorldState& pWorldState,
       const SetOfEntities& pConstants,
       const SetOfEntities& pObjects,
@@ -208,7 +208,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
                          bool pIsWrappingExpressionNegated,
                          bool pIgnoreValue,
                          bool pOnlyMandatoryFacts) const override;
-  bool findConditionCandidateFromFactFromEffect(const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+  bool findConditionCandidateFromFactFromEffect(const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
                                                 const WorldState& pWorldState,
                                                 const SetOfEntities& pConstants,
                                                 const SetOfEntities& pObjects,
@@ -274,7 +274,7 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
                          bool pOnlyMandatoryFacts) const override;
 
   bool findConditionCandidateFromFactFromEffect(
-      const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+      const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
       const WorldState& pWorldState,
       const SetOfEntities& pConstants,
       const SetOfEntities& pObjects,
@@ -341,7 +341,7 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
                          bool pOnlyMandatoryFacts) const override;
 
   bool findConditionCandidateFromFactFromEffect(
-      const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+      const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
       const WorldState& pWorldState,
       const SetOfEntities& pConstants,
       const SetOfEntities& pObjects,
@@ -407,7 +407,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
                          bool pOnlyMandatoryFacts) const override;
 
   bool findConditionCandidateFromFactFromEffect(
-      const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+      const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
       const WorldState& pWorldState,
       const SetOfEntities& pConstants,
       const SetOfEntities& pObjects,
@@ -470,7 +470,7 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
                          bool pIgnoreValue,
                          bool pOnlyMandatoryFacts) const override;
   bool findConditionCandidateFromFactFromEffect(
-      const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+      const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
       const WorldState&,
       const SetOfEntities&,
       const SetOfEntities&,
@@ -529,7 +529,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
   bool hasEntity(const std::string&) const override { return false; }
   ContinueOrBreak forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>&, bool, bool, bool) const override { return ContinueOrBreak::CONTINUE; }
   bool findConditionCandidateFromFactFromEffect(
-      const std::function<bool (const FactOptional&)>&,
+      const std::function<bool (const FactOptional&, const Fact*, const Fact*)>&,
       const WorldState&,
       const SetOfEntities&,
       const SetOfEntities&,

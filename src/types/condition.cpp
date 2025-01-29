@@ -11,45 +11,43 @@ namespace ogp
 namespace
 {
 
-bool _forEachValueUntil(const std::function<bool (const Entity&)>& pValueCallback,
+bool _forEachValueUntil(const std::function<bool (const Entity&, const Fact*, const Fact*)>& pValueCallback,
                         bool pUntilValue,
                         const Condition& pCondition,
                         const WorldState& pWorldState,
-                        const std::map<Parameter, std::set<Entity>>* pParametersPtr)
+                        const std::map<Parameter, std::set<Entity>>& pParameters)
 {
   const auto& setOfFacts = pWorldState.factsMapping();
-  if (pParametersPtr == nullptr || pParametersPtr->empty())
+  if (pParameters.empty())
   {
     auto valueOpt = pCondition.getValue(setOfFacts);
     if (valueOpt)
-      return pValueCallback(*valueOpt);
+      return pValueCallback(*valueOpt, nullptr, nullptr);
   }
 
   std::list<std::map<Parameter, Entity>> paramPossibilities;
-  unfoldMapWithSet(paramPossibilities, *pParametersPtr);
+  unfoldMapWithSet(paramPossibilities, pParameters);
   for (auto& currParamPoss : paramPossibilities)
   {
     auto condToExtractValue = pCondition.clone(&currParamPoss);
     auto valueOpt = condToExtractValue->getValue(setOfFacts);
-    if (valueOpt && pValueCallback(*valueOpt) == pUntilValue)
+    if (valueOpt && pValueCallback(*valueOpt, nullptr, nullptr) == pUntilValue)
       return pUntilValue;
   }
 
+  bool res = !pUntilValue;
   auto* factCondPtr = pCondition.fcFactPtr();
-  if (factCondPtr != nullptr &&
-      (!factCondPtr->factOptional.fact.value() || factCondPtr->factOptional.fact.value()->isAnyEntity()))
-  {
-    pWorldState.iterateOnMatchingFactsWithoutValueConsideration(
-          [&pValueCallback](const Fact& pFact) {
-      if (pFact.value())
-        pValueCallback(*pFact.value());
-      return false;
-    },
-    factCondPtr->factOptional.fact, // pFact
-    *pParametersPtr); // Parameters to consider as any value of set is empty, otherwise it is a filter
-  }
+  const auto& factCond = factCondPtr->factOptional.fact;
+  pWorldState.iterateOnMatchingFactsWithoutValueConsideration(
+        [&](const Fact& pFact) {
+    if (pFact.value() && pValueCallback(*pFact.value(), &factCond, &pFact) == pUntilValue)
+      res = true;
+    return false;
+  },
+  factCond,
+  pParameters); // Parameters to consider as any value of set is empty, otherwise it is a filter
 
-  return !pUntilValue;
+  return res;
 }
 
 
@@ -140,12 +138,9 @@ bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
   if (nodeOfConditionPtr != nullptr &&
       nodeOfConditionPtr->leftOperand && nodeOfConditionPtr->rightOperand)
   {
-    auto updateAllEntitiesForParam = [&]() {
-      for (const auto& currLocalParamToValue : pLocalParamToValue)
-      {
-        pAllEntitiesForParam = currLocalParamToValue.second;
-        break;
-      }
+    auto updateAllEntitiesForParam = [&](const std::map<Parameter, std::set<Entity>>& pParamToValue) {
+      if (!pParamToValue.empty())
+        pAllEntitiesForParam = pParamToValue.begin()->second;
     };
 
     if (nodeOfConditionPtr->nodeType == ConditionNodeType::AND)
@@ -153,7 +148,7 @@ bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
       if (!_isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
                      *nodeOfConditionPtr->leftOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam))
         return false;
-      updateAllEntitiesForParam();
+      updateAllEntitiesForParam(pLocalParamToValue);
       return  _isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
                      *nodeOfConditionPtr->rightOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam);
     }
@@ -162,17 +157,21 @@ bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
       if (_isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
                               *nodeOfConditionPtr->leftOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam))
         return true;
-      updateAllEntitiesForParam();
+      updateAllEntitiesForParam(pLocalParamToValue);
       return _isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
                         *nodeOfConditionPtr->rightOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam);
     }
 
     if (nodeOfConditionPtr->nodeType == ConditionNodeType::IMPLY)
     {
-      if (_isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
+      auto implyLocalParamToValue = pLocalParamToValue;
+      if (_isTrueRec(implyLocalParamToValue, pConditionParametersToPossibleArguments, false,
                      *nodeOfConditionPtr->leftOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam))
       {
-        updateAllEntitiesForParam();
+        // For exists (!pMustBeTrueForAllParameters) if one parameter makes that imply not satisfied it is ok
+        if (!pMustBeTrueForAllParameters && !implyLocalParamToValue.empty() && pAllEntitiesForParam != implyLocalParamToValue.begin()->second)
+          return true;
+        updateAllEntitiesForParam(implyLocalParamToValue);
         return _isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
                           *nodeOfConditionPtr->rightOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam);
       }
@@ -404,7 +403,7 @@ ContinueOrBreak ConditionNode::forAll(const std::function<ContinueOrBreak (const
 
 
 bool ConditionNode::findConditionCandidateFromFactFromEffect(
-    const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+    const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
     const WorldState& pWorldState,
     const SetOfEntities& pConstants,
     const SetOfEntities& pObjects,
@@ -445,12 +444,12 @@ bool ConditionNode::findConditionCandidateFromFactFromEffect(
         if (leftFact.factOptional.fact.areEqualWithoutValueConsideration(pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr))
         {
           bool potRes = _forEachValueUntil(
-                [&](const Entity& pValue)
+                [&](const Entity& pValue, const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr)
           {
             auto factToCheck = leftFact.factOptional.fact;
             factToCheck.setValue(pValue);
-            return pDoesConditionFactMatchFactFromEffect(FactOptional(factToCheck));
-          }, true, *rightOperand, pWorldState, &pConditionParametersToPossibleArguments);
+            return pDoesConditionFactMatchFactFromEffect(FactOptional(factToCheck), pOtherPatternPtr, pOtherInstancePtr);
+          }, true, *rightOperand, pWorldState, pConditionParametersToPossibleArguments);
           if (potRes)
             return true;
         }
@@ -462,19 +461,19 @@ bool ConditionNode::findConditionCandidateFromFactFromEffect(
           if (rightFact.factOptional.fact.areEqualWithoutValueConsideration(pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr))
           {
             return _forEachValueUntil(
-                  [&](const Entity& pValue)
+                  [&](const Entity& pValue, const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr)
             {
               auto factToCheck = rightFact.factOptional.fact;
               factToCheck.setValue(pValue);
-              return pDoesConditionFactMatchFactFromEffect(FactOptional(factToCheck));
-            }, true, *leftOperand, pWorldState, &pConditionParametersToPossibleArguments);
+              return pDoesConditionFactMatchFactFromEffect(FactOptional(factToCheck), pOtherPatternPtr, pOtherInstancePtr);
+            }, true, *leftOperand, pWorldState, pConditionParametersToPossibleArguments);
           }
         }
       }
       else if (nodeType == ConditionNodeType::SUPERIOR || nodeType == ConditionNodeType::SUPERIOR_OR_EQUAL ||
                nodeType == ConditionNodeType::INFERIOR || nodeType == ConditionNodeType::INFERIOR_OR_EQUAL)
       {
-         return pDoesConditionFactMatchFactFromEffect(leftFact.factOptional);
+         return pDoesConditionFactMatchFactFromEffect(leftFact.factOptional, nullptr, nullptr);
       }
     }
   }
@@ -771,7 +770,7 @@ ContinueOrBreak ConditionExists::forAll(const std::function<ContinueOrBreak (con
 
 
 bool ConditionExists::findConditionCandidateFromFactFromEffect(
-    const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+    const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
     const WorldState& pWorldState,
     const SetOfEntities& pConstants,
     const SetOfEntities& pObjects,
@@ -792,10 +791,10 @@ bool ConditionExists::findConditionCandidateFromFactFromEffect(
     auto parameters = pConditionParametersToPossibleArguments;
     parameters[parameter];
 
-    return condition->findConditionCandidateFromFactFromEffect([&](const FactOptional& pConditionFact) {
+    return condition->findConditionCandidateFromFactFromEffect([&](const FactOptional& pConditionFact, const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr) {
       auto factToConsider = pConditionFact;
       factToConsider.fact.replaceArguments(localParamToValue);
-      return pDoesConditionFactMatchFactFromEffect(factToConsider) == !pIsWrappingExpressionNegated;
+      return pDoesConditionFactMatchFactFromEffect(factToConsider, pOtherPatternPtr, pOtherInstancePtr) == !pIsWrappingExpressionNegated;
     }, pWorldState, pConstants, pObjects, pFactFromEffect, pFactFromEffectParameters, pFactFromEffectTmpParametersPtr,
     parameters, pIsWrappingExpressionNegated);
   }
@@ -930,7 +929,7 @@ ContinueOrBreak ConditionForall::forAll(const std::function<ContinueOrBreak (con
 
 
 bool ConditionForall::findConditionCandidateFromFactFromEffect(
-    const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+    const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
     const WorldState& pWorldState,
     const SetOfEntities& pConstants,
     const SetOfEntities& pObjects,
@@ -949,7 +948,7 @@ bool ConditionForall::findConditionCandidateFromFactFromEffect(
     auto parameters = pConditionParametersToPossibleArguments;
     parameters[parameter];
 
-    return condition->findConditionCandidateFromFactFromEffect([&](const FactOptional& pConditionFact) {
+    return condition->findConditionCandidateFromFactFromEffect([&](const FactOptional& pConditionFact, const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr) {
       bool res = false;
       auto& values = localParamToValue[parameter];
 
@@ -957,7 +956,7 @@ bool ConditionForall::findConditionCandidateFromFactFromEffect(
       {
         auto factToConsider = pConditionFact;
         factToConsider.fact.replaceArguments(localParamToValue);
-        res = pDoesConditionFactMatchFactFromEffect(factToConsider) || res;
+        res = pDoesConditionFactMatchFactFromEffect(factToConsider, pOtherPatternPtr, pOtherInstancePtr) || res;
         if (values.empty())
           break;
         values.erase(values.begin());
@@ -1099,7 +1098,7 @@ ContinueOrBreak ConditionNot::forAll(const std::function<ContinueOrBreak (const 
 
 
 bool ConditionNot::findConditionCandidateFromFactFromEffect(
-    const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+    const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
     const WorldState& pWorldState,
     const SetOfEntities& pConstants,
     const SetOfEntities& pObjects,
@@ -1188,7 +1187,7 @@ ContinueOrBreak ConditionFact::forAll(const std::function<ContinueOrBreak (const
 
 
 bool ConditionFact::findConditionCandidateFromFactFromEffect(
-    const std::function<bool (const FactOptional&)>& pDoesConditionFactMatchFactFromEffect,
+    const std::function<bool (const FactOptional&, const Fact*, const Fact*)>& pDoesConditionFactMatchFactFromEffect,
     const WorldState&,
     const SetOfEntities&,
     const SetOfEntities&,
@@ -1198,7 +1197,7 @@ bool ConditionFact::findConditionCandidateFromFactFromEffect(
     const std::map<Parameter, std::set<Entity>>&,
     bool pIsWrappingExpressionNegated) const
 {
-  bool res = pDoesConditionFactMatchFactFromEffect(factOptional);
+  bool res = pDoesConditionFactMatchFactFromEffect(factOptional, nullptr, nullptr);
   if (pIsWrappingExpressionNegated)
     return !res;
   return res;

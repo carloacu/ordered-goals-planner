@@ -180,6 +180,72 @@ void _test_exists_with_and_list_inside()
   EXPECT_TRUE(_isTrue("(exists (?p - entity) (and (= (fun1 ?p) toto) (pred_name ?p)))", ontology, worldState, objects));
 }
 
+
+void _test_exists_with_imply_inside()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("my_type my_type2 my_type3 - entity\n"
+                                             "sub_my_type3 - my_type3");
+  ontology.constants = ogp::SetOfEntities::fromPddl("toto - my_type\n"
+                                                    "titi - my_type2\n"
+                                                    "v3 - my_type3", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("pred_name(?e - entity)\n"
+                                                      "fun1(?e - my_type3) - entity", ontology.types);
+
+  ogp::WorldState worldState;
+  ogp::GoalStack goalStack;
+  ogp::SetOfEntities objects;
+  std::map<ogp::SetOfEventsId, ogp::SetOfEvents> setOfEvents;
+
+  EXPECT_TRUE(_isTrue("(exists (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("pred_name(v3)", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(exists (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun1(v3)=titi", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(exists (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun1(v3)=toto", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_TRUE(_isTrue("(exists (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  objects.add(ogp::Entity::fromDeclaration("v3b - my_type3", ontology.types));
+  EXPECT_TRUE(_isTrue("(exists (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun1(v3)=titi", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_TRUE(_isTrue("(exists (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("pred_name(v3b)", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(exists (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+}
+
+
+void _test_forall_with_imply_inside()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("my_type my_type2 my_type3 - entity\n"
+                                             "sub_my_type3 - my_type3");
+  ontology.constants = ogp::SetOfEntities::fromPddl("toto - my_type\n"
+                                                    "titi - my_type2\n"
+                                                    "v3 - my_type3", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("pred_name(?e - entity)\n"
+                                                      "fun1(?e - my_type3) - entity", ontology.types);
+
+  ogp::WorldState worldState;
+  ogp::GoalStack goalStack;
+  ogp::SetOfEntities objects;
+  std::map<ogp::SetOfEventsId, ogp::SetOfEvents> setOfEvents;
+
+  EXPECT_TRUE(_isTrue("(forall (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("pred_name(v3)", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(forall (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun1(v3)=titi", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(forall (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun1(v3)=toto", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_TRUE(_isTrue("(forall (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  objects.add(ogp::Entity::fromDeclaration("v3b - my_type3", ontology.types));
+  EXPECT_TRUE(_isTrue("(forall (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun1(v3)=titi", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(forall (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("pred_name(v3b)", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(forall (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fun1(v3)=toto", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_FALSE(_isTrue("(forall (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
+}
+
 }
 
 
@@ -189,4 +255,7 @@ TEST(Tool, test_condition)
   _test_checkConditionWithOntology();
   _test_fluent_value_equality_with_sub_types();
   _test_exists_with_and_list_inside();
+  _test_exists_with_imply_inside();
+  _test_forall_with_imply_inside();
+
 }

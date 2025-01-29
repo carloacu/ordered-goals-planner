@@ -308,12 +308,19 @@ bool _fillParameter(const Parameter& pParameter,
     std::shared_ptr<Type> parameterType = pParameter.type;
     bool foundSomethingThatMatched = false;
     pCondition.findConditionCandidateFromFactFromEffect(
-          [&](const FactOptional& pConditionFactOptional)
+          [&](const FactOptional& pConditionFactOptional,
+              const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr)
     {
       auto parentParamValue = pFact.tryToExtractArgumentFromExample(pParameter, pConditionFactOptional.fact);
       if (!parentParamValue)
         return false;
       foundSomethingThatMatched = true;
+      if (pOtherPatternPtr != nullptr && pOtherInstancePtr != nullptr && parentParamValue->isAParameterToFill())
+      {
+        auto newPotentialParentParamValue = pOtherPatternPtr->tryToExtractArgumentFromExample(parentParamValue->toParameter(), *pOtherInstancePtr);
+        if (newPotentialParentParamValue)
+          parentParamValue = newPotentialParentParamValue;
+      }
 
       // Maybe the extracted parameter is also a parameter so we replace by it's value
       auto itParam = pHoldingActionParameters.find(parentParamValue->toParameter());
@@ -564,7 +571,7 @@ bool _doesConditionMatchAnOptionalFact(const std::map<Parameter, std::set<Entity
   const auto& ontology = pContext.domain.getOntology();
   const auto& objective = pContext.goal.objective();
   return objective.findConditionCandidateFromFactFromEffect(
-        [&](const FactOptional& pConditionFactOptional)
+        [&](const FactOptional& pConditionFactOptional, const Fact*, const Fact*)
   {
     if (!pConditionFactOptional.fact.hasAParameter() && pContext.problem.worldState.isOptionalFactSatisfied(pConditionFactOptional))
       return false;

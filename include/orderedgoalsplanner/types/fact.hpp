@@ -237,7 +237,7 @@ struct ORDEREDGOALSPLANNER_API Fact
 
   bool filterPossibilities(const Fact& pOtherFact,
                            std::map<Parameter, std::set<Entity>>& pNewParameters,
-                           const std::map<Parameter, std::set<Entity> >& pParameters) const;
+                           const std::map<Parameter, std::set<Entity>>& pParameters) const;
 
   /**
    * @brief Does the fact matches the other fact.

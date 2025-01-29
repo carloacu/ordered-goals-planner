@@ -37,10 +37,11 @@ ogp::Parameter _parameter(const std::string& pStr,
 
 ogp::Goal _pddlGoal(const std::string& pStr,
                     const ogp::Ontology& pOntology,
+                    const ogp::SetOfEntities& pObjects,
                     int pMaxTimeToKeepInactive = -1,
                     const std::string& pGoalGroupId = "") {
   std::size_t pos = 0;
-  return *ogp::pddlToGoal(pStr, pos, pOntology, {}, pMaxTimeToKeepInactive, pGoalGroupId);
+  return *ogp::pddlToGoal(pStr, pos, pOntology, pObjects, pMaxTimeToKeepInactive, pGoalGroupId);
 }
 
 std::unique_ptr<ogp::Condition> _condition_fromPddl(const std::string& pConditionStr,
@@ -113,7 +114,7 @@ void _test_set_a_fluent_value_to_undefined()
   auto& setOfEventsMap = domain.getSetOfEvents();
   ogp::Problem problem;
   _addFact(problem.worldState, "(= (fact_a) v)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
-  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_a) undefined)", ontology)}, ontology.constants);
+  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_a) undefined)", ontology, problem.objects)}, ontology.constants);
   EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
 }
@@ -137,7 +138,7 @@ void _test_set_a_fluent_value_to_undefined_with_sub_types()
   auto& setOfEventsMap = domain.getSetOfEvents();
   ogp::Problem problem;
   _addFact(problem.worldState, "(= (fact_a) v)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
-  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_a) undefined)", ontology)}, ontology.constants);
+  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_a) undefined)", ontology, problem.objects)}, ontology.constants);
   EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
 }
@@ -178,10 +179,49 @@ void _test_fluent_for_location_with_sub_types()
   _addFact(problem.worldState, "(= (declared_location a_checkpoint) a_checkpoint_loc)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
   _addFact(problem.worldState, "(= (declared_location pod) charging_zone_loc)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
 
-  _setGoalsForAPriority(problem, {_pddlGoal("(goal)", ontology)}, ontology.constants);
+  _setGoalsForAPriority(problem, {_pddlGoal("(goal)", ontology, problem.objects)}, ontology.constants);
   EXPECT_EQ(action1 + "(?cp -> pod)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
   EXPECT_EQ(action2 + "(?cz -> pod)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
+
+void _fluentEqualityInPrecondition()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("entity");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1(?p - entity) - entity\n"
+                                                      "fact_2(?p - entity) - entity\n"
+                                                      "goal", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("v1 v2 v3 v4 - entity", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{_parameter("?p1 - entity", ontology), _parameter("?p2 - entity", ontology)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (fact_1 ?p1) ?p2)", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  std::vector<ogp::Parameter> action2Parameters{_parameter("?e - entity", ontology)};
+  ogp::Action actionObj2(_condition_fromPddl("(= (fact_1 ?e) (fact_2 ?e))", ontology, action2Parameters),
+                         _worldStateModification_fromPddl("(goal)", ontology, action2Parameters));
+  actionObj2.parameters = std::move(action2Parameters);
+  actions.emplace(action2, actionObj2);
+
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _addFact(problem.worldState, "(= (fact_2 v3) v4)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(goal)", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("action1(?p1 -> v3, ?p2 -> v4)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+
+//  _setGoalsForAPriority(problem, {_pddlGoal("(exists (?e - entity) (= (fact_1 ?e) v4))", ontology, problem.objects)}, ontology.constants);
+ // EXPECT_EQ("action1(?p1 -> v3, ?p2 -> v4)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+
 }
 
 /*
@@ -212,7 +252,7 @@ void _test_fluent_negation_in_precondition()
   ogp::Problem problem;
   _addFact(problem.worldState, "(= (fact_a p1) ent2)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
 
-  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_b p1) ent)", ontology)}, ontology.constants);
+  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_b p1) ent)", ontology, problem.objects)}, ontology.constants);
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
 }
 */
@@ -225,4 +265,5 @@ TEST(Planner, test_fluent_requirement)
   _test_set_a_fluent_value_to_undefined();
   _test_set_a_fluent_value_to_undefined_with_sub_types();
   _test_fluent_for_location_with_sub_types();
+  _fluentEqualityInPrecondition();
 }
