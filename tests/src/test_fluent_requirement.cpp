@@ -218,10 +218,6 @@ void _fluentEqualityInPrecondition()
 
   _setGoalsForAPriority(problem, {_pddlGoal("(goal)", ontology, problem.objects)}, ontology.constants);
   EXPECT_EQ("action1(?p1 -> v3, ?p2 -> v4)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-
-//  _setGoalsForAPriority(problem, {_pddlGoal("(exists (?e - entity) (= (fact_1 ?e) v4))", ontology, problem.objects)}, ontology.constants);
- // EXPECT_EQ("action1(?p1 -> v3, ?p2 -> v4)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-
 }
 
 /*

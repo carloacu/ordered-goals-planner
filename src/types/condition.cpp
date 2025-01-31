@@ -1,4 +1,5 @@
 #include <orderedgoalsplanner/types/condition.hpp>
+#include <algorithm>
 #include <optional>
 #include <orderedgoalsplanner/types/ontology.hpp>
 #include <orderedgoalsplanner/types/setofderivedpredicates.hpp>
@@ -15,7 +16,7 @@ bool _forEachValueUntil(const std::function<bool (const Entity&, const Fact*, co
                         bool pUntilValue,
                         const Condition& pCondition,
                         const WorldState& pWorldState,
-                        const std::map<Parameter, std::set<Entity>>& pParameters)
+                        const ParameterValuesWithConstraints& pParameters)
 {
   const auto& setOfFacts = pWorldState.factsMapping();
   if (pParameters.empty())
@@ -54,7 +55,7 @@ bool _forEachValueUntil(const std::function<bool (const Entity&, const Fact*, co
 void _forEach(const std::function<void (const Entity&, const Fact*)>& pValueCallback,
               const Condition& pCondition,
               const WorldState& pWorldState,
-              const std::map<Parameter, std::set<Entity>>* pParametersPtr)
+              const ParameterValuesWithConstraints* pParametersPtr)
 {
   const auto& setOfFacts = pWorldState.factsMapping();
   if (pParametersPtr == nullptr || pParametersPtr->empty())
@@ -103,14 +104,135 @@ bool _areEqual(
 }
 
 
-bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
-                std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+struct ParamToEntities
+{
+  ParameterValuesWithConstraints paramToEntities1;
+  ParameterValuesWithConstraints paramToEntities2;
+};
+
+bool _isTrueRecEquality(ParameterValuesWithConstraints& pLocalParamToValue,
+                        ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
+                        bool pMustBeTrueForAllParameters,
+                        const Fact& pFact1,
+                        const Fact& pFact2,
+                        const WorldState& pWorldState,
+                        const EntitiesWithParamConstaints& pAllEntitiesForParam)
+{
+  std::map<Entity, ParamToEntities> valueToParamToEntities;
+
+  std::map<Entity, ParameterValuesWithConstraints> leftOpPossibleValuesToParams;
+  pWorldState.iterateOnMatchingFactsWithoutValueConsideration([&](const Fact& pFact){
+    if (pFact.value())
+    {
+      auto& value = *pFact.value();
+
+      auto& paramToEntities = valueToParamToEntities[value];
+      for (auto& currArg : pLocalParamToValue)
+      {
+        auto argValue = pFact1.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
+        if (argValue)
+          paramToEntities.paramToEntities1[currArg.first][*argValue];
+      }
+
+      auto& newParams = leftOpPossibleValuesToParams[value];
+      if (pConditionParametersToPossibleArguments != nullptr)
+      {
+        for (auto& currArg : *pConditionParametersToPossibleArguments)
+        {
+          auto argValue = pFact1.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
+          if (argValue)
+            newParams[currArg.first][*argValue];
+        }
+      }
+    }
+    return false;
+  }, pFact1, pLocalParamToValue, pConditionParametersToPossibleArguments);
+
+  bool res = false;
+  ParameterValuesWithConstraints newParameters;
+  pWorldState.iterateOnMatchingFactsWithoutValueConsideration([&](const Fact& pFact){
+    if (pFact.value())
+    {
+      auto& value = *pFact.value();
+
+      auto& paramToEntities = valueToParamToEntities[value];
+      for (auto& currArg : pLocalParamToValue)
+      {
+        auto argValue = pFact1.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
+        if (argValue)
+          paramToEntities.paramToEntities2[currArg.first][*argValue];
+      }
+
+      auto itToLeftPoss = leftOpPossibleValuesToParams.find(value);
+      if (itToLeftPoss != leftOpPossibleValuesToParams.end())
+      {
+        if (pConditionParametersToPossibleArguments != nullptr)
+        {
+          if (!itToLeftPoss->second.empty())
+          {
+            for (auto& currArg : itToLeftPoss->second)
+              newParameters[currArg.first].insert(currArg.second.begin(), currArg.second.end());
+          }
+          else
+          {
+            for (auto& currArg : *pConditionParametersToPossibleArguments)
+            {
+              auto argValue = pFact2.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
+              if (argValue)
+                newParameters[currArg.first][*argValue];
+            }
+          }
+        }
+        res = true;
+      }
+    }
+    return res && pConditionParametersToPossibleArguments == nullptr;
+  }, pFact2, pLocalParamToValue, pConditionParametersToPossibleArguments);
+
+
+  if (pConditionParametersToPossibleArguments != nullptr)
+    applyNewParams(*pConditionParametersToPossibleArguments, newParameters);
+
+  ParameterValuesWithConstraints newLocalParamToValue;
+  for (const auto& currElt : valueToParamToEntities)
+  {
+    for (const auto& currParam : currElt.second.paramToEntities1)
+    {
+      auto& resSet = newLocalParamToValue[currParam.first];
+      auto itParam2 = currElt.second.paramToEntities2.find(currParam.first);
+      if (itParam2 == currElt.second.paramToEntities2.end())
+      {
+        resSet.insert(currParam.second.begin(), currParam.second.end());
+      }
+      else
+      {
+        std::set_intersection(currParam.second.begin(), currParam.second.end(),
+                              itParam2->second.begin(), itParam2->second.end(),
+                              std::inserter(resSet, resSet.begin()));
+      }
+    }
+  }
+
+  if (pMustBeTrueForAllParameters)
+  {
+    if (res)
+      for (const auto& currLocalParamToValue : newLocalParamToValue)
+        if (currLocalParamToValue.second != pAllEntitiesForParam)
+          return false;
+  }
+
+  return res;
+}
+
+
+bool _isTrueRec(ParameterValuesWithConstraints& pLocalParamToValue,
+                ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                 bool pMustBeTrueForAllParameters,
                 const Condition& pCondition,
                 const WorldState& pWorldState,
                 const std::set<Fact>& pPunctualFacts,
                 const std::set<Fact>& pRemovedFacts,
-                std::set<Entity>& pAllEntitiesForParam)
+                EntitiesWithParamConstaints& pAllEntitiesForParam)
 {
   auto* factOfConditionPtr = pCondition.fcFactPtr();
   if (factOfConditionPtr != nullptr)
@@ -138,7 +260,7 @@ bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
   if (nodeOfConditionPtr != nullptr &&
       nodeOfConditionPtr->leftOperand && nodeOfConditionPtr->rightOperand)
   {
-    auto updateAllEntitiesForParam = [&](const std::map<Parameter, std::set<Entity>>& pParamToValue) {
+    auto updateAllEntitiesForParam = [&](const ParameterValuesWithConstraints& pParamToValue) {
       if (!pParamToValue.empty())
         pAllEntitiesForParam = pParamToValue.begin()->second;
     };
@@ -180,79 +302,29 @@ bool _isTrueRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
 
     if (nodeOfConditionPtr->nodeType == ConditionNodeType::EQUALITY)
     {
-      std::map<Entity, std::map<Parameter, std::set<Entity>>> leftOpPossibleValuesToParams;
       auto* leftOpFactPtr = nodeOfConditionPtr->leftOperand->fcFactPtr();
       if (leftOpFactPtr != nullptr)
       {
         auto& leftOpFact = *leftOpFactPtr;
-
-        pWorldState.iterateOnMatchingFactsWithoutValueConsideration([&](const Fact& pFact){
-          if (pFact.value())
-          {
-            auto& newParams = leftOpPossibleValuesToParams[*pFact.value()];
-            if (pConditionParametersToPossibleArguments != nullptr)
-            {
-              for (auto& currArg : *pConditionParametersToPossibleArguments)
-              {
-                auto argValue = leftOpFact.factOptional.fact.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
-                if (argValue)
-                  newParams[currArg.first].insert(*argValue);
-              }
-            }
-          }
-          return false;
-        }, leftOpFact.factOptional.fact, pLocalParamToValue, pConditionParametersToPossibleArguments);
+        auto* rightOpFactPtr = nodeOfConditionPtr->rightOperand->fcFactPtr();
+        if (rightOpFactPtr != nullptr)
+        {
+          auto& rightOpFact = *rightOpFactPtr;
+          return _isTrueRecEquality(pLocalParamToValue, pConditionParametersToPossibleArguments,
+                                    pMustBeTrueForAllParameters,
+                                    leftOpFact.factOptional.fact, rightOpFact.factOptional.fact,
+                                    pWorldState, pAllEntitiesForParam);
+        }
       }
-
-      bool res = false;
-      auto* rightOpFactPtr = nodeOfConditionPtr->rightOperand->fcFactPtr();
-      if (rightOpFactPtr != nullptr)
-      {
-        auto& rightOpFact = *rightOpFactPtr;
-
-        std::map<Parameter, std::set<Entity>> newParameters;
-        pWorldState.iterateOnMatchingFactsWithoutValueConsideration([&](const Fact& pFact){
-          if (pFact.value())
-          {
-            auto itToLeftPoss = leftOpPossibleValuesToParams.find(*pFact.value());
-            if (itToLeftPoss != leftOpPossibleValuesToParams.end())
-            {
-              if (pConditionParametersToPossibleArguments != nullptr)
-              {
-                if (!itToLeftPoss->second.empty())
-                {
-                  for (auto& currArg : itToLeftPoss->second)
-                    newParameters[currArg.first].insert(currArg.second.begin(), currArg.second.end());
-                }
-                else
-                {
-                  for (auto& currArg : *pConditionParametersToPossibleArguments)
-                  {
-                    auto argValue = rightOpFact.factOptional.fact.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
-                    if (argValue)
-                      newParameters[currArg.first].insert(*argValue);
-                  }
-                }
-              }
-              res = true;
-            }
-          }
-          return res && pConditionParametersToPossibleArguments == nullptr;
-        }, rightOpFact.factOptional.fact, pLocalParamToValue, pConditionParametersToPossibleArguments);
-
-        if (pConditionParametersToPossibleArguments != nullptr)
-          applyNewParams(*pConditionParametersToPossibleArguments, newParameters);
-      }
-
-      return res;
+      return false;
     }
   }
   return false;
 }
 
 
-void _extractParamForNotLoopRec(std::map<Parameter, std::set<Entity>>& pLocalParamToValue,
-                           const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+void _extractParamForNotLoopRec(ParameterValuesWithConstraints& pLocalParamToValue,
+                           const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
                            const Condition& pCondition,
                            const SetOfFacts& pFacts,
                            const Fact& pFactFromEffect,
@@ -265,7 +337,7 @@ void _extractParamForNotLoopRec(std::map<Parameter, std::set<Entity>>& pLocalPar
     if (!factOfConditionOpt.isFactNegated ||
         !factOfConditionOpt.fact.areEqualWithoutAnArgConsideration(pFactFromEffect, pParameter.name))
     {
-      std::map<Parameter, std::set<Entity>> newParameters;
+      ParameterValuesWithConstraints newParameters;
       factOfConditionOpt.fact.isInOtherFactsMap(pFacts, &newParameters, &pConditionParametersToPossibleArguments, &pLocalParamToValue);
     }
     return;
@@ -408,9 +480,9 @@ bool ConditionNode::findConditionCandidateFromFactFromEffect(
     const SetOfEntities& pConstants,
     const SetOfEntities& pObjects,
     const Fact& pFactFromEffect,
-    const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
-    const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
-    const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+    const ParameterValuesWithConstraints& pFactFromEffectParameters,
+    const ParameterValuesWithConstraints* pFactFromEffectTmpParametersPtr,
+    const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
     bool pIsWrappingExpressionNegated) const
 {
   if (nodeType == ConditionNodeType::AND || nodeType == ConditionNodeType::OR)
@@ -520,7 +592,7 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
                            const SetOfEntities& pObjects,
                            const std::set<Fact>& pPunctualFacts,
                            const std::set<Fact>& pRemovedFacts,
-                           std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+                           ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                            bool pIsWrappingExpressionNegated) const
 {
   if (nodeType == ConditionNodeType::AND)
@@ -562,7 +634,7 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
       {
         const auto& factAccessorsToFacts = pWorldState.factsMapping();
         bool res = false;
-        std::map<Parameter, std::set<Entity>> newParameters;
+        ParameterValuesWithConstraints newParameters;
         _forEach([&](const Entity& pValue, const Fact* pFromFactPtr)
         {
           auto factToCheck = leftFactPtr->factOptional.fact;
@@ -586,7 +658,7 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
                 {
                   auto value = rightFactPtr->factOptional.fact.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, *pFromFactPtr);
                   if (value)
-                    currArg.second.insert(*value);
+                    currArg.second[*value];
                 }
             }
           }
@@ -775,14 +847,14 @@ bool ConditionExists::findConditionCandidateFromFactFromEffect(
     const SetOfEntities& pConstants,
     const SetOfEntities& pObjects,
     const Fact& pFactFromEffect,
-    const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
-    const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
-    const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+    const ParameterValuesWithConstraints& pFactFromEffectParameters,
+    const ParameterValuesWithConstraints* pFactFromEffectTmpParametersPtr,
+    const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
     bool pIsWrappingExpressionNegated) const
 {
   if (condition)
   {
-    std::map<Parameter, std::set<Entity>> localParamToValue{{parameter, {}}};
+    ParameterValuesWithConstraints localParamToValue{{parameter, {}}};
     if (pIsWrappingExpressionNegated)
     {
       const auto& factsMapping = pWorldState.factsMapping();
@@ -807,10 +879,10 @@ bool ConditionExists::isTrue(const WorldState& pWorldState,
                              const SetOfEntities& pObjects,
                              const std::set<Fact>& pPunctualFacts,
                              const std::set<Fact>& pRemovedFacts,
-                             std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+                             ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                              bool pIsWrappingExpressionNegated) const
 {
-  std::set<Entity> entities;
+  EntitiesWithParamConstaints entities;
   if (parameter.type)
     entities = typeToEntities(*parameter.type, pConstants, pObjects);
   if (entities.empty())
@@ -818,7 +890,7 @@ bool ConditionExists::isTrue(const WorldState& pWorldState,
 
   if (condition)
   {
-    std::map<Parameter, std::set<Entity>> localParamToValue{{parameter, {}}};
+    ParameterValuesWithConstraints localParamToValue{{parameter, {}}};
     return _isTrueRec(localParamToValue, pConditionParametersToPossibleArguments, false, *condition, pWorldState,
                       pPunctualFacts, pRemovedFacts, entities) == !pIsWrappingExpressionNegated;
   }
@@ -934,15 +1006,15 @@ bool ConditionForall::findConditionCandidateFromFactFromEffect(
     const SetOfEntities& pConstants,
     const SetOfEntities& pObjects,
     const Fact& pFactFromEffect,
-    const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
-    const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
-    const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+    const ParameterValuesWithConstraints& pFactFromEffectParameters,
+    const ParameterValuesWithConstraints* pFactFromEffectTmpParametersPtr,
+    const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
     bool pIsWrappingExpressionNegated) const
 {
   if (condition)
   {
     const auto& factAccessorsToFacts = pWorldState.factsMapping();
-    std::map<Parameter, std::set<Entity>> localParamToValue{{parameter, {}}};
+    ParameterValuesWithConstraints localParamToValue{{parameter, {}}};
     if (pIsWrappingExpressionNegated)
       _extractParamForNotLoopRec(localParamToValue, pConditionParametersToPossibleArguments, *condition, factAccessorsToFacts, pFactFromEffect, parameter);
     auto parameters = pConditionParametersToPossibleArguments;
@@ -975,10 +1047,10 @@ bool ConditionForall::isTrue(const WorldState& pWorldState,
                              const SetOfEntities& pObjects,
                              const std::set<Fact>& pPunctualFacts,
                              const std::set<Fact>& pRemovedFacts,
-                             std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+                             ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                              bool pIsWrappingExpressionNegated) const
 {
-  std::set<Entity> entities;
+  EntitiesWithParamConstaints entities;
   if (parameter.type)
     entities = typeToEntities(*parameter.type, pConstants, pObjects);
   if (entities.empty())
@@ -986,7 +1058,7 @@ bool ConditionForall::isTrue(const WorldState& pWorldState,
 
   if (condition)
   {
-    std::map<Parameter, std::set<Entity>> localParamToValue{{parameter, {}}};
+    ParameterValuesWithConstraints localParamToValue{{parameter, {}}};
     return _isTrueRec(localParamToValue, pConditionParametersToPossibleArguments, true,
                       *condition, pWorldState, pPunctualFacts, pRemovedFacts,
                       entities) == !pIsWrappingExpressionNegated;
@@ -1103,9 +1175,9 @@ bool ConditionNot::findConditionCandidateFromFactFromEffect(
     const SetOfEntities& pConstants,
     const SetOfEntities& pObjects,
     const Fact& pFactFromEffect,
-    const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
-    const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
-    const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+    const ParameterValuesWithConstraints& pFactFromEffectParameters,
+    const ParameterValuesWithConstraints* pFactFromEffectTmpParametersPtr,
+    const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
     bool pIsWrappingExpressionNegated) const
 {
   if (condition)
@@ -1121,7 +1193,7 @@ bool ConditionNot::isTrue(const WorldState& pWorldState,
                           const SetOfEntities& pObjects,
                           const std::set<Fact>& pPunctualFacts,
                           const std::set<Fact>& pRemovedFacts,
-                          std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+                          ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                           bool pIsWrappingExpressionNegated) const
 {
   if (condition)
@@ -1192,9 +1264,9 @@ bool ConditionFact::findConditionCandidateFromFactFromEffect(
     const SetOfEntities&,
     const SetOfEntities&,
     const Fact&,
-    const std::map<Parameter, std::set<Entity>>&,
-    const std::map<Parameter, std::set<Entity>>*,
-    const std::map<Parameter, std::set<Entity>>&,
+    const ParameterValuesWithConstraints&,
+    const ParameterValuesWithConstraints*,
+    const ParameterValuesWithConstraints&,
     bool pIsWrappingExpressionNegated) const
 {
   bool res = pDoesConditionFactMatchFactFromEffect(factOptional, nullptr, nullptr);
@@ -1209,7 +1281,7 @@ bool ConditionFact::isTrue(const WorldState& pWorldState,
                            const SetOfEntities& pObjects,
                            const std::set<Fact>& pPunctualFacts,
                            const std::set<Fact>& pRemovedFacts,
-                           std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+                           ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                            bool pIsWrappingExpressionNegated) const
 {
   bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(factOptional, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, nullptr);

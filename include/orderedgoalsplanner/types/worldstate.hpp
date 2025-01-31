@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <set>
+#include <orderedgoalsplanner/types/entitieswithparamconstraints.hpp>
 #include <orderedgoalsplanner/types/fact.hpp>
 #include <orderedgoalsplanner/types/setoffacts.hpp>
 #include <orderedgoalsplanner/util/alias.hpp>
@@ -209,7 +210,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
 
 
   bool canBeModifiedBy(const FactOptional& pFactOptional,
-                       std::map<Parameter, std::set<Entity>>& pArgumentsToFilter) const;
+                       ParameterValuesWithConstraints& pArgumentsToFilter) const;
 
   /**
    * @brief Is an optional fact satisfied in a specific context.
@@ -223,8 +224,8 @@ struct ORDEREDGOALSPLANNER_API WorldState
   bool isOptionalFactSatisfiedInASpecificContext(const FactOptional& pFactOptional,
                                                  const std::set<Fact>& pPunctualFacts,
                                                  const std::set<Fact>& pRemovedFacts,
-                                                 std::map<Parameter, std::set<Entity>>* pParametersToPossibleArgumentsPtr,
-                                                 std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const;
+                                                 ParameterValuesWithConstraints* pParametersToPossibleArgumentsPtr,
+                                                 ParameterValuesWithConstraints* pParametersToModifyInPlacePtr) const;
 
   /**
    * @brief Check if a goal is satisfied.<br/>
@@ -244,9 +245,9 @@ struct ORDEREDGOALSPLANNER_API WorldState
    * @param[in] pParametersToConsiderAsAnyValuePtr Other parameters to consider as "any entity" if there possible values (set of string) is empty.
    */
   void iterateOnMatchingFactsWithoutValueConsideration(const std::function<bool (const Fact&)>& pCallback,
-                                                        const Fact& pFact,
-                                                        const std::map<Parameter, std::set<Entity>>& pParametersToConsiderAsAnyValue,
-                                                        const std::map<Parameter, std::set<Entity>>* pParametersToConsiderAsAnyValuePtr = nullptr) const;
+                                                       const Fact& pFact,
+                                                       const ParameterValuesWithConstraints& pParametersToConsiderAsAnyValue,
+                                                       const ParameterValuesWithConstraints* pParametersToConsiderAsAnyValuePtr = nullptr) const;
 
   /**
    * @brief Iterate over all matching facts.
@@ -257,8 +258,8 @@ struct ORDEREDGOALSPLANNER_API WorldState
    */
   void iterateOnMatchingFacts(const std::function<bool (const Fact&)>& pValueCallback,
                               const Fact& pFact,
-                              const std::map<Parameter, std::set<Entity>>& pParametersToConsiderAsAnyValue,
-                              const std::map<Parameter, std::set<Entity>>* pParametersToConsiderAsAnyValuePtr = nullptr) const;
+                              const ParameterValuesWithConstraints& pParametersToConsiderAsAnyValue,
+                              const ParameterValuesWithConstraints* pParametersToConsiderAsAnyValuePtr = nullptr) const;
 
 
   bool hasEntity(const std::string& pEntityId) const;

@@ -102,13 +102,13 @@ struct ORDEREDGOALSPLANNER_API WorldStateModification
    * @param[in] pWorldState World state use to extract value of the facts.
    * @param[in] pFromDeductionId Identifier of the deduction holding the world state modification.
    */
-  virtual bool canSatisfyObjective(const std::function<bool (const FactOptional&, std::map<Parameter, std::set<Entity>>*, const std::function<bool (const std::map<Parameter, std::set<Entity>>&)>&)>& pFactCallback,
-                                   std::map<Parameter, std::set<Entity>>& pParameters,
+  virtual bool canSatisfyObjective(const std::function<bool (const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>& pFactCallback,
+                                   ParameterValuesWithConstraints& pParameters,
                                    const WorldState& pWorldState,
                                    const std::string& pFromDeductionId) const = 0;
 
-  virtual bool iterateOnSuccessions(const std::function<bool (const Successions&, const FactOptional&, std::map<Parameter, std::set<Entity>>*, const std::function<bool (const std::map<Parameter, std::set<Entity>>&)>&)>& pCallback,
-                                    std::map<Parameter, std::set<Entity>>& pParameters,
+  virtual bool iterateOnSuccessions(const std::function<bool (const Successions&, const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>& pCallback,
+                                    ParameterValuesWithConstraints& pParameters,
                                     const WorldState& pWorldState,
                                     bool pCanSatisfyThisGoal,
                                     const std::string& pFromDeductionId) const = 0;

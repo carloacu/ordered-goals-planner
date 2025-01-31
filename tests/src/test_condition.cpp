@@ -12,9 +12,9 @@ namespace
 {
 const ogp::SetOfCallbacks _emptyCallbacks;
 
-std::map<ogp::Parameter, std::set<ogp::Entity>> _toParameterMap(const std::vector<ogp::Parameter>& pParameters)
+ogp::ParameterValuesWithConstraints _toParameterMap(const std::vector<ogp::Parameter>& pParameters)
 {
-  std::map<ogp::Parameter, std::set<ogp::Entity>> res;
+  ogp::ParameterValuesWithConstraints res;
   for (auto& currParam : pParameters)
     res[currParam];
   return res;
@@ -26,7 +26,8 @@ bool _isTrue(const std::string& pConditionPddlStr,
              const ogp::SetOfEntities& pObjects)
 {
   std::size_t pos = 0;
-  return ogp::pddlToCondition(pConditionPddlStr, pos, pOntology, {}, {})->isTrue(pWorldState, pOntology.constants, pObjects, {}, {});
+  auto condtionPtr = ogp::pddlToCondition(pConditionPddlStr, pos, pOntology, pObjects, {});
+  return condtionPtr->isTrue(pWorldState, pOntology.constants, pObjects);
 }
 
 
@@ -246,6 +247,33 @@ void _test_forall_with_imply_inside()
   EXPECT_FALSE(_isTrue("(forall (?p - my_type3) (imply (pred_name ?p) (= (fun1 ?p) toto)))", ontology, worldState, objects));
 }
 
+
+void _test_forall_with_imply_inside2()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("entity return_type");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1(?p - entity) - return_type\n"
+                                                      "fact_2(?p - entity) - return_type\n"
+                                                      "fact_3(?p - entity) - return_type\n"
+                                                      "false", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("r1 r2 r3 r4 r5 - return_type", ontology.types);
+
+  ogp::WorldState worldState;
+  ogp::GoalStack goalStack;
+  ogp::SetOfEntities objects = ogp::SetOfEntities::fromPddl("v1 v2 v3 v4 - entity", ontology.types);
+  std::map<ogp::SetOfEventsId, ogp::SetOfEvents> setOfEvents;
+
+  worldState.addFact(ogp::Fact::fromStr("fact_3(v1)=r2", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  worldState.addFact(ogp::Fact::fromStr("fact_3(v3)=r2", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  worldState.addFact(ogp::Fact::fromStr("fact_2(v1)=r3", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  worldState.addFact(ogp::Fact::fromStr("fact_2(v3)=r4", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  worldState.addFact(ogp::Fact::fromStr("fact_1(v1)=r3", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+
+  EXPECT_FALSE(_isTrue("(forall (?e - entity) (imply (= (fact_3 ?e) r2) (= (fact_1 ?e) (fact_2 ?e))))", ontology, worldState, objects));
+  worldState.addFact(ogp::Fact::fromStr("fact_1(v3)=r3", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  EXPECT_TRUE(_isTrue("(forall (?e - entity) (imply (= (fact_3 ?e) r2) (= (fact_1 ?e) (fact_2 ?e))))", ontology, worldState, objects));
+}
+
 }
 
 
@@ -257,5 +285,6 @@ TEST(Tool, test_condition)
   _test_exists_with_and_list_inside();
   _test_exists_with_imply_inside();
   _test_forall_with_imply_inside();
+  _test_forall_with_imply_inside2();
 
 }

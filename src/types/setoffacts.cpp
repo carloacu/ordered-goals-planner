@@ -351,8 +351,8 @@ void SetOfFacts::extractPotentialArgumentsOfAFactParameter(
     std::set<Entity>& pPotentialArgumentsOfTheParameter,
     const Fact& pFact,
     const std::string& pParameter,
-    const std::map<Parameter, std::set<Entity>>& pParameters,
-    std::map<Parameter, std::set<Entity>>* pPotentialNewParametersPtr) const
+    const ParameterValuesWithConstraints& pParameters,
+    ParameterValuesWithConstraints* pPotentialNewParametersPtr) const
 {
   auto factMatchingInWs = find(pFact);
   for (const auto& currFact : factMatchingInWs)
@@ -377,7 +377,7 @@ void SetOfFacts::extractPotentialArgumentsOfAFactParameter(
           if (pFactEntity.value == currParam.first.name)
           {
             if (pPotentialNewParametersPtr != nullptr)
-              (*pPotentialNewParametersPtr)[currParam.first].insert(pCurrFactEntity);
+              (*pPotentialNewParametersPtr)[currParam.first][pCurrFactEntity];
             res = true;
             break;
           }

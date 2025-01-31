@@ -5,7 +5,7 @@
 #include <set>
 #include <string>
 #include "../util/api.hpp"
-
+#include <orderedgoalsplanner/types/entitieswithparamconstraints.hpp>
 
 namespace ogp
 {
@@ -21,7 +21,7 @@ struct ORDEREDGOALSPLANNER_API ActionInvocation
   ActionInvocation(const std::string& pActionId,
                    const std::map<Parameter, Entity>& pParameters);
   ActionInvocation(const std::string& pActionId,
-                   const std::map<Parameter, std::set<Entity>>& pParameters);
+                   const ParameterValuesWithConstraints& pParameters);
   ~ActionInvocation();
 
   /**

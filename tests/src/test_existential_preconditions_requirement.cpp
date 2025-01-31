@@ -696,6 +696,38 @@ void _existWithFluentValuesEquality()
 
 
 
+void _existWithImplyAndFluentValuesEquality()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("entity return_type");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1(?p - entity) - return_type\n"
+                                                      "fact_2(?p - entity) - return_type\n"
+                                                      "false", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("r1 r2 - return_type", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{_parameter("?p1 - entity", ontology), _parameter("?p2 - return_type", ontology)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (fact_1 ?p1) ?p2)", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("v1 v2 - entity", ontology.types);
+  _addFact(problem.worldState, "fact_2(v1)=r2", problem.goalStack, ontology, setOfEventsMap, _now, problem.objects);
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(exists (?e - entity) (imply (= (fact_2 ?e) r2) (= (fact_1 ?e) (fact_2 ?e))))", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+
+  problem.objects = ogp::SetOfEntities::fromPddl("v1 - entity", ontology.types);
+  _setGoalsForAPriority(problem, {_pddlGoal("(exists (?e - entity) (imply (= (fact_2 ?e) r2) (= (fact_1 ?e) (fact_2 ?e))))", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("action1(?p1 -> v1, ?p2 -> r2)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
+
 }
 
 
@@ -719,4 +751,5 @@ TEST(Planner, test_existentialPreconditionsRequirement)
   _existsInsideAPath();
   _checkExistsInGoalWithAndListWithANotStatement();
   _existWithFluentValuesEquality();
+  _existWithImplyAndFluentValuesEquality();
 }

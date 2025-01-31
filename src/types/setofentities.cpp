@@ -29,7 +29,7 @@ void SetOfEntities::add(const Entity& pEntity)
   _valueToEntity.emplace(pEntity.value, pEntity);
 
   if (pEntity.type)
-    _typeNameToEntities[pEntity.type->name].insert(pEntity);
+    _typeNameToEntities[pEntity.type->name][pEntity];
 }
 
 void SetOfEntities::addAllIfNotExist(const SetOfEntities& pSetOfEntities)
@@ -88,7 +88,7 @@ void SetOfEntities::remove(const Entity& pEntity)
   }
 }
 
-const std::set<Entity>* SetOfEntities::typeNameToEntities(const std::string& pTypename) const
+const EntitiesWithParamConstaints* SetOfEntities::typeNameToEntities(const std::string& pTypename) const
 {
   auto it = _typeNameToEntities.find(pTypename);
   if (it != _typeNameToEntities.end())
@@ -144,9 +144,10 @@ std::list<Entity> SetOfEntities::getUnusedEntitiesOfTypes(const WorldState& pWor
     auto itToEntities = _typeNameToEntities.find(currType->name);
     if (itToEntities != _typeNameToEntities.end())
     {
-      auto& entities = itToEntities->second;
-      for (const Entity& entity : entities)
+      auto& entitiesToConstraints = itToEntities->second;
+      for (const auto& entityToConstraints : entitiesToConstraints)
       {
+        const Entity& entity = entityToConstraints.first;
         if (!pWorldState.hasEntity(entity.value))
         {
           bool isInGoals = false;

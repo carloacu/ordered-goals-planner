@@ -21,11 +21,11 @@ bool _areEqual(
 }
 
 
-bool _isOkWithLocalParameters(const std::map<Parameter, std::set<Entity>>& pLocalParameterToFind,
-                              std::map<Parameter, std::set<Entity>>& pParametersToFill,
+bool _isOkWithLocalParameters(const ParameterValuesWithConstraints& pLocalParameterToFind,
+                              ParameterValuesWithConstraints& pParametersToFill,
                               const WorldStateModification& pWModif,
                               const WorldState& pWorldState,
-                              std::map<Parameter, std::set<Entity>>& pParametersToModifyInPlace)
+                              ParameterValuesWithConstraints& pParametersToModifyInPlace)
 {
   if (!pParametersToFill.empty() &&
       !pParametersToFill.begin()->second.empty())
@@ -34,15 +34,15 @@ bool _isOkWithLocalParameters(const std::map<Parameter, std::set<Entity>>& pLoca
     const auto* wSMFPtr = dynamic_cast<const WorldStateModificationFact*>(&pWModif);
     if (wSMFPtr != nullptr)
     {
-      std::set<Entity>& parameterPossibilities = pParametersToFill.begin()->second;
+      auto& parameterPossibilities = pParametersToFill.begin()->second;
 
-      std::map<Parameter, std::set<Entity>> newParameters;
+      ParameterValuesWithConstraints newParameters;
       while (!parameterPossibilities.empty())
       {
         auto factWithValueToAssign = wSMFPtr->factOptional.fact;
         factWithValueToAssign.replaceArguments(pLocalParameterToFind);
         auto itBeginOfParamPoss = parameterPossibilities.begin();
-        factWithValueToAssign.setValue(*itBeginOfParamPoss);
+        factWithValueToAssign.setValue(itBeginOfParamPoss->first);
 
         const auto& factAccessorsToFacts = pWorldState.factsMapping();
 
@@ -134,7 +134,7 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
   }
   else if (nodeType == WorldStateModificationNodeType::FOR_ALL)
   {
-    std::map<Parameter, std::set<Entity>> parameters;
+    ParameterValuesWithConstraints parameters;
     _forAllInstruction(
           [&](const WorldStateModification& pWsModification)
     {
@@ -220,8 +220,8 @@ ContinueOrBreak WorldStateModificationNode::forAllThatCanBeModified(const std::f
 }
 
 
-bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (const FactOptional&, std::map<Parameter, std::set<Entity>>*, const std::function<bool (const std::map<Parameter, std::set<Entity>>&)>&)>& pFactCallback,
-                                                     std::map<Parameter, std::set<Entity>>& pParameters,
+bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>& pFactCallback,
+                                                     ParameterValuesWithConstraints& pParameters,
                                                      const WorldState& pWorldState,
                                                      const std::string& pFromDeductionId) const
 {
@@ -238,14 +238,14 @@ bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (c
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(rightOperand->getValue(setOfFacts));
-      std::map<Parameter, std::set<Entity>> localParameterToFind;
+      ParameterValuesWithConstraints localParameterToFind;
 
       if (!factToCheck.fact.value())
       {
         factToCheck.fact.setValue(Entity("??tmpValueFromSet_" + pFromDeductionId, factToCheck.fact.predicate.value));
         localParameterToFind[Parameter(factToCheck.fact.value()->value, factToCheck.fact.predicate.value)];
       }
-      bool res = pFactCallback(factToCheck, &localParameterToFind, [&](const std::map<Parameter, std::set<Entity>>& pLocalParameterToFind){
+      bool res = pFactCallback(factToCheck, &localParameterToFind, [&](const ParameterValuesWithConstraints& pLocalParameterToFind){
         return _isOkWithLocalParameters(pLocalParameterToFind, localParameterToFind, *rightOperand, pWorldState, pParameters);
       });
       return res;
@@ -271,7 +271,7 @@ bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (c
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(plusIntOrStr(leftOperand->getValue(setOfFacts), rightOperand->getValue(setOfFacts)));
-      return pFactCallback(factToCheck, nullptr, [](const std::map<Parameter, std::set<Entity>>&){ return true; });
+      return pFactCallback(factToCheck, nullptr, [](const ParameterValuesWithConstraints&){ return true; });
     }
   }
 
@@ -282,7 +282,7 @@ bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (c
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(minusIntOrStr(leftOperand->getValue(setOfFacts), rightOperand->getValue(setOfFacts)));
-      return pFactCallback(factToCheck, nullptr, [](const std::map<Parameter, std::set<Entity>>&){ return true; });
+      return pFactCallback(factToCheck, nullptr, [](const ParameterValuesWithConstraints&){ return true; });
     }
   }
 
@@ -293,7 +293,7 @@ bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (c
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(multiplyNbOrStr(leftOperand->getValue(setOfFacts), rightOperand->getValue(setOfFacts)));
-      return pFactCallback(factToCheck, nullptr, [](const std::map<Parameter, std::set<Entity>>&){ return true; });
+      return pFactCallback(factToCheck, nullptr, [](const ParameterValuesWithConstraints&){ return true; });
     }
   }
 
@@ -304,8 +304,8 @@ bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (c
 }
 
 
-bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (const Successions&, const FactOptional&, std::map<Parameter, std::set<Entity>>*, const std::function<bool (const std::map<Parameter, std::set<Entity>>&)>&)>& pCallback,
-                                                      std::map<Parameter, std::set<Entity>>& pParameters,
+bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (const Successions&, const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>& pCallback,
+                                                      ParameterValuesWithConstraints& pParameters,
                                                       const WorldState& pWorldState,
                                                       bool pCanSatisfyThisGoal,
                                                       const std::string& pFromDeductionId) const
@@ -323,14 +323,14 @@ bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(rightOperand->getValue(setOfFacts));
-      std::map<Parameter, std::set<Entity>> localParameterToFind;
+      ParameterValuesWithConstraints localParameterToFind;
 
       if (!factToCheck.fact.value())
       {
         factToCheck.fact.setValue(Entity("??tmpValueFromSet_" + pFromDeductionId, factToCheck.fact.predicate.value));
         localParameterToFind[Parameter(factToCheck.fact.value()->value, factToCheck.fact.predicate.value)];
       }
-      bool res = pCallback(_successions, factToCheck, &localParameterToFind, [&](const std::map<Parameter, std::set<Entity>>& pLocalParameterToFind){
+      bool res = pCallback(_successions, factToCheck, &localParameterToFind, [&](const ParameterValuesWithConstraints& pLocalParameterToFind){
         return _isOkWithLocalParameters(pLocalParameterToFind, localParameterToFind, *rightOperand, pWorldState, pParameters);
       });
       return res;
@@ -356,7 +356,7 @@ bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(plusIntOrStr(leftOperand->getValue(setOfFacts), rightOperand->getValue(setOfFacts)));
-      return pCallback(_successions, factToCheck, nullptr, [](const std::map<Parameter, std::set<Entity>>&){ return true; });
+      return pCallback(_successions, factToCheck, nullptr, [](const ParameterValuesWithConstraints&){ return true; });
     }
   }
 
@@ -367,7 +367,7 @@ bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(minusIntOrStr(leftOperand->getValue(setOfFacts), rightOperand->getValue(setOfFacts)));
-      return pCallback(_successions, factToCheck, nullptr, [](const std::map<Parameter, std::set<Entity>>&){ return true; });
+      return pCallback(_successions, factToCheck, nullptr, [](const ParameterValuesWithConstraints&){ return true; });
     }
   }
 
@@ -378,7 +378,7 @@ bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(multiplyNbOrStr(leftOperand->getValue(setOfFacts), rightOperand->getValue(setOfFacts)));
-      return pCallback(_successions, factToCheck, nullptr, [](const std::map<Parameter, std::set<Entity>>&){ return true; });
+      return pCallback(_successions, factToCheck, nullptr, [](const ParameterValuesWithConstraints&){ return true; });
     }
   }
 
@@ -538,7 +538,7 @@ std::optional<Entity> WorldStateModificationNode::getValue(const SetOfFacts& pSe
 
 void WorldStateModificationNode::_forAllInstruction(const std::function<void (const WorldStateModification &)>& pCallback,
                                                     const SetOfFacts& pSetOfFact,
-                                                    std::map<Parameter, std::set<Entity>>& pParameters) const
+                                                    ParameterValuesWithConstraints& pParameters) const
 {
   if (leftOperand && rightOperand && parameterOpt)
   {
@@ -546,7 +546,7 @@ void WorldStateModificationNode::_forAllInstruction(const std::function<void (co
     if (leftFactPtr != nullptr)
     {
       std::set<Entity> parameterValues;
-      std::map<Parameter, std::set<Entity>> potentialNewParameters;
+      ParameterValuesWithConstraints potentialNewParameters;
       pSetOfFact.extractPotentialArgumentsOfAFactParameter(parameterValues, leftFactPtr->factOptional.fact, parameterOpt->name,
                                                            pParameters, &potentialNewParameters);
       if (!parameterValues.empty())

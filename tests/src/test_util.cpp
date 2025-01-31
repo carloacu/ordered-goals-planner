@@ -38,8 +38,15 @@ std::string _toStr(const std::list<std::map<Parameter, Entity>>& pParams)
 
 std::string _unfoldMapWithSet(const std::map<Parameter, std::set<ogp::Entity>>& pInMap)
 {
+  ParameterValuesWithConstraints inMap;
+  for (const auto& currElt : pInMap)
+  {
+    auto& inMapSecond = inMap[currElt.first];
+    for (const auto& currEntity : currElt.second)
+      inMapSecond[currEntity];
+  }
   std::list<std::map<Parameter, ogp::Entity>> res;
-  unfoldMapWithSet(res, pInMap);
+  unfoldMapWithSet(res, inMap);
   return _toStr(res);
 }
 

@@ -20,7 +20,7 @@ struct ORDEREDGOALSPLANNER_API ActionInvocationWithGoal
                            std::unique_ptr<Goal> pFromGoal,
                            int pFromGoalPriority);
   ActionInvocationWithGoal(const std::string& pActionId,
-                           const std::map<Parameter, std::set<Entity>>& pParameters,
+                           const ParameterValuesWithConstraints& pParameters,
                            std::unique_ptr<Goal> pFromGoal,
                            int pFromGoalPriority);
 

@@ -9,6 +9,7 @@
 #include <vector>
 #include "../util/api.hpp"
 #include <orderedgoalsplanner/types/entity.hpp>
+#include <orderedgoalsplanner/types/entitieswithparamconstraints.hpp>
 #include <orderedgoalsplanner/types/predicate.hpp>
 
 namespace ogp
@@ -75,8 +76,8 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return True if the equality check succeeded.
    */
   bool areEqualWithoutValueConsideration(const Fact& pFact,
-                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
-                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
+                                         const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
+                                         const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
 
   /// Check equality with another fact without considering an argument.
   bool areEqualWithoutAnArgConsideration(const Fact& pFact,
@@ -96,8 +97,8 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return True if the 2 facts match, false otherwise.
    */
   bool areEqualExceptAnyEntities(const Fact& pOther,
-                                 const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
-                                 const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr,
+                                 const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
+                                 const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr,
                                  const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr = nullptr) const;
 
   /**
@@ -108,8 +109,8 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return True if the 2 facts match, false otherwise.
    */
   bool areEqualExceptAnyEntitiesAndValue(const Fact& pOther,
-                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
-                                         const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
+                                         const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
+                                         const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
 
   bool doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const Fact& pFact) const;
 
@@ -164,7 +165,7 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @param pCurrentArgumentsToNewArgument[in] Map of current arguments to new possible arguments to set.<br/>
    * Only the first new possible argument to set will be considered.
    */
-  void replaceArguments(const std::map<Parameter, std::set<Entity>>& pCurrentArgumentsToNewArgument);
+  void replaceArguments(const ParameterValuesWithConstraints& pCurrentArgumentsToNewArgument);
 
   std::string toPddl(bool pInEffectContext,
                      bool pPrintAnyValue = true) const;
@@ -203,9 +204,9 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return True if the fact matches any of the other facts.
    */
   bool isInOtherFacts(const std::set<Fact>& pOtherFacts,
-                      std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
-                      const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                      std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr = nullptr,
+                      ParameterValuesWithConstraints* pNewParametersPtr,
+                      const ParameterValuesWithConstraints* pParametersPtr,
+                      ParameterValuesWithConstraints* pParametersToModifyInPlacePtr = nullptr,
                       bool* pTriedToModifyParametersPtr = nullptr) const;
 
   /**
@@ -219,25 +220,25 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return True if the fact matches any of the other facts.
    */
   bool isInOtherFactsMap(const SetOfFacts& pOtherFacts,
-                         std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
-                         const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                         std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr = nullptr,
+                         ParameterValuesWithConstraints* pNewParametersPtr,
+                         const ParameterValuesWithConstraints* pParametersPtr,
+                         ParameterValuesWithConstraints* pParametersToModifyInPlacePtr = nullptr,
                          bool* pTriedToModifyParametersPtr = nullptr) const;
 
   bool canModifySetOfFacts(const SetOfFacts& pOtherFacts,
-                           std::map<Parameter, std::set<Entity> >& pArgumentsToFilter) const;
+                           ParameterValuesWithConstraints& pArgumentsToFilter) const;
 
-  bool updateParameters(std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,
-                        std::map<Parameter, std::set<Entity>>& pNewPotentialParametersInPlace,
-                        std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
+  bool updateParameters(ParameterValuesWithConstraints& pNewPotentialParameters,
+                        ParameterValuesWithConstraints& pNewPotentialParametersInPlace,
+                        ParameterValuesWithConstraints* pNewParametersPtr,
                         bool pCheckAllPossibilities,
-                        const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                        std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr,
+                        const ParameterValuesWithConstraints* pParametersPtr,
+                        ParameterValuesWithConstraints* pParametersToModifyInPlacePtr,
                         bool* pTriedToModifyParametersPtr) const;
 
   bool filterPossibilities(const Fact& pOtherFact,
-                           std::map<Parameter, std::set<Entity>>& pNewParameters,
-                           const std::map<Parameter, std::set<Entity>>& pParameters) const;
+                           ParameterValuesWithConstraints& pNewParameters,
+                           const ParameterValuesWithConstraints& pParameters) const;
 
   /**
    * @brief Does the fact matches the other fact.
@@ -248,10 +249,10 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return True if the fact matches the other fact.
    */
   bool isInOtherFact(const Fact& pOtherFact,
-                     std::map<Parameter, std::set<Entity>>& pNewParameters,
-                     const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                     std::map<Parameter, std::set<Entity>>& pNewParametersInPlace,
-                     const std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const;
+                     ParameterValuesWithConstraints& pNewParameters,
+                     const ParameterValuesWithConstraints* pParametersPtr,
+                     ParameterValuesWithConstraints& pNewParametersInPlace,
+                     const ParameterValuesWithConstraints* pParametersToModifyInPlacePtr) const;
 
   /**
    * @brief Replace, in the arguments of this fact, a fact by another fact.
@@ -303,10 +304,10 @@ private:
 
   std::string _generateFactSignature() const;
 
-  bool _updateParameters(std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
-                         std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,
+  bool _updateParameters(ParameterValuesWithConstraints* pNewParametersPtr,
+                         ParameterValuesWithConstraints& pNewPotentialParameters,
                          bool pCheckAllPossibilities,
-                         const std::map<Parameter, std::set<Entity>>* pParametersPtr,
+                         const ParameterValuesWithConstraints* pParametersPtr,
                          bool* pTriedToModifyParametersPtr) const;
 
   void _resetFactSignatureCache();

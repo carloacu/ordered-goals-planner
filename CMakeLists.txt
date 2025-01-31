@@ -23,6 +23,7 @@ set(ORDERED_GOALS_PLANNER_HPPS
     include/orderedgoalsplanner/types/derivedpredicate.hpp
     include/orderedgoalsplanner/types/domain.hpp
     include/orderedgoalsplanner/types/entity.hpp
+    include/orderedgoalsplanner/types/entitieswithparamconstraints.hpp
     include/orderedgoalsplanner/types/event.hpp
     include/orderedgoalsplanner/types/fact.hpp
     include/orderedgoalsplanner/types/factoptional.hpp

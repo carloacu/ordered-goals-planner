@@ -26,7 +26,7 @@ T _lexical_cast(const std::string& pStr)
   return atoi(pStr.c_str());
 }
 
-void _typeToEntitiesRec(std::set<Entity>& pRes,
+void _typeToEntitiesRec(EntitiesWithParamConstaints& pRes,
                         const Type& pParamType,
                         const SetOfEntities& pConstants,
                         const SetOfEntities& pObjects)
@@ -150,20 +150,40 @@ bool isNumber(const std::string& str) {
     return hasDigits; // Valid if there's at least one digit
 }
 
+
+bool _isValidForConstraints(const std::map<Parameter, Entity>& pParamToValue,
+                            const ParamConstaints& pConstraints)
+{
+  for (const auto& currParamToValue : pParamToValue)
+  {
+    auto itContraint = pConstraints.find(currParamToValue.first);
+    if (itContraint != pConstraints.end() && !itContraint->second.empty() &&
+        itContraint->second.count(currParamToValue.second) == 0)
+      return false;
+  }
+
+  return true;
+}
+
+
 void _unfoldMapWithSet(std::list<std::map<Parameter, Entity>>& pOutMap,
-                       const std::map<Parameter, std::set<Entity>>& pInMap,
-                       std::map<Parameter, std::set<Entity>>::const_iterator pItInMap)
+                       const ParameterValuesWithConstraints& pInMap,
+                       ParameterValuesWithConstraints::const_iterator pItInMap)
 {
   auto nextIt = pItInMap;
   ++nextIt;
   if (nextIt == pInMap.end())
   {
     for (auto& currValue : pItInMap->second)
-      pOutMap.emplace_back(std::map<Parameter, Entity>{{pItInMap->first, currValue}});
+    {
+      std::map<Parameter, Entity> newValue{{pItInMap->first, currValue.first}};
+      if (_isValidForConstraints(newValue, currValue.second))
+        pOutMap.emplace_back(std::move(newValue));
+    }
     return;
   }
 
-  for (auto it = pItInMap; it != pInMap.end(); ++it)
+  for (auto it = pItInMap; it != pInMap.end(); )
   {
     auto key = it->first;
     auto values = std::move(it->second);
@@ -177,15 +197,18 @@ void _unfoldMapWithSet(std::list<std::map<Parameter, Entity>>& pOutMap,
       auto newRes = subRes;
       for (auto& currSubResValue : newRes)
       {
-        currSubResValue.try_emplace(key, currValue);
-        pOutMap.emplace_back(std::move(currSubResValue));
+        if (_isValidForConstraints(currSubResValue, currValue.second))
+        {
+          currSubResValue.try_emplace(key, currValue.first);
+          pOutMap.emplace_back(std::move(currSubResValue));
+        }
       }
     }
   }
 }
 
 void unfoldMapWithSet(std::list<std::map<Parameter, Entity>>& pOutMap,
-                      const std::map<Parameter, std::set<Entity>>& pInMap)
+                      const ParameterValuesWithConstraints& pInMap)
 {
   if (pInMap.empty())
     return;
@@ -194,13 +217,12 @@ void unfoldMapWithSet(std::list<std::map<Parameter, Entity>>& pOutMap,
 
 
 void applyNewParams(
-    std::map<Parameter, std::set<Entity>>& pParameters,
-    std::map<Parameter, std::set<Entity>>& pNewParameters)
+    ParameterValuesWithConstraints& pParameters,
+    ParameterValuesWithConstraints& pNewParameters)
 {
   for (auto& currNewParam : pNewParameters)
     pParameters[currNewParam.first] = std::move(currNewParam.second);
 }
-
 
 
 std::optional<Entity> plusIntOrStr(const std::optional<Entity>& pNb1,
@@ -359,11 +381,11 @@ void trim(std::string& s)
 }
 
 
-std::set<Entity> typeToEntities(const Type& pParamType,
-                                const SetOfEntities& pConstants,
-                                const SetOfEntities& pObjects)
+EntitiesWithParamConstaints typeToEntities(const Type& pParamType,
+                                           const SetOfEntities& pConstants,
+                                           const SetOfEntities& pObjects)
 {
-  std::set<Entity> res;
+  EntitiesWithParamConstaints res;
   _typeToEntitiesRec(res, pParamType, pConstants, pObjects);
   return res;
 }

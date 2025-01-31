@@ -9,7 +9,7 @@ namespace ogp
 {
 namespace
 {
-static const std::map<Parameter, std::set<Entity>> _emptyParametersWithValues;
+static const ParameterValuesWithConstraints _emptyParametersWithValues;
 static const std::vector<Parameter> _emptyParameters;
 
 

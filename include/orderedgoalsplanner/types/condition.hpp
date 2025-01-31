@@ -8,6 +8,7 @@
 #include <vector>
 #include "../util/api.hpp"
 #include "factoptional.hpp"
+#include <orderedgoalsplanner/types/entitieswithparamconstraints.hpp>
 #include <orderedgoalsplanner/util/continueorbreak.hpp>
 #include <orderedgoalsplanner/util/util.hpp>
 
@@ -81,9 +82,9 @@ struct ORDEREDGOALSPLANNER_API Condition
       const SetOfEntities& pConstants,
       const SetOfEntities& pObjects,
       const Fact& pFactFromEffect,
-      const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
-      const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
-      const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+      const ParameterValuesWithConstraints& pFactFromEffectParameters,
+      const ParameterValuesWithConstraints* pFactFromEffectTmpParametersPtr,
+      const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
       bool pIsWrappingExpressionNegated = false) const = 0;
 
   /**
@@ -110,7 +111,7 @@ struct ORDEREDGOALSPLANNER_API Condition
                       const SetOfEntities& pObjects,
                       const std::set<Fact>& pPunctualFacts = {},
                       const std::set<Fact>& pRemovedFacts = {},
-                      std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments = nullptr,
+                      ParameterValuesWithConstraints* pConditionParametersToPossibleArguments = nullptr,
                       bool pIsWrappingExpressionNegated = false) const = 0;
 
   /// Equality operators.
@@ -213,9 +214,9 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
                                                 const SetOfEntities& pConstants,
                                                 const SetOfEntities& pObjects,
                                                 const Fact& pFactFromEffect,
-                                                const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
-                                                const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
-                                                const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+                                                const ParameterValuesWithConstraints& pFactFromEffectParameters,
+                                                const ParameterValuesWithConstraints* pFactFromEffectTmpParametersPtr,
+                                                const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
                                                 bool pIsWrappingExpressionNegated) const override;
   bool untilFalse(const std::function<bool (const FactOptional&)>& pFactCallback,
                   const SetOfFacts& pSetOfFact) const override;
@@ -224,7 +225,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
-              std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+              ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -279,9 +280,9 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
       const SetOfEntities& pConstants,
       const SetOfEntities& pObjects,
       const Fact& pFactFromEffect,
-      const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
-      const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
-      const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+      const ParameterValuesWithConstraints& pFactFromEffectParameters,
+      const ParameterValuesWithConstraints* pFactFromEffectTmpParametersPtr,
+      const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
       bool pIsWrappingExpressionNegated) const override;
 
   bool untilFalse(const std::function<bool (const FactOptional&)>&,
@@ -291,7 +292,7 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
-              std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+              ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -346,9 +347,9 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
       const SetOfEntities& pConstants,
       const SetOfEntities& pObjects,
       const Fact& pFactFromEffect,
-      const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
-      const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
-      const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+      const ParameterValuesWithConstraints& pFactFromEffectParameters,
+      const ParameterValuesWithConstraints* pFactFromEffectTmpParametersPtr,
+      const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
       bool pIsWrappingExpressionNegated) const override;
 
   bool untilFalse(const std::function<bool (const FactOptional&)>&,
@@ -358,7 +359,7 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
-              std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+              ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -412,9 +413,9 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
       const SetOfEntities& pConstants,
       const SetOfEntities& pObjects,
       const Fact& pFactFromEffect,
-      const std::map<Parameter, std::set<Entity>>& pFactFromEffectParameters,
-      const std::map<Parameter, std::set<Entity>>* pFactFromEffectTmpParametersPtr,
-      const std::map<Parameter, std::set<Entity>>& pConditionParametersToPossibleArguments,
+      const ParameterValuesWithConstraints& pFactFromEffectParameters,
+      const ParameterValuesWithConstraints* pFactFromEffectTmpParametersPtr,
+      const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
       bool pIsWrappingExpressionNegated) const override;
 
   bool untilFalse(const std::function<bool (const FactOptional&)>& pFactCallback,
@@ -424,7 +425,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
-              std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+              ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -475,9 +476,9 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
       const SetOfEntities&,
       const SetOfEntities&,
       const Fact&,
-      const std::map<Parameter, std::set<Entity>>&,
-      const std::map<Parameter, std::set<Entity>>*,
-      const std::map<Parameter, std::set<Entity>>&,
+      const ParameterValuesWithConstraints&,
+      const ParameterValuesWithConstraints*,
+      const ParameterValuesWithConstraints&,
       bool pIsWrappingExpressionNegated) const override;
   bool untilFalse(const std::function<bool (const FactOptional&)>& pFactCallback,
                   const SetOfFacts&) const override { return pFactCallback(factOptional); }
@@ -486,7 +487,7 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
               const std::set<Fact>& pRemovedFacts,
-              std::map<Parameter, std::set<Entity>>* pConditionParametersToPossibleArguments,
+              ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
   bool operator==(const Condition& pOther) const override;
 
@@ -534,9 +535,9 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
       const SetOfEntities&,
       const SetOfEntities&,
       const Fact&,
-      const std::map<Parameter, std::set<Entity>>&,
-      const std::map<Parameter, std::set<Entity>>*,
-      const std::map<Parameter, std::set<Entity>>&,
+      const ParameterValuesWithConstraints&,
+      const ParameterValuesWithConstraints*,
+      const ParameterValuesWithConstraints&,
       bool) const override { return true; }
   bool untilFalse(const std::function<bool (const FactOptional&)>&,
                   const SetOfFacts&) const override { return true; }
@@ -545,7 +546,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
               const SetOfEntities&,
               const std::set<Fact>&,
               const std::set<Fact>&,
-              std::map<Parameter, std::set<Entity>>*,
+              ParameterValuesWithConstraints*,
               bool pIsWrappingExpressionNegated) const override { return !pIsWrappingExpressionNegated; }
   bool operator==(const Condition& pOther) const override;
 

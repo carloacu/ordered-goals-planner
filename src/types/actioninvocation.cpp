@@ -15,13 +15,13 @@ ActionInvocation::ActionInvocation(const std::string& pActionId,
 
 
 ActionInvocation::ActionInvocation(const std::string& pActionId,
-                                   const std::map<Parameter, std::set<Entity>>& pParameters)
+                                   const ParameterValuesWithConstraints& pParameters)
   : actionId(pActionId),
     parameters()
 {
   for (auto& currParam : pParameters)
     if (!currParam.second.empty())
-      parameters.emplace(currParam.first, *currParam.second.begin());
+      parameters.emplace(currParam.first, currParam.second.begin()->first);
 }
 
 

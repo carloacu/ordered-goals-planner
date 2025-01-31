@@ -6,7 +6,7 @@
 #include <map>
 #include <set>
 #include <string>
-#include "entity.hpp"
+#include "entitieswithparamconstraints.hpp"
 
 namespace ogp
 {
@@ -31,7 +31,7 @@ struct ORDEREDGOALSPLANNER_API SetOfEntities
 
   void remove(const Entity& pEntity);
 
-  const std::set<Entity>* typeNameToEntities(const std::string& pTypename) const;
+  const EntitiesWithParamConstaints* typeNameToEntities(const std::string& pTypename) const;
 
   const Entity* valueToEntity(const std::string& pValue) const;
 
@@ -45,7 +45,7 @@ struct ORDEREDGOALSPLANNER_API SetOfEntities
 
 private:
   std::map<std::string, Entity> _valueToEntity;
-  std::map<std::string, std::set<Entity>> _typeNameToEntities;
+  std::map<std::string, EntitiesWithParamConstaints> _typeNameToEntities;
 };
 
 } // namespace ogp

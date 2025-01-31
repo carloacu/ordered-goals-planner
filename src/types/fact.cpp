@@ -62,7 +62,7 @@ bool _isInside(const Entity& pEntity,
 }
 
 bool _isInside(const Entity& pEntity,
-               const std::map<Parameter, std::set<Entity>>* pEltsPtr)
+               const ParameterValuesWithConstraints* pEltsPtr)
 {
   if (pEltsPtr == nullptr)
     return false;
@@ -273,8 +273,8 @@ std::ostream& operator<<(std::ostream& os, const Fact& pFact) {
 }
 
 bool Fact::areEqualWithoutValueConsideration(const Fact& pFact,
-                                              const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
-                                              const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2) const
+                                              const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr,
+                                              const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2) const
 {
   if (pFact._name != _name ||
       pFact._arguments.size() != _arguments.size())
@@ -391,8 +391,8 @@ bool Fact::areEqualExceptAnyParameters(const Fact& pOther,
 
 
 bool Fact::areEqualExceptAnyEntities(const Fact& pOther,
-                                     const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
-                                     const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2,
+                                     const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr,
+                                     const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2,
                                      const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr) const
 {
   if (_name != pOther._name || _arguments.size() != pOther._arguments.size())
@@ -431,8 +431,8 @@ bool Fact::areEqualExceptAnyEntities(const Fact& pOther,
 
 
 bool Fact::areEqualExceptAnyEntitiesAndValue(const Fact& pOther,
-                                             const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr,
-                                             const std::map<Parameter, std::set<Entity>>* pOtherFactParametersToConsiderAsAnyValuePtr2) const
+                                             const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr,
+                                             const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2) const
 {
   if (_name != pOther._name || _arguments.size() != pOther._arguments.size())
     return false;
@@ -582,20 +582,20 @@ void Fact::replaceArguments(const std::map<Parameter, Entity>& pCurrentArguments
   _resetFactSignatureCache();
 }
 
-void Fact::replaceArguments(const std::map<Parameter, std::set<Entity>>& pCurrentArgumentsToNewArgument)
+void Fact::replaceArguments(const ParameterValuesWithConstraints& pCurrentArgumentsToNewArgument)
 {
   if (_value)
   {
     auto itValueParam = pCurrentArgumentsToNewArgument.find(_value->toParameter());
     if (itValueParam != pCurrentArgumentsToNewArgument.end() && !itValueParam->second.empty())
-      _value = *itValueParam->second.begin();
+      _value = itValueParam->second.begin()->first;
   }
 
   for (auto& currParam : _arguments)
   {
     auto itValueParam = pCurrentArgumentsToNewArgument.find(currParam.toParameter());
     if (itValueParam != pCurrentArgumentsToNewArgument.end() && !itValueParam->second.empty())
-      currParam = *itValueParam->second.begin();
+      currParam = itValueParam->second.begin()->first;
   }
   _resetFactSignatureCache();
 }
@@ -670,14 +670,14 @@ Fact Fact::fromPddl(const std::string& pStr,
 
 
 bool Fact::isInOtherFacts(const std::set<Fact>& pOtherFacts,
-                          std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
-                          const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                          std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr,
+                          ParameterValuesWithConstraints* pNewParametersPtr,
+                          const ParameterValuesWithConstraints* pParametersPtr,
+                          ParameterValuesWithConstraints* pParametersToModifyInPlacePtr,
                           bool* pTriedToModifyParametersPtr) const
 {
   bool res = false;
-  std::map<Parameter, std::set<Entity>> newPotentialParameters;
-  std::map<Parameter, std::set<Entity>> newPotentialParametersInPlace;
+  ParameterValuesWithConstraints newPotentialParameters;
+  ParameterValuesWithConstraints newPotentialParametersInPlace;
   for (const auto& currOtherFact : pOtherFacts)
     if (isInOtherFact(currOtherFact, newPotentialParameters,
                       pParametersPtr, newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
@@ -691,15 +691,15 @@ bool Fact::isInOtherFacts(const std::set<Fact>& pOtherFacts,
 
 
 bool Fact::isInOtherFactsMap(const SetOfFacts& pOtherFacts,
-                             std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
-                             const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                             std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr,
+                             ParameterValuesWithConstraints* pNewParametersPtr,
+                             const ParameterValuesWithConstraints* pParametersPtr,
+                             ParameterValuesWithConstraints* pParametersToModifyInPlacePtr,
                              bool* pTriedToModifyParametersPtr) const
 {
   bool res = false;
   auto otherFactsThatMatched = pOtherFacts.find(*this);
-  std::map<Parameter, std::set<Entity>> newPotentialParameters;
-  std::map<Parameter, std::set<Entity>> newPotentialParametersInPlace;
+  ParameterValuesWithConstraints newPotentialParameters;
+  ParameterValuesWithConstraints newPotentialParametersInPlace;
   if (pParametersToModifyInPlacePtr != nullptr)
     newPotentialParametersInPlace = *pParametersToModifyInPlacePtr;
   for (const auto& currOtherFact : otherFactsThatMatched)
@@ -715,11 +715,11 @@ bool Fact::isInOtherFactsMap(const SetOfFacts& pOtherFacts,
 
 
 bool Fact::canModifySetOfFacts(const SetOfFacts& pOtherFacts,
-                               std::map<Parameter, std::set<Entity>>& pArgumentsToFilter) const
+                               ParameterValuesWithConstraints& pArgumentsToFilter) const
 {
   bool res = true;
   auto otherFactsThatMatched = pOtherFacts.find(*this);
-  std::map<Parameter, std::set<Entity>> parametersAlreadyInSetOfFacts;
+  ParameterValuesWithConstraints parametersAlreadyInSetOfFacts;
   for (const auto& currOtherFact : otherFactsThatMatched)
     if (filterPossibilities(currOtherFact, parametersAlreadyInSetOfFacts, pArgumentsToFilter))
       res = false;
@@ -727,12 +727,12 @@ bool Fact::canModifySetOfFacts(const SetOfFacts& pOtherFacts,
 }
 
 
-bool Fact::updateParameters(std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,
-                            std::map<Parameter, std::set<Entity>>& pNewPotentialParametersInPlace,
-                            std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
+bool Fact::updateParameters(ParameterValuesWithConstraints& pNewPotentialParameters,
+                            ParameterValuesWithConstraints& pNewPotentialParametersInPlace,
+                            ParameterValuesWithConstraints* pNewParametersPtr,
                             bool pCheckAllPossibilities,
-                            const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                            std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr,
+                            const ParameterValuesWithConstraints* pParametersPtr,
+                            ParameterValuesWithConstraints* pParametersToModifyInPlacePtr,
                             bool* pTriedToModifyParametersPtr) const
 {
   if (pParametersToModifyInPlacePtr != nullptr)
@@ -741,10 +741,10 @@ bool Fact::updateParameters(std::map<Parameter, std::set<Entity>>& pNewPotential
 }
 
 
-bool Fact::_updateParameters(std::map<Parameter, std::set<Entity>>* pNewParametersPtr,
-                             std::map<Parameter, std::set<Entity>>& pNewPotentialParameters,
+bool Fact::_updateParameters(ParameterValuesWithConstraints* pNewParametersPtr,
+                             ParameterValuesWithConstraints& pNewPotentialParameters,
                              bool pCheckAllPossibilities,
-                             const std::map<Parameter, std::set<Entity>>* pParametersPtr,
+                             const ParameterValuesWithConstraints* pParametersPtr,
                              bool* pTriedToModifyParametersPtr) const
 {
   if (pCheckAllPossibilities && pParametersPtr != nullptr && pNewPotentialParameters != *pParametersPtr)
@@ -774,14 +774,14 @@ bool Fact::_updateParameters(std::map<Parameter, std::set<Entity>>* pNewParamete
 
 
 bool Fact::filterPossibilities(const Fact& pOtherFact,
-                               std::map<Parameter, std::set<Entity>>& pNewParameters,
-                               const std::map<Parameter, std::set<Entity>>& pParameters) const
+                               ParameterValuesWithConstraints& pNewParameters,
+                               const ParameterValuesWithConstraints& pParameters) const
 {
   if (pOtherFact._name != _name ||
       pOtherFact._arguments.size() != _arguments.size())
     return false;
 
-  std::map<Parameter, std::set<Entity>> newPotentialParameters;
+  ParameterValuesWithConstraints newPotentialParameters;
   auto doesItMatch = [&](const Entity& pFactValue, const Entity& pValueToLookFor) {
     if (pFactValue == pValueToLookFor ||
         pFactValue.isAnyEntity())
@@ -794,7 +794,7 @@ bool Fact::filterPossibilities(const Fact& pOtherFact,
       if (!itParam->second.empty() && itParam->second.count(pValueToLookFor) == 0)
         return false;
 
-      newPotentialParameters[pFactValue.toParameter()].insert(pValueToLookFor);
+      newPotentialParameters[pFactValue.toParameter()][pValueToLookFor];
       return true;
     }
 
@@ -853,17 +853,17 @@ bool Fact::filterPossibilities(const Fact& pOtherFact,
 
 
 bool Fact::isInOtherFact(const Fact& pOtherFact,
-                         std::map<Parameter, std::set<Entity>>& pNewParameters,
-                         const std::map<Parameter, std::set<Entity>>* pParametersPtr,
-                         std::map<Parameter, std::set<Entity>>& pNewParametersInPlace,
-                         const std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const
+                         ParameterValuesWithConstraints& pNewParameters,
+                         const ParameterValuesWithConstraints* pParametersPtr,
+                         ParameterValuesWithConstraints& pNewParametersInPlace,
+                         const ParameterValuesWithConstraints* pParametersToModifyInPlacePtr) const
 {
   if (pOtherFact._name != _name ||
       pOtherFact._arguments.size() != _arguments.size())
     return false;
 
-  std::map<Parameter, std::set<Entity>> newPotentialParameters;
-  std::map<Parameter, std::set<Entity>> newParametersInPlace;
+  ParameterValuesWithConstraints newPotentialParameters;
+  ParameterValuesWithConstraints newParametersInPlace;
   auto doesItMatch = [&](const Entity& pFactValue, const Entity& pValueToLookFor) {
     if (pFactValue == pValueToLookFor ||
         pFactValue.isAnyEntity())
@@ -878,7 +878,7 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
         if (!itParam->second.empty() && itParam->second.count(pValueToLookFor) == 0)
           return false;
 
-        newPotentialParameters[pFactValue.toParameter()].insert(pValueToLookFor);
+        newPotentialParameters[pFactValue.toParameter()][pValueToLookFor];
         return true;
       }
     }
@@ -891,7 +891,7 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
       {
         if (!itParam->second.empty() && itParam->second.count(pValueToLookFor) == 0)
           return false;
-        newParametersInPlace[pFactValue.toParameter()].insert(pValueToLookFor);
+        newParametersInPlace[pFactValue.toParameter()][pValueToLookFor];
         return true;
       }
     }

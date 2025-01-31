@@ -11,6 +11,7 @@
 #include <string>
 #include <memory>
 #include <variant>
+#include <orderedgoalsplanner/types/entitieswithparamconstraints.hpp>
 
 namespace ogp
 {
@@ -54,12 +55,12 @@ bool isNumber(const std::string& str);
 
 ORDEREDGOALSPLANNER_API
 void unfoldMapWithSet(std::list<std::map<Parameter, Entity>>& pOutMap,
-                      const std::map<Parameter, std::set<Entity>>& pInMap);
+                      const ParameterValuesWithConstraints& pInMap);
 
 
 ORDEREDGOALSPLANNER_API
-void applyNewParams(std::map<Parameter, std::set<Entity>>& pParameters,
-                    std::map<Parameter, std::set<Entity>>& pNewParameters);
+void applyNewParams(ParameterValuesWithConstraints& pParameters,
+                    ParameterValuesWithConstraints& pNewParameters);
 
 
 ORDEREDGOALSPLANNER_API
@@ -104,9 +105,9 @@ void trim(std::string& s);
 
 
 ORDEREDGOALSPLANNER_API
-std::set<Entity> typeToEntities(const Type& pParamType,
-                                const SetOfEntities& pConstants,
-                                const SetOfEntities& pObjects);
+EntitiesWithParamConstaints typeToEntities(const Type& pParamType,
+                                           const SetOfEntities& pConstants,
+                                           const SetOfEntities& pObjects);
 
 
 template <typename T>

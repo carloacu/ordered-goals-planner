@@ -17,9 +17,9 @@ namespace
 {
 std::optional<bool> _isPresentWithAnotherValue(const Fact& pFact,
                                                const SetOfFacts::SetOfFactIterator& pSetOfFacts,
-                                               std::map<Parameter, std::set<Entity>>& pArgumentsToFilter)
+                                               ParameterValuesWithConstraints& pArgumentsToFilter)
 {
-  std::map<Parameter, std::set<Entity>> newParameters;
+  ParameterValuesWithConstraints newParameters;
   std::list<std::map<Parameter, Entity>> paramPossibilities;
   unfoldMapWithSet(paramPossibilities, pArgumentsToFilter);
 
@@ -37,7 +37,7 @@ std::optional<bool> _isPresentWithAnotherValue(const Fact& pFact,
           {
             if (currFact.value() == pFact.value())
               return std::optional<bool>(false);
-            newParameters = {{pFact.value()->toParameter(), {*currFact.value()}}};
+            newParameters = {{pFact.value()->toParameter(), {{*currFact.value(), {}}}}};
           }
           applyNewParams(pArgumentsToFilter, newParameters);
           return std::optional<bool>(true);
@@ -429,7 +429,7 @@ bool WorldState::isOptionalFactSatisfied(const FactOptional& pFactOptional) cons
 
 
 bool WorldState::canBeModifiedBy(const FactOptional& pFactOptional,
-                                 std::map<Parameter, std::set<Entity>>& pArgumentsToFilter) const
+                                 ParameterValuesWithConstraints& pArgumentsToFilter) const
 {
   if (pFactOptional.isFactNegated && pFactOptional.fact.value() && pFactOptional.fact.value()->isAParameterToFill())
   {
@@ -452,13 +452,13 @@ bool WorldState::canBeModifiedBy(const FactOptional& pFactOptional,
 bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& pFactOptional,
                                                            const std::set<Fact>& pPunctualFacts,
                                                            const std::set<Fact>& pRemovedFacts,
-                                                           std::map<Parameter, std::set<Entity>>* pParametersToPossibleArgumentsPtr,
-                                                           std::map<Parameter, std::set<Entity>>* pParametersToModifyInPlacePtr) const
+                                                           ParameterValuesWithConstraints* pParametersToPossibleArgumentsPtr,
+                                                           ParameterValuesWithConstraints* pParametersToModifyInPlacePtr) const
 {
   if (pFactOptional.fact.isPunctual() && !pFactOptional.isFactNegated)
     return pPunctualFacts.count(pFactOptional.fact) != 0;
 
-  std::map<Parameter, std::set<Entity>> newParameters;
+  ParameterValuesWithConstraints newParameters;
   if (pFactOptional.isFactNegated)
   {
     bool res = pFactOptional.fact.isInOtherFacts(pRemovedFacts, &newParameters, pParametersToPossibleArgumentsPtr, pParametersToModifyInPlacePtr);
@@ -481,8 +481,8 @@ bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& p
             return !*resOpt;
         }
 
-        std::map<Parameter, std::set<Entity>> newPotentialParameters;
-        std::map<Parameter, std::set<Entity>> newPotentialParametersInPlace;
+        ParameterValuesWithConstraints newPotentialParameters;
+        ParameterValuesWithConstraints newPotentialParametersInPlace;
         res = true;
         for (const auto& currFact : factMatchingInWs)
           if (pFactOptional.fact.isInOtherFact(currFact, newPotentialParameters, pParametersToPossibleArgumentsPtr,
@@ -519,8 +519,8 @@ bool WorldState::isGoalSatisfied(const Goal& pGoal,
 void WorldState::iterateOnMatchingFactsWithoutValueConsideration
 (const std::function<bool (const Fact&)>& pValueCallback,
  const Fact& pFact,
- const std::map<Parameter, std::set<Entity>>& pParametersToConsiderAsAnyValue,
- const std::map<Parameter, std::set<Entity>>* pParametersToConsiderAsAnyValuePtr) const
+ const ParameterValuesWithConstraints& pParametersToConsiderAsAnyValue,
+ const ParameterValuesWithConstraints* pParametersToConsiderAsAnyValuePtr) const
 {
   auto factMatchInWs = _factsMapping.find(pFact, true);
   for (const auto& currFact : factMatchInWs)
@@ -533,8 +533,8 @@ void WorldState::iterateOnMatchingFactsWithoutValueConsideration
 void WorldState::iterateOnMatchingFacts
 (const std::function<bool (const Fact&)>& pValueCallback,
  const Fact& pFact,
- const std::map<Parameter, std::set<Entity>>& pParametersToConsiderAsAnyValue,
- const std::map<Parameter, std::set<Entity>>* pParametersToConsiderAsAnyValuePtr) const
+ const ParameterValuesWithConstraints& pParametersToConsiderAsAnyValue,
+ const ParameterValuesWithConstraints* pParametersToConsiderAsAnyValuePtr) const
 {
   auto factMatchInWs = _factsMapping.find(pFact);
   for (const auto& currFact : factMatchInWs)
@@ -577,7 +577,7 @@ bool WorldState::_tryToApplyEvent(std::set<EventId>& pEventsAlreadyApplied,
       {
         const Event& currEvent = itEvent->second;
 
-        std::map<Parameter, std::set<Entity>> parametersToValues;
+        ParameterValuesWithConstraints parametersToValues;
         for (const auto& currParam : currEvent.parameters)
           parametersToValues[currParam];
         if (!currEvent.precondition || currEvent.precondition->isTrue(*this, pOntology.constants, pObjects,
@@ -646,7 +646,7 @@ void WorldState::_tryToCallCallback(std::set<CallbackId>& pCallbackAlreadyCalled
     {
       const ConditionToCallback& currCallback = itCallback->second;
 
-      std::map<Parameter, std::set<Entity>> parametersToValues;
+      ParameterValuesWithConstraints parametersToValues;
       for (const auto& currParam : currCallback.parameters)
         parametersToValues[currParam];
       if (currCallback.condition && currCallback.condition->isTrue(*this, pConstants, pObjects,
@@ -726,7 +726,7 @@ void WorldState::_notifyWhatChanged(WhatChanged& pWhatChanged,
             {
               const ConditionToCallback& currCallback = itCallback->second;
 
-              std::map<Parameter, std::set<Entity>> parametersToValues;
+              ParameterValuesWithConstraints parametersToValues;
               for (const auto& currParam : currCallback.parameters)
                 parametersToValues[currParam];
               if (currCallback.condition && currCallback.condition->isTrue(*this, pOntology.constants, pObjects,
