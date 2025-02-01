@@ -152,7 +152,7 @@ bool isNumber(const std::string& str) {
 
 
 bool _isValidForConstraints(const std::map<Parameter, Entity>& pParamToValue,
-                            const ParamConstaints& pConstraints)
+                            const ParamToEntityValues& pConstraints)
 {
   for (const auto& currParamToValue : pParamToValue)
   {

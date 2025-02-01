@@ -274,6 +274,41 @@ void _test_forall_with_imply_inside2()
   EXPECT_TRUE(_isTrue("(forall (?e - entity) (imply (= (fact_3 ?e) r2) (= (fact_1 ?e) (fact_2 ?e))))", ontology, worldState, objects));
 }
 
+
+
+void _test_exists_with_and_list()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("location physical_object - entity\n"
+                                             "user rune - physical_object");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("location_of(?o - physical_object) - location\n"
+                                                      "wanted_location_of(?o - physical_object) - location", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("unknown_human - user", ontology.types);
+
+  ogp::WorldState worldState;
+  ogp::GoalStack goalStack;
+  ogp::SetOfEntities objects = ogp::SetOfEntities::fromPddl("rune1 - rune\n"
+                                                            "location1 - location", ontology.types);
+  std::map<ogp::SetOfEventsId, ogp::SetOfEvents> setOfEvents;
+
+  worldState.addFact(ogp::Fact::fromStr("location_of(rune1)=location1", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  worldState.addFact(ogp::Fact::fromStr("wanted_location_of(unknown_human)=location1", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+  worldState.addFact(ogp::Fact::fromStr("location_of(unknown_human)=location1", ontology, objects, {}), goalStack, setOfEvents, _emptyCallbacks, ontology, objects, {});
+
+  EXPECT_TRUE(_isTrue("(and\n"
+                      "  (not (= (wanted_location_of unknown_human) undefined))\n"
+                      "       (= (location_of unknown_human) (wanted_location_of unknown_human))\n"
+                      ")", ontology, worldState, objects));
+
+  EXPECT_TRUE(_isTrue("(exists (?user_param - user)\n"
+                      "   (and\n"
+                      "       (not (= (wanted_location_of ?user_param) undefined))\n"
+                      "       (= (location_of ?user_param) (wanted_location_of ?user_param))\n"
+                      "   )\n"
+                      ")", ontology, worldState, objects));
+}
+
+
 }
 
 
@@ -286,5 +321,6 @@ TEST(Tool, test_condition)
   _test_exists_with_imply_inside();
   _test_forall_with_imply_inside();
   _test_forall_with_imply_inside2();
+  _test_exists_with_and_list();
 
 }

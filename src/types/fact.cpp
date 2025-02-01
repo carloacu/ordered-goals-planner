@@ -453,6 +453,25 @@ bool Fact::areEqualExceptAnyEntitiesAndValue(const Fact& pOther,
 }
 
 
+
+bool Fact::areEqualExceptParametersAndValue(const Fact& pOther) const
+{
+  if (_name != pOther._name || _arguments.size() != pOther._arguments.size())
+    return false;
+
+  auto itParam = _arguments.begin();
+  auto itOtherParam = pOther._arguments.begin();
+  while (itParam != _arguments.end())
+  {
+    if (*itParam != *itOtherParam && !itParam->isAParameterToFill() && !itOtherParam->isAParameterToFill())
+      return false;
+    ++itParam;
+    ++itOtherParam;
+  }
+
+  return _isValueNegated == pOther._isValueNegated;
+}
+
 bool Fact::doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const Fact& pFact) const
 {
   if (pFact._name != _name ||

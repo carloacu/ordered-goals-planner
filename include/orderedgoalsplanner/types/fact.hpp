@@ -112,6 +112,8 @@ struct ORDEREDGOALSPLANNER_API Fact
                                          const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
                                          const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
 
+  bool areEqualExceptParametersAndValue(const Fact& pOther) const;
+
   bool doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const Fact& pFact) const;
 
   /**

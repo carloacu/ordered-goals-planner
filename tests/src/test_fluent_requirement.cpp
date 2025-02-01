@@ -220,6 +220,39 @@ void _fluentEqualityInPrecondition()
   EXPECT_EQ("action1(?p1 -> v3, ?p2 -> v4)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
 }
 
+void _andListWithFluentValueEquality()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("location physical_object - entity\n"
+                                             "user rune - physical_object");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("location_of(?o - physical_object) - location\n"
+                                                      "wanted_location_of(?o - physical_object) - location", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("unknown_human - user", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{_parameter("?user - user", ontology), _parameter("?loc - location", ontology)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (location_of ?user) ?loc)", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("rune1 - rune\n"
+                                                 "location1 - location", ontology.types);
+  _addFact(problem.worldState, "(= (location_of rune1) location1)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  _addFact(problem.worldState, "(= (wanted_location_of unknown_human) location1)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal(
+                               "   (and\n"
+                               "       (not (= (wanted_location_of unknown_human) undefined))\n"
+                               "       (= (location_of unknown_human) (wanted_location_of unknown_human))\n"
+                               "   )", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("action1(?loc -> location1, ?user -> unknown_human)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
 /*
 void _test_fluent_negation_in_precondition()
 {
@@ -262,4 +295,5 @@ TEST(Planner, test_fluent_requirement)
   _test_set_a_fluent_value_to_undefined_with_sub_types();
   _test_fluent_for_location_with_sub_types();
   _fluentEqualityInPrecondition();
+  _andListWithFluentValueEquality();
 }

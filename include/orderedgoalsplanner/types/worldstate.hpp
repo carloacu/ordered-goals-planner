@@ -249,6 +249,8 @@ struct ORDEREDGOALSPLANNER_API WorldState
                                                        const ParameterValuesWithConstraints& pParametersToConsiderAsAnyValue,
                                                        const ParameterValuesWithConstraints* pParametersToConsiderAsAnyValuePtr = nullptr) const;
 
+  void iterateOnMatchingFactsWithoutParametersAndValueConsideration(const std::function<bool (const Fact&)>& pCallback,
+                                                                    const Fact& pFact) const;
   /**
    * @brief Iterate over all matching facts.
    * @param[in] pCallback Callback of each matching facts. If it returns true we break the iteration.

@@ -319,7 +319,7 @@ bool _fillParameter(const Parameter& pParameter,
           [&](const FactOptional& pConditionFactOptional,
               const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr)
     {
-      ParamConstaints constraints;
+      ParamToEntityValues constraints;
       auto parentParamValue = pFact.tryToExtractArgumentFromExample(pParameter, pConditionFactOptional.fact);
       if (!parentParamValue)
         return false;

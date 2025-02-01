@@ -121,7 +121,7 @@ bool _isTrueRecEquality(ParameterValuesWithConstraints& pLocalParamToValue,
   std::map<Entity, ParamToEntities> valueToParamToEntities;
 
   std::map<Entity, ParameterValuesWithConstraints> leftOpPossibleValuesToParams;
-  pWorldState.iterateOnMatchingFactsWithoutValueConsideration([&](const Fact& pFact){
+  pWorldState.iterateOnMatchingFactsWithoutParametersAndValueConsideration([&](const Fact& pFact){
     if (pFact.value())
     {
       auto& value = *pFact.value();
@@ -146,11 +146,11 @@ bool _isTrueRecEquality(ParameterValuesWithConstraints& pLocalParamToValue,
       }
     }
     return false;
-  }, pFact1, pLocalParamToValue, pConditionParametersToPossibleArguments);
+  }, pFact1);
 
   bool res = false;
   ParameterValuesWithConstraints newParameters;
-  pWorldState.iterateOnMatchingFactsWithoutValueConsideration([&](const Fact& pFact){
+  pWorldState.iterateOnMatchingFactsWithoutParametersAndValueConsideration([&](const Fact& pFact){
     if (pFact.value())
     {
       auto& value = *pFact.value();
@@ -187,8 +187,7 @@ bool _isTrueRecEquality(ParameterValuesWithConstraints& pLocalParamToValue,
       }
     }
     return res && pConditionParametersToPossibleArguments == nullptr;
-  }, pFact2, pLocalParamToValue, pConditionParametersToPossibleArguments);
-
+  }, pFact2);
 
   if (pConditionParametersToPossibleArguments != nullptr)
     applyNewParams(*pConditionParametersToPossibleArguments, newParameters);

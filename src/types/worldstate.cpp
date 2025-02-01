@@ -529,6 +529,16 @@ void WorldState::iterateOnMatchingFactsWithoutValueConsideration
         break;
 }
 
+void WorldState::iterateOnMatchingFactsWithoutParametersAndValueConsideration
+(const std::function<bool (const Fact&)>& pValueCallback,
+ const Fact& pFact) const
+{
+  auto factMatchInWs = _factsMapping.find(pFact, true);
+  for (const auto& currFact : factMatchInWs)
+    if (currFact.areEqualExceptParametersAndValue(pFact))
+      if (pValueCallback(currFact))
+        break;
+}
 
 void WorldState::iterateOnMatchingFacts
 (const std::function<bool (const Fact&)>& pValueCallback,
