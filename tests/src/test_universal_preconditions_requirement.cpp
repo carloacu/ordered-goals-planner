@@ -280,8 +280,7 @@ void _forallWithImplyAndFluentValuesEquality()
   ontology.types = ogp::SetOfTypes::fromPddl("entity return_type");
   ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1(?p - entity) - return_type\n"
                                                       "fact_2(?p - entity) - return_type\n"
-                                                      "fact_3(?p - entity) - return_type\n"
-                                                      "false", ontology.types);
+                                                      "fact_3(?p - entity) - return_type", ontology.types);
   ontology.constants = ogp::SetOfEntities::fromPddl("r1 r2 r3 r4 r5 - return_type", ontology.types);
 
   std::map<std::string, ogp::Action> actions;

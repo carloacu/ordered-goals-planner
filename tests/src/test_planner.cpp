@@ -41,6 +41,15 @@ ogp::ActionInvocationWithGoal _lookForAnActionToDo(ogp::Problem& pProblem,
   return ogp::ActionInvocationWithGoal("", std::map<ogp::Parameter, ogp::Entity>(), {}, 0);
 }
 
+ogp::Goal _pddlGoal(const std::string& pStr,
+                    const ogp::Ontology& pOntology,
+                    const ogp::SetOfEntities& pObjects,
+                    int pMaxTimeToKeepInactive = -1,
+                    const std::string& pGoalGroupId = "") {
+  std::size_t pos = 0;
+  return *ogp::pddlToGoal(pStr, pos, pOntology, pObjects, pMaxTimeToKeepInactive, pGoalGroupId);
+}
+
 ogp::ActionInvocationWithGoal _lookForAnActionToDoThenNotify(
     ogp::Problem& pProblem,
     const ogp::Domain& pDomain,
@@ -57,6 +66,19 @@ ogp::ActionInvocationWithGoal _lookForAnActionToDoThenNotify(
   return ogp::ActionInvocationWithGoal("", std::map<ogp::Parameter, ogp::Entity>(), {}, 0);
 }
 
+std::unique_ptr<ogp::Condition> _condition_fromPddl(const std::string& pConditionStr,
+                                                    const ogp::Ontology& pOntology,
+                                                    const std::vector<ogp::Parameter>& pParameters = {}) {
+  std::size_t pos = 0;
+  return ogp::pddlToCondition(pConditionStr, pos, pOntology, {}, pParameters);
+}
+
+std::unique_ptr<ogp::WorldStateModification> _worldStateModification_fromPddl(const std::string& pStr,
+                                                                              const ogp::Ontology& pOntology,
+                                                                              const std::vector<ogp::Parameter>& pParameters = {}) {
+  std::size_t pos = 0;
+  return ogp::pddlToWsModification(pStr, pos, pOntology, {}, pParameters);
+}
 
 
 void _simplest_plan_possible()
@@ -670,6 +692,54 @@ void _disjunctivePrecondition()
 }
 
 
+void _forallWithImplyAndFluentValuesEqualityOnPrecondition()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("entity return_type");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1(?p - entity) - return_type\n"
+                                                      "fact_2(?p - entity) - return_type\n"
+                                                      "fact_3(?p - entity) - return_type\n"
+                                                      "goal", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("r1 r2 r3 r4 r5 - return_type", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> action1Parameters{ogp::Parameter::fromStr("?p1 - entity", ontology.types), ogp::Parameter::fromStr("?p2 - return_type", ontology.types)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (fact_1 ?p1) ?p2)", ontology, action1Parameters));
+  actionObj1.parameters = std::move(action1Parameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Action actionObj2(_condition_fromPddl("(forall (?e - entity) (imply (= (fact_3 ?e) r2) (= (fact_1 ?e) (fact_2 ?e))))", ontology),
+                         _worldStateModification_fromPddl("(goal)", ontology));
+  actions.emplace(action2, actionObj2);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("v1 v2 v3 v4 - entity", ontology.types);
+  problem.worldState.addFact(ogp::Fact("fact_3(v1)=r2", false, ontology, problem.objects, {}), problem.goalStack, setOfEventsMap,
+                             _emptyCallbacks, ontology, problem.objects, _now);
+  problem.worldState.addFact(ogp::Fact("fact_3(v3)=r2", false, ontology, problem.objects, {}), problem.goalStack, setOfEventsMap,
+                             _emptyCallbacks, ontology, problem.objects, _now);
+  problem.worldState.addFact(ogp::Fact("fact_2(v1)=r3", false, ontology, problem.objects, {}), problem.goalStack, setOfEventsMap,
+                             _emptyCallbacks, ontology, problem.objects, _now);
+  problem.worldState.addFact(ogp::Fact("fact_2(v3)=r4", false, ontology, problem.objects, {}), problem.goalStack, setOfEventsMap,
+                             _emptyCallbacks, ontology, problem.objects, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(goal)", ontology, problem.objects)}, ontology.constants);
+  auto actionInvocation1 = _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr();
+  auto actionInvocation2 = _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr();
+
+  std::set<std::string> potentialResults{"action1(?p1 -> v1, ?p2 -> r3)", "action1(?p1 -> v3, ?p2 -> r4)"};
+  EXPECT_NE(actionInvocation1, actionInvocation2);
+  EXPECT_TRUE(potentialResults.count(actionInvocation1) > 0);
+  EXPECT_TRUE(potentialResults.count(actionInvocation2) > 0);
+  EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+}
+
 }
 
 
@@ -694,4 +764,5 @@ TEST(Planner, test_planner)
   _planToMove();
   _disjunctiveGoal();
   _disjunctivePrecondition();
+  _forallWithImplyAndFluentValuesEqualityOnPrecondition();
 }
