@@ -29,13 +29,12 @@ struct ParallelPan;
  * @return The next action to do, his parameters and information about the goal that motivated that action.
  */
 ORDEREDGOALSPLANNER_API
-std::list<ActionInvocationWithGoal> planForMoreImportantGoalPossible(
-    Problem& pProblem,
-    const Domain& pDomain,
-    bool pTryToDoMoreOptimalSolution,
-    const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
-    const Historical* pGlobalHistorical = nullptr,
-    LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr = nullptr);
+std::list<ActionInvocationWithGoal> planForMoreImportantGoalPossible(Problem& pProblem,
+                                                                     const Domain& pDomain, const SetOfCallbacks& pCallbacks,
+                                                                     bool pTryToDoMoreOptimalSolution,
+                                                                     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
+                                                                     const Historical* pGlobalHistorical = nullptr,
+                                                                     LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr = nullptr);
 
 
 
@@ -49,11 +48,11 @@ std::list<ActionInvocationWithGoal> planForMoreImportantGoalPossible(
  * @return The next actions to do in parallel.
  */
 ORDEREDGOALSPLANNER_API
-ActionsToDoInParallel actionsToDoInParallelNow(
-    Problem& pProblem,
-    const Domain& pDomain,
-    const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
-    Historical* pGlobalHistorical = nullptr);
+ActionsToDoInParallel actionsToDoInParallelNow(Problem& pProblem,
+                                               const Domain& pDomain,
+                                               const SetOfCallbacks& pCallbacks,
+                                               const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
+                                               Historical* pGlobalHistorical = nullptr);
 
 
 /**
@@ -100,19 +99,19 @@ bool notifyActionDone(Problem& pProblem,
  * @return List of all the actions to do with their parameters with values.
  */
 ORDEREDGOALSPLANNER_API
-std::list<ActionInvocationWithGoal> planForEveryGoals(
-    Problem& pProblem,
-    const Domain& pDomain,
-    const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
-    Historical* pGlobalHistorical = nullptr,
-    std::list<Goal>* pGoalsDonePtr = nullptr);
+std::list<ActionInvocationWithGoal> planForEveryGoals(Problem& pProblem,
+                                                      const Domain& pDomain,
+                                                      const SetOfCallbacks& pCallbacks,
+                                                      const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
+                                                      Historical* pGlobalHistorical = nullptr,
+                                                      std::list<Goal>* pGoalsDonePtr = nullptr);
 
 ORDEREDGOALSPLANNER_API
-ParallelPan parallelPlanForEveryGoals(
-    Problem& pProblem,
-    const Domain& pDomain,
-    const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
-    Historical* pGlobalHistorical);
+ParallelPan parallelPlanForEveryGoals(Problem& pProblem,
+                                      const Domain& pDomain,
+                                      const SetOfCallbacks& pCallbacks,
+                                      const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
+                                      Historical* pGlobalHistorical);
 
 /**
  * @brief Convert a plan to a string.

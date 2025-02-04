@@ -4,6 +4,7 @@
 #include <string>
 #include <orderedgoalsplanner/types/domain.hpp>
 #include <orderedgoalsplanner/types/problem.hpp>
+#include <orderedgoalsplanner/types/setofcallbacks.hpp>
 #include <orderedgoalsplanner/util/serializer/deserializefrompddl.hpp>
 #include <orderedgoalsplanner/util/serializer/serializeinpddl.hpp>
 #include <orderedgoalsplanner/orderedgoalsplanner.hpp>
@@ -109,7 +110,7 @@ int main(int argc, char* argv[])
 
   if (verbose)
     std::cout << "Searching for a plan..." << std::endl;
-  std::string planStr = ogp::planToPddl(ogp::planForEveryGoals(problem, domain, {}), domain);
+  std::string planStr = ogp::planToPddl(ogp::planForEveryGoals(problem, domain, {}, {}), domain);
 
 
   if (planStr == "")

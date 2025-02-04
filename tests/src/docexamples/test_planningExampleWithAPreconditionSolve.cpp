@@ -36,16 +36,16 @@ void planningExampleWithAPreconditionSolve()
   problem.goalStack.setGoals({ogp::Goal::fromStr(proposedOurHelpToUser, ontology, {})}, problem.worldState, ontology.constants, problem.objects, now);
 
   // Look for an action to do
-  auto planResult1 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  ogp::SetOfCallbacks setOfCallbacks;
+  auto planResult1 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(!planResult1.empty());
   const auto& firstActionInPlan1 = planResult1.front();
   assert(sayHi == firstActionInPlan1.actionInvocation.actionId); // The action found is "say_hi", because it is needed to satisfy the preconditions of "ask_how_I_can_help"
   // When the action is finished we notify the planner
-  ogp::SetOfCallbacks setOfCallbacks;
   ogp::notifyActionDone(problem, domain, setOfCallbacks, firstActionInPlan1, now);
 
   // Look for the next action to do
-  auto planResult2 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  auto planResult2 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(!planResult2.empty());
   const auto& firstActionInPlan2 = planResult2.front();
   assert(askHowICanHelp == firstActionInPlan2.actionInvocation.actionId); // The action found is "ask_how_I_can_help"
@@ -53,7 +53,6 @@ void planningExampleWithAPreconditionSolve()
   ogp::notifyActionDone(problem, domain, setOfCallbacks, firstActionInPlan2, now);
 
   // Look for the next action to do
-  auto planResult3 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  auto planResult3 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(planResult3.empty()); // No action found
 }
-

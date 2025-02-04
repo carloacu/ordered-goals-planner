@@ -82,9 +82,10 @@ void _addFact(ogp::WorldState& pWorldState,
 ogp::ActionInvocationWithGoal _lookForAnActionToDoThenNotify(
     ogp::Problem& pProblem,
     const ogp::Domain& pDomain,
+    const ogp::SetOfCallbacks& pCallbacks = {},
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {})
 {
-  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, true, pNow);
+  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, true, pNow);
   if (!plan.empty())
   {
     auto& firstActionInPlan = plan.front();
@@ -115,8 +116,8 @@ void _test_set_a_fluent_value_to_undefined()
   ogp::Problem problem;
   _addFact(problem.worldState, "(= (fact_a) v)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
   _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_a) undefined)", ontology, problem.objects)}, ontology.constants);
-  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
 
 
@@ -139,8 +140,8 @@ void _test_set_a_fluent_value_to_undefined_with_sub_types()
   ogp::Problem problem;
   _addFact(problem.worldState, "(= (fact_a) v)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
   _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_a) undefined)", ontology, problem.objects)}, ontology.constants);
-  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
 
 
@@ -180,9 +181,9 @@ void _test_fluent_for_location_with_sub_types()
   _addFact(problem.worldState, "(= (declared_location pod) charging_zone_loc)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
 
   _setGoalsForAPriority(problem, {_pddlGoal("(goal)", ontology, problem.objects)}, ontology.constants);
-  EXPECT_EQ(action1 + "(?cp -> pod)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-  EXPECT_EQ(action2 + "(?cz -> pod)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1 + "(?cp -> pod)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ(action2 + "(?cz -> pod)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
 
 
@@ -217,7 +218,7 @@ void _fluentEqualityInPrecondition()
   _addFact(problem.worldState, "(= (fact_2 v3) v4)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
 
   _setGoalsForAPriority(problem, {_pddlGoal("(goal)", ontology, problem.objects)}, ontology.constants);
-  EXPECT_EQ("action1(?p1 -> v3, ?p2 -> v4)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("action1(?p1 -> v3, ?p2 -> v4)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
 
 void _andListWithFluentValueEquality()
@@ -250,7 +251,7 @@ void _andListWithFluentValueEquality()
                                "       (not (= (wanted_location_of unknown_human) undefined))\n"
                                "       (= (location_of unknown_human) (wanted_location_of unknown_human))\n"
                                "   )", ontology, problem.objects)}, ontology.constants);
-  EXPECT_EQ("action1(?loc -> location1, ?user -> unknown_human)", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("action1(?loc -> location1, ?user -> unknown_human)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
 
 /*

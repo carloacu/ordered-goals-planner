@@ -103,7 +103,7 @@ void _testEvaluateWithPlanNotValidAnymore()
   _addFact(problem.worldState, _fact_c,  problem.goalStack, ontology);
 
   auto copiedProblem = problem;
-  auto parallelPlan = ogp::parallelPlanForEveryGoals(copiedProblem, domain, _now, nullptr);
+  auto parallelPlan = ogp::parallelPlanForEveryGoals(copiedProblem, domain, _emptyCallbacks, _now, nullptr);
   ASSERT_FALSE(parallelPlan.actionsToDoInParallel.empty());
   EXPECT_EQ(action1, ogp::planToStr(parallelPlan.actionsToDoInParallel.front().actions));
 
@@ -131,7 +131,7 @@ void _testEvaluateWithFirstActionAlreadyDone()
   _setGoalsForAPriority(problem, {_goal(_fact_b, ontology)}, ontology.constants);
 
   auto copiedProblem = problem;
-  auto parallelPlan = ogp::parallelPlanForEveryGoals(copiedProblem, domain, _now, nullptr);
+  auto parallelPlan = ogp::parallelPlanForEveryGoals(copiedProblem, domain, _emptyCallbacks, _now, nullptr);
   ASSERT_FALSE(parallelPlan.actionsToDoInParallel.empty());
   EXPECT_EQ(action1, ogp::planToStr(parallelPlan.actionsToDoInParallel.front().actions));
 
@@ -170,7 +170,7 @@ void _testEvaluateWithOneOfFirstActionAlreadyDone()
   _setGoalsForAPriority(problem, {_goal(_fact_c, ontology)}, ontology.constants);
 
   auto copiedProblem = problem;
-  auto parallelPlan = ogp::parallelPlanForEveryGoals(copiedProblem, domain, _now, nullptr);
+  auto parallelPlan = ogp::parallelPlanForEveryGoals(copiedProblem, domain, _emptyCallbacks, _now, nullptr);
   ASSERT_FALSE(parallelPlan.actionsToDoInParallel.empty());
   EXPECT_TRUE(action1 + ", " + action2 == ogp::planToStr(parallelPlan.actionsToDoInParallel.front().actions));
 
@@ -208,7 +208,7 @@ void _testAlreadySatisfiedGoal()
   _setGoalsForAPriority(problem, {_goal(_fact_b, ontology)}, ontology.constants);
 
   auto copiedProblem = problem;
-  auto parallelPlan = ogp::parallelPlanForEveryGoals(copiedProblem, domain, _now, nullptr);
+  auto parallelPlan = ogp::parallelPlanForEveryGoals(copiedProblem, domain, _emptyCallbacks, _now, nullptr);
   EXPECT_TRUE(_evaluate(parallelPlan, problem, domain));
   _addFact(problem.worldState, _fact_b,  problem.goalStack, ontology);
   EXPECT_FALSE(_evaluate(parallelPlan, problem, domain));

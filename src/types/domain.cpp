@@ -18,7 +18,8 @@ std::set<std::string> _requirementsManaged = {
   ":existential-preconditions", ":universal-preconditions", ":quantified-preconditions",
   ":conditional-effects", ":fluents", ":numeric-fluents", ":object-fluents",
   ":adl", ":durative-actions",
-  ":derived-predicates", ":domain-axioms"
+  ":derived-predicates", ":domain-axioms",
+  ":ordered-goals"
 };
 
 

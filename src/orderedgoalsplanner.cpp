@@ -4,6 +4,7 @@
 #include <optional>
 #include <orderedgoalsplanner/types/entitieswithparamconstraints.hpp>
 #include <orderedgoalsplanner/types/parallelplan.hpp>
+#include <orderedgoalsplanner/types/setofcallbacks.hpp>
 #include <orderedgoalsplanner/types/setofevents.hpp>
 #include <orderedgoalsplanner/util/util.hpp>
 #include "types/factsalreadychecked.hpp"
@@ -175,12 +176,13 @@ struct ResearchContext
 
 
 std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& pProblem,
-                                                                     const Domain& pDomain,
-                                                                     bool pTryToDoMoreOptimalSolution,
-                                                                     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
-                                                                     const Historical* pGlobalHistorical,
-                                                                     LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr,
-                                                                     const ActionPtrWithGoal* pPreviousActionPtr);
+                                                                      const Domain& pDomain,
+                                                                      const SetOfCallbacks& pCallbacks,
+                                                                      bool pTryToDoMoreOptimalSolution,
+                                                                      const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
+                                                                      const Historical* pGlobalHistorical,
+                                                                      LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr,
+                                                                      const ActionPtrWithGoal* pPreviousActionPtr);
 
 void _getPreferInContextStatistics(std::size_t& nbOfPreconditionsSatisfied,
                                    std::size_t& nbOfPreconditionsNotSatisfied,
@@ -755,7 +757,8 @@ PlanCost _extractPlanCost(
       break;
     }
 
-    auto subPlan = _planForMoreImportantGoalPossible(pProblem, pDomain, false,
+    const SetOfCallbacks callbacks;
+    auto subPlan = _planForMoreImportantGoalPossible(pProblem, pDomain, callbacks, false,
                                                      pNow, pGlobalHistorical, &pLookForAnActionOutputInfos, pPreviousActionPtr);
     if (subPlan.empty())
       break;
@@ -917,7 +920,9 @@ ActionId _findFirstActionForAGoal(
           auto actionInvocations = newPotRes.toActionInvocations();
           for (auto& currActionInvocation : actionInvocations)
           {
-            if (_isMoreOptimalNextAction(potentialNextActionComparisonCacheOpt, pNextInPlanCanBeAnEvent, currActionInvocation, res, pProblem, pDomain, dataRelatedToOptimisation, pLength, pGoal, pGlobalHistorical))
+            if (_isMoreOptimalNextAction(potentialNextActionComparisonCacheOpt, pNextInPlanCanBeAnEvent,
+                                         currActionInvocation, res, pProblem, pDomain,
+                                         dataRelatedToOptimisation, pLength, pGoal, pGlobalHistorical))
               res.emplace(currActionInvocation);
           }
         }
@@ -1005,6 +1010,7 @@ bool _goalToPlanRec(
 
 std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& pProblem,
                                                                      const Domain& pDomain,
+                                                                     const SetOfCallbacks& pCallbacks,
                                                                      bool pTryToDoMoreOptimalSolution,
                                                                      const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                                                                      const Historical* pGlobalHistorical,
@@ -1016,6 +1022,14 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
   pProblem.goalStack.refreshIfNeeded(pDomain);
   pProblem.goalStack.iterateOnGoalsAndRemoveNonPersistent(
         [&](const Goal& pGoal, int pPriority){
+
+            if (pProblem.goalStack.effectBeweenGoals)
+            {
+              bool goalChanged = false;
+              pProblem.worldState.applyEffect({}, pProblem.goalStack.effectBeweenGoals, goalChanged, pProblem.goalStack,
+                                              pDomain.getSetOfEvents(), pCallbacks, pDomain.getOntology(), pProblem.objects, pNow);
+            }
+
             std::map<std::string, std::size_t> actionAlreadyInPlan;
             return _goalToPlanRec(res, pProblem, actionAlreadyInPlan,
                                   pDomain, pTryToDoMoreOptimalSolution, pNow, pGlobalHistorical, pGoal, pPriority,
@@ -1031,12 +1045,13 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
 
 std::list<ActionInvocationWithGoal> planForMoreImportantGoalPossible(Problem& pProblem,
                                                                      const Domain& pDomain,
+                                                                     const SetOfCallbacks& pCallbacks,
                                                                      bool pTryToDoMoreOptimalSolution,
                                                                      const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                                                                      const Historical* pGlobalHistorical,
                                                                      LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr)
 {
-  return _planForMoreImportantGoalPossible(pProblem, pDomain, pTryToDoMoreOptimalSolution, pNow,
+  return _planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, pTryToDoMoreOptimalSolution, pNow,
                                            pGlobalHistorical, pLookForAnActionOutputInfosPtr, nullptr);
 }
 
@@ -1044,13 +1059,15 @@ std::list<ActionInvocationWithGoal> planForMoreImportantGoalPossible(Problem& pP
 ActionsToDoInParallel actionsToDoInParallelNow(
     Problem& pProblem,
     const Domain& pDomain,
+    const SetOfCallbacks& pCallbacks,
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
     Historical* pGlobalHistorical)
 {
   pProblem.goalStack.refreshIfNeeded(pDomain);
   std::list<Goal> goalsDone;
   auto problemForPlanResolution = pProblem;
-  auto sequentialPlan = planForEveryGoals(problemForPlanResolution, pDomain, pNow, pGlobalHistorical, &goalsDone);
+  auto sequentialPlan = planForEveryGoals(problemForPlanResolution, pDomain, pCallbacks,
+                                          pNow, pGlobalHistorical, &goalsDone);
   auto parallelPlan = toParallelPlan(sequentialPlan, true, pProblem, pDomain, goalsDone, pNow);
   if (!parallelPlan.actionsToDoInParallel.empty())
     return parallelPlan.actionsToDoInParallel.front();
@@ -1109,6 +1126,7 @@ bool notifyActionDone(Problem& pProblem,
 std::list<ActionInvocationWithGoal> planForEveryGoals(
     Problem& pProblem,
     const Domain& pDomain,
+    const SetOfCallbacks& pCallbacks,
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
     Historical* pGlobalHistorical,
     std::list<Goal>* pGoalsDonePtr)
@@ -1119,7 +1137,7 @@ std::list<ActionInvocationWithGoal> planForEveryGoals(
   LookForAnActionOutputInfos lookForAnActionOutputInfos;
   while (!pProblem.goalStack.goals().empty())
   {
-    auto subPlan = _planForMoreImportantGoalPossible(pProblem, pDomain, tryToDoMoreOptimalSolution,
+    auto subPlan = _planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, tryToDoMoreOptimalSolution,
                                                      pNow, pGlobalHistorical, &lookForAnActionOutputInfos, nullptr);
     if (subPlan.empty())
       break;
@@ -1154,6 +1172,7 @@ std::list<ActionInvocationWithGoal> planForEveryGoals(
 ParallelPan parallelPlanForEveryGoals(
     Problem& pProblem,
     const Domain& pDomain,
+    const SetOfCallbacks& pCallbacks,
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
     Historical* pGlobalHistorical)
 {
@@ -1161,7 +1180,7 @@ ParallelPan parallelPlanForEveryGoals(
 
   std::list<Goal> goalsDone;
   auto problemForPlanResolution = pProblem;
-  auto sequentialPlan = planForEveryGoals(problemForPlanResolution, pDomain, pNow, pGlobalHistorical, &goalsDone);
+  auto sequentialPlan = planForEveryGoals(problemForPlanResolution, pDomain, pCallbacks, pNow, pGlobalHistorical, &goalsDone);
   return toParallelPlan(sequentialPlan, false, pProblem, pDomain, goalsDone, pNow);
 }
 

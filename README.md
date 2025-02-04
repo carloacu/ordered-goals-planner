@@ -3,27 +3,42 @@
 
 ## Description
 
-This is C++ library to do planification PDDL.
-The specificity of this planner is that it handles goals sorted by priorities.<br/>
-Each pieces of goals inside the `and` function with this c tag `__PRIORITIZED` in the comments will be satisfied one after another.<br/>
+This is C++ library to do planification PDDL.<br/>
+The specificity of this planner is that it can handles goals sorted by priorities.<br/>
+
+For specification about the PDDL language, please look at:<br/>
+https://en.wikipedia.org/wiki/Planning_Domain_Definition_Language
+
+A Kotlin version for Android (that needs to be updated) is also available here https://github.com/carloacu/contextualplanner-android
+
+
+## Ordered goals requirement
+
+For this it managed a problem requirement called `:ordered-goals`.<br/>
+Each pieces of goals inside the `ordered-list` function will be satisfied one after another.<br/>
+And before each piece of goal the effect defined in `:effect-between-goals` will be applied.
+
 Example:
 ```lisp
-  (:goal
-    (and ;; __ORDERED
-      (at-object box1 locationC)
-      (at robot1 locationA)
-    )
+  (:requirements :ordered-goals)
+  [...]
+
+  (:ordered-goals
+    :effect-between-goals
+      (not (has-grasped-an-object-for-current-goal))
+
+    :goals
+      (ordered-list
+        (at-object box1 locationC)
+        (at robot1 locationA)
+      )
   )
 ```
 
 The planner will first focus on the goal `(at-object box1 locationC)` and then on the goal `(at robot1 locationA)`.<br/>
 Even if the plan for satisfying the first goal is chosen in consideration of helping to minimize the following goals.
 
-
-The plannification part is highly inspirated from the PDDL language.<br/>
-https://en.wikipedia.org/wiki/Planning_Domain_Definition_Language
-
-A Kotlin version for Android (that needs to be updated) is also available here https://github.com/carloacu/contextualplanner-android
+Before each of these 2 goals the planner will apply the effect `(not (has-grasped-an-object-for-current-goal))`.
 
 
 ## Build
@@ -88,6 +103,10 @@ requirements:
 - [ ] `:constraints`
 - [ ] `:action-costs`
 - [x] `:domain-axioms`
+
+And the problem requirement specific for this lib
+
+- [x] `:ordered-goals`
 
 ### Definition of words
 
@@ -181,19 +200,19 @@ void planningDummyExample()
 
   // Initialize the problem with the goal to satisfy
   ogp::Problem problem;
-  problem.goalStack.setGoals({ogp::Goal::fromStr(userIsGreeted, ontology, {})}, problem.worldState, now);
+  problem.goalStack.setGoals({ogp::Goal::fromStr(userIsGreeted, ontology, {})}, problem.worldState, ontology.constants, problem.objects, now);
 
   // Look for an action to do
-  auto planResult1 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  ogp::SetOfCallbacks setOfCallbacks;
+  auto planResult1 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(!planResult1.empty());
   const auto& firstActionInPlan = planResult1.front();
   assert(sayHi == firstActionInPlan.actionInvocation.actionId); // The action found is "say_hi", because it is needed to satisfy the preconditions of "ask_how_I_can_help"
   // When the action is finished we notify the planner
-  ogp::SetOfCallbacks setOfCallbacks;
   ogp::notifyActionDone(problem, domain, setOfCallbacks, firstActionInPlan, now);
 
   // Look for the next action to do
-  auto planResult2 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  auto planResult2 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(planResult2.empty()); // No action found
 }
 ```
@@ -237,19 +256,19 @@ void planningExampleWithAPreconditionSolve()
 
   // Initialize the problem with the goal to satisfy
   ogp::Problem problem;
-  problem.goalStack.setGoals({ogp::Goal::fromStr(proposedOurHelpToUser, ontology, {})}, problem.worldState, now);
+  problem.goalStack.setGoals({ogp::Goal::fromStr(proposedOurHelpToUser, ontology, {})}, problem.worldState, ontology.constants, problem.objects, now);
 
   // Look for an action to do
-  auto planResult1 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  ogp::SetOfCallbacks setOfCallbacks;
+  auto planResult1 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(!planResult1.empty());
   const auto& firstActionInPlan1 = planResult1.front();
   assert(sayHi == firstActionInPlan1.actionInvocation.actionId); // The action found is "say_hi", because it is needed to satisfy the preconditions of "ask_how_I_can_help"
   // When the action is finished we notify the planner
-  ogp::SetOfCallbacks setOfCallbacks;
   ogp::notifyActionDone(problem, domain, setOfCallbacks, firstActionInPlan1, now);
 
   // Look for the next action to do
-  auto planResult2 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  auto planResult2 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(!planResult2.empty());
   const auto& firstActionInPlan2 = planResult2.front();
   assert(askHowICanHelp == firstActionInPlan2.actionInvocation.actionId); // The action found is "ask_how_I_can_help"
@@ -257,7 +276,7 @@ void planningExampleWithAPreconditionSolve()
   ogp::notifyActionDone(problem, domain, setOfCallbacks, firstActionInPlan2, now);
 
   // Look for the next action to do
-  auto planResult3 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  auto planResult3 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(planResult3.empty()); // No action found
 }
 ```

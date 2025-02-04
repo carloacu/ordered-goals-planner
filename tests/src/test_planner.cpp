@@ -32,10 +32,11 @@ void _setGoalsForAPriority(ogp::Problem& pProblem,
 
 ogp::ActionInvocationWithGoal _lookForAnActionToDo(ogp::Problem& pProblem,
                                                    const ogp::Domain& pDomain,
+                                                   const ogp::SetOfCallbacks& pCallbacks = {},
                                                    const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
                                                    const ogp::Historical* pGlobalHistorical = nullptr)
 {
-  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, true, pNow, pGlobalHistorical);
+  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, true, pNow, pGlobalHistorical);
   if (!plan.empty())
     return plan.front();
   return ogp::ActionInvocationWithGoal("", std::map<ogp::Parameter, ogp::Entity>(), {}, 0);
@@ -53,9 +54,10 @@ ogp::Goal _pddlGoal(const std::string& pStr,
 ogp::ActionInvocationWithGoal _lookForAnActionToDoThenNotify(
     ogp::Problem& pProblem,
     const ogp::Domain& pDomain,
+    const ogp::SetOfCallbacks& pCallbacks = {},
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {})
 {
-  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, true, pNow);
+  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, true, pNow);
   if (!plan.empty())
   {
     auto& firstActionInPlan = plan.front();
@@ -108,7 +110,7 @@ void _simplest_plan_possible()
   problem.worldState.addFact(ogp::Fact("pred_a(toto)", false, ontology, entities, {}), problem.goalStack, setOfEventsMap,
                              _emptyCallbacks, ontology, entities, _now);
 
-  EXPECT_EQ("action1(?pa -> toto)", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("action1(?pa -> toto)", _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
 }
 
 
@@ -142,7 +144,7 @@ void _wrong_condition_type()
   problem.worldState.addFact(ogp::Fact("pred_a(titi)", false, ontology, entities, {}), problem.goalStack, setOfEventsMap,
                              _emptyCallbacks, ontology, entities, _now);
 
-  EXPECT_EQ("", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
 }
 
 
@@ -167,13 +169,13 @@ void _number_type()
   auto& setOfEventsMap = domain.getSetOfEvents();
   ogp::Problem problem;
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("pred_b", ontology, entities)}, ontology.constants);
-  EXPECT_EQ("", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
   problem.worldState.addFact(ogp::Fact("pred_a(toto)=10", false, ontology, entities, {}), problem.goalStack, setOfEventsMap,
                              _emptyCallbacks, ontology, entities, _now);
   EXPECT_EQ("10", problem.worldState.factsMapping().getFluentValue(ogp::Fact::fromPddl("(pred_a toto)", ontology, entities, {}, 0, nullptr, true))->value);
 
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("pred_b", ontology, entities)}, ontology.constants);
-  EXPECT_EQ(action1, _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1, _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
 }
 
 
@@ -204,7 +206,7 @@ void _planWithActionThenEventWithValue()
   ogp::Domain domain(std::move(actions), {}, std::move(setOfEvents));
   ogp::Problem problem;
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("pred_b(toto)", ontology, entities)}, ontology.constants);
-  EXPECT_EQ(action1, _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1, _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
 }
 
 
@@ -244,7 +246,7 @@ void _planWithActionThenEventWithAssign()
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("pred_d=v", ontology, entities)}, ontology.constants);
   problem.worldState.addFact(ogp::Fact("pred_b(toto)=v", false, ontology, entities, {}), problem.goalStack, setOfEventsMap,
                              _emptyCallbacks, ontology, entities, _now);
-  EXPECT_EQ(action1 + "(?e -> toto)", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1 + "(?e -> toto)", _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
 }
 
 
@@ -287,7 +289,7 @@ void _valueEqualityInPrecoditionOfAnAction()
                              _emptyCallbacks, ontology, entities, _now);
   problem.worldState.addFact(ogp::Fact("pred_c(lol_val)=v", false, ontology, entities, {}), problem.goalStack, setOfEventsMap,
                              _emptyCallbacks, ontology, entities, _now);
-  EXPECT_EQ(action1 + "(?e -> toto)", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1 + "(?e -> toto)", _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
 }
 
 
@@ -387,7 +389,7 @@ void _actionWithParametersInPreconditionsAndEffects()
                              _emptyCallbacks, ontology, entities, _now);
 
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("isHappy(1)", ontology, entities)}, ontology.constants);
-  const auto& plan = ogp::planForEveryGoals(problem, domain, _now);
+  const auto& plan = ogp::planForEveryGoals(problem, domain, _emptyCallbacks, _now);
   EXPECT_EQ(action1 + "(?human -> 1)", ogp::planToStr(plan));
   EXPECT_EQ("00: (" + action1 + " 1) [1]\n", ogp::planToPddl(plan, domain));
 }
@@ -516,7 +518,7 @@ void _doNextActionThatBringsToTheSmallerCost()
   // Here it will will be quicker for the second goal if we ungrab the obj2 right away
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("locationOfObject(obj1)=bedroom & !grab(me)=obj1", ontology, entities),
                                   ogp::Goal::fromStr("locationOfObject(obj2)=livingRoom & !grab(me)=obj2", ontology, entities)}, ontology.constants);
-  const auto& plan = ogp::planForEveryGoals(problem, domain, _now);
+  const auto& plan = ogp::planForEveryGoals(problem, domain, _emptyCallbacks, _now);
   const std::string planStartingWithUngrab = "ungrab(?object -> obj2)\n"
                                              "navigate(?targetPlace -> kitchen)\n"
                                              "grab(?object -> obj1)\n"
@@ -527,7 +529,7 @@ void _doNextActionThatBringsToTheSmallerCost()
   // Here it will will be quicker for the second goal if we move the obj2 to the kitchen
   _setGoalsForAPriority(secondProblem, {ogp::Goal::fromStr("locationOfObject(obj1)=bedroom & !grab(me)=obj1", ontology, entities),
                                         ogp::Goal::fromStr("locationOfObject(obj2)=kitchen & !grab(me)=obj2", ontology, entities)}, ontology.constants);
-  const auto& secondPlan = ogp::planForEveryGoals(secondProblem, domain, _now);
+  const auto& secondPlan = ogp::planForEveryGoals(secondProblem, domain, _emptyCallbacks, _now);
   const std::string planStartingWithNavigate = "navigate(?targetPlace -> kitchen)\n"
                                                "ungrab(?object -> obj2)\n"
                                                "grab(?object -> obj1)\n"
@@ -540,12 +542,12 @@ void _doNextActionThatBringsToTheSmallerCost()
   // Here it will will be quicker for the second goal if we ungrab the obj2 right away
   _setGoalsForAPriority(thirdProblem, {ogp::Goal::fromStr("!grab(me)=obj1 & locationOfObject(obj1)=bedroom", ontology, entities),
                                        ogp::Goal::fromStr("!grab(me)=obj2 & locationOfObject(obj2)=livingRoom", ontology, entities)}, ontology.constants);
-  EXPECT_EQ(planStartingWithUngrab, ogp::planToStr(ogp::planForEveryGoals(thirdProblem, domain, _now), "\n"));
+  EXPECT_EQ(planStartingWithUngrab, ogp::planToStr(ogp::planForEveryGoals(thirdProblem, domain, _emptyCallbacks, _now), "\n"));
 
   // Here it will will be quicker for the second goal if we move the obj2 to the kitchen
   _setGoalsForAPriority(fourthProblem, {ogp::Goal::fromStr("!grab(me)=obj1 & locationOfObject(obj1)=bedroom", ontology, entities),
                                         ogp::Goal::fromStr("!grab(me)=obj2 & locationOfObject(obj2)=kitchen", ontology, entities)}, ontology.constants);
-  EXPECT_EQ(planStartingWithNavigate, ogp::planToStr(ogp::planForEveryGoals(fourthProblem, domain, _now), "\n"));
+  EXPECT_EQ(planStartingWithNavigate, ogp::planToStr(ogp::planForEveryGoals(fourthProblem, domain, _emptyCallbacks, _now), "\n"));
 }
 
 
@@ -571,8 +573,8 @@ void _satisfyGoalWithSuperiorOperator()
                              _emptyCallbacks, ontology, entities, _now);
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("fact_a>50", ontology, entities)}, ontology.constants);
 
-  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }
 
 
@@ -607,7 +609,7 @@ void _parameterToFillFromConditionOfFirstAction()
                              _emptyCallbacks, ontology, entities, _now);
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("batteryLevel=100", ontology, entities)}, ontology.constants);
 
-  EXPECT_EQ(action1 + "(?cz -> cz)", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1 + "(?cz -> cz)", _lookForAnActionToDo(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }
 
 
@@ -636,7 +638,7 @@ void _planToMove()
                              _emptyCallbacks, ontology, entities, _now);
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("locationOfRobot=loc1", ontology, entities)}, ontology.constants);
 
-  EXPECT_EQ(action1 + "(?o -> bottle)", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1 + "(?o -> bottle)", _lookForAnActionToDo(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }
 
 void _disjunctiveGoal()
@@ -656,10 +658,10 @@ void _disjunctiveGoal()
   auto& entities = problem.objects;
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("or(fact_a, fact_b)", ontology, entities)}, ontology.constants);
 
-  auto firstActionStr = _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr();
+  auto firstActionStr = _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr();
   if (firstActionStr != action1 && firstActionStr != action2)
     EXPECT_TRUE(false);
-  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }
 
 
@@ -684,11 +686,11 @@ void _disjunctivePrecondition()
   auto& entities = problem.objects;
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("fact_c", ontology, entities)}, ontology.constants);
 
-  auto firstActionStr = _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr();
+  auto firstActionStr = _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr();
   if (firstActionStr != action1 && firstActionStr != action2)
     EXPECT_TRUE(false);
-  EXPECT_EQ(action3, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action3, _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }
 
 
@@ -729,15 +731,15 @@ void _forallWithImplyAndFluentValuesEqualityOnPrecondition()
                              _emptyCallbacks, ontology, problem.objects, _now);
 
   _setGoalsForAPriority(problem, {_pddlGoal("(goal)", ontology, problem.objects)}, ontology.constants);
-  auto actionInvocation1 = _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr();
-  auto actionInvocation2 = _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr();
+  auto actionInvocation1 = _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr();
+  auto actionInvocation2 = _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr();
 
   std::set<std::string> potentialResults{"action1(?p1 -> v1, ?p2 -> r3)", "action1(?p1 -> v3, ?p2 -> r4)"};
   EXPECT_NE(actionInvocation1, actionInvocation2);
   EXPECT_TRUE(potentialResults.count(actionInvocation1) > 0);
   EXPECT_TRUE(potentialResults.count(actionInvocation2) > 0);
-  EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
-  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }
 
 }

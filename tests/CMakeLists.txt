@@ -32,6 +32,7 @@ add_executable(
   src/test_planner.cpp
   src/test_plannerWithSingleType.cpp
   src/test_ontology.cpp
+  src/test_ordered_goals_requirement.cpp
   src/test_parallelplan.cpp
   src/test_pddl_serialization.cpp
   src/test_problems_in_data.cpp

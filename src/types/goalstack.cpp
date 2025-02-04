@@ -13,6 +13,7 @@ namespace ogp
 
 GoalStack::GoalStack(const GoalStack& pOther)
   : onGoalsChanged(),
+    effectBeweenGoals(),
     _goals(pOther._goals),
     _currentGoalPtr(nullptr)
 {
@@ -20,6 +21,10 @@ GoalStack::GoalStack(const GoalStack& pOther)
 
 GoalStack& GoalStack::operator=(const GoalStack& pOther)
 {
+  if (pOther.effectBeweenGoals)
+    effectBeweenGoals = pOther.effectBeweenGoals->clone(nullptr);
+  else
+    effectBeweenGoals.reset();
   _goals = pOther._goals;
   _currentGoalPtr = nullptr;
   return *this;
@@ -128,7 +133,6 @@ bool GoalStack::_iterateOnGoalsAndRemoveNonPersistent(
         if (_currentGoalPtr == &*itGoal)
           isCurrentlyActiveGoal = false;
       }
-
 
       if (itGoal->isPersistent())
       {
@@ -497,6 +501,20 @@ std::set<ActionId> GoalStack::getEventsPredecessors() const
     }
   }
   return res;
+}
+
+bool GoalStack::isOrderedGoals() const
+{
+  if (effectBeweenGoals)
+    return true;
+
+  if (_goals.size() > 1)
+    return true;
+
+  if (_goals.size() == 1 && _goals.begin()->second.size() > 1)
+    return true;
+
+  return false;
 }
 
 

@@ -3,6 +3,7 @@
 #include <fstream>
 #include <orderedgoalsplanner/types/domain.hpp>
 #include <orderedgoalsplanner/types/problem.hpp>
+#include <orderedgoalsplanner/types/setofcallbacks.hpp>
 #include <orderedgoalsplanner/util/serializer/deserializefrompddl.hpp>
 #include <orderedgoalsplanner/util/serializer/serializeinpddl.hpp>
 #include <orderedgoalsplanner/orderedgoalsplanner.hpp>
@@ -12,6 +13,8 @@ using namespace ogp;
 
 namespace
 {
+const ogp::SetOfCallbacks _emptyCallbacks;
+
 
 std::string _getFileContent(const std::string& filePath)
 {
@@ -71,7 +74,7 @@ void _test_dataDirectory(const std::string& pDataPath,
   auto& problem = *domainAndProblemPtrs.problemPtr;
 
   std::string expected = _getFileContentWithoutComments(directory + "/problem.plan");
-  std::string actualPlan = ogp::planToPddl(ogp::planForEveryGoals(problem, domain, {}), domain);
+  std::string actualPlan = ogp::planToPddl(ogp::planForEveryGoals(problem, domain, _emptyCallbacks, {}), domain);
   EXPECT_EQ(expected, actualPlan);
 }
 

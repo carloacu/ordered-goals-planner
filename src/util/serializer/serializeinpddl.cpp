@@ -358,7 +358,11 @@ std::string problemToPddl(const Problem& pProblem,
   std::size_t identation = _identationOffset;
 
   res += std::string(identation, ' ') + "(problem " + pProblem.name + ")\n";
-  res += std::string(identation, ' ') + "(:domain " + pDomain.getName() + ")\n\n";
+  res += std::string(identation, ' ') + "(:domain " + pDomain.getName() + ")\n";
+  if (pProblem.goalStack.isOrderedGoals())
+    res += std::string(identation, ' ') + "(:requirements :ordered-goals)\n";
+  res += "\n";
+
 
   if (!pProblem.objects.empty())
   {
@@ -379,58 +383,49 @@ std::string problemToPddl(const Problem& pProblem,
   std::list<std::string> pddlGoals;
   std::size_t subIdentation = identation + _identationOffset;
   std::size_t subSubIdentation = subIdentation + _identationOffset;
+  std::size_t subSubSubIdentation = subSubIdentation + _identationOffset;
 
   const auto& goals = pProblem.goalStack.goals();
   if (!goals.empty())
   {
-    res += std::string(identation, ' ') + "(:goal\n";
-    if (goals.size() == 1 && goals.begin()->second.size() == 1)
+    if (pProblem.goalStack.isOrderedGoals())
     {
-      const auto& currGoal = goals.begin()->second.front();
-      auto pddlGoal = currGoal.toPddl(subSubIdentation);
-      res += std::string(subSubIdentation, ' ') + pddlGoal + "\n";
-      pddlGoals.emplace_back(pddlGoal);
-    }
-    else
-    {
-      res += std::string(subIdentation, ' ') + "(and ;; __ORDERED\n";
+      res += std::string(identation, ' ') + "(:ordered-goals\n";
+
+
+      std::size_t subIdentation = identation + _identationOffset;
+      std::size_t subSubIdentation = subIdentation + _identationOffset;
+
+      if (pProblem.goalStack.effectBeweenGoals)
+      {
+        res += std::string(subIdentation, ' ') + ":effect-between-goals\n";
+        res += std::string(subSubIdentation, ' ') + effectToPddl(*pProblem.goalStack.effectBeweenGoals, subSubIdentation) + "\n";
+        res += "\n";
+      }
+
+      res += std::string(subIdentation, ' ') + ":goals\n";
+
+      res += std::string(subSubIdentation, ' ') + "(ordered-list\n";
       for (auto itGoalsGroup = goals.end(); itGoalsGroup != goals.begin(); )
       {
         --itGoalsGroup;
         for (const Goal& currGoal : itGoalsGroup->second)
         {
-          auto pddlGoal = currGoal.toPddl(subSubIdentation);
-          res += std::string(subSubIdentation, ' ') + pddlGoal + "\n";
+          auto pddlGoal = currGoal.toPddl(subSubSubIdentation);
+          res += std::string(subSubSubIdentation, ' ') + pddlGoal + "\n";
           pddlGoals.emplace_back(pddlGoal);
         }
       }
-      res += std::string(subIdentation, ' ') + ")\n";
+      res += std::string(subSubIdentation, ' ') + ")\n";
     }
-    res += std::string(identation, ' ') + ")\n\n";
-  }
-
-  if (pddlGoals.size() > 1)
-  {
-    std::size_t subSubSubIdentation = subSubIdentation + _identationOffset;
-    res += std::string(identation, ' ') + "(:constraints\n";
-    res += std::string(subIdentation, ' ') + "(and ; These contraints are to specify the goals order\n";
-
-    std::size_t preferenceIndex = 0;
-    std::string previousGoal;
-    for (const auto& currPddlGoal : pddlGoals)
+    else
     {
-      if (previousGoal != "")
-      {
-        res += std::string(subSubIdentation, ' ') + "(preference p" + std::to_string(preferenceIndex) + "\n";
-        ++preferenceIndex;
-        res += std::string(subSubSubIdentation, ' ') + "(sometime-after " +
-            previousGoal + " " + currPddlGoal + ")\n";
-        res += std::string(subSubIdentation, ' ') + ")\n";
-      }
-      previousGoal = currPddlGoal;
+      res += std::string(identation, ' ') + "(:goal\n";
+      const auto& currGoal = goals.begin()->second.front();
+      auto pddlGoal = currGoal.toPddl(subSubIdentation);
+      res += std::string(subSubIdentation, ' ') + pddlGoal + "\n";
+      pddlGoals.emplace_back(pddlGoal);
     }
-
-    res += std::string(subIdentation, ' ') + ")\n";
     res += std::string(identation, ' ') + ")\n\n";
   }
 

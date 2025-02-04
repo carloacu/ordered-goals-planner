@@ -12,14 +12,15 @@
     (at-object box1 locationB)
   )
 
-  (:goal
-    (and ;; __ORDERED
-      (started_notified)
-      (and
-        (at robot1 locationA)
-        (at-object box1 locationC)
+  (:ordered-goals
+    :goals
+      (ordered-list
+        (started_notified)
+        (and
+          (at robot1 locationA)
+          (at-object box1 locationC)
+        )
+        (finished_notified)
       )
-      (finished_notified)
-    )
   )
 )

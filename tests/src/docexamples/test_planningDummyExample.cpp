@@ -31,16 +31,16 @@ void planningDummyExample()
   problem.goalStack.setGoals({ogp::Goal::fromStr(userIsGreeted, ontology, {})}, problem.worldState, ontology.constants, problem.objects, now);
 
   // Look for an action to do
-  auto planResult1 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  ogp::SetOfCallbacks setOfCallbacks;
+  auto planResult1 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(!planResult1.empty());
   const auto& firstActionInPlan = planResult1.front();
   assert(sayHi == firstActionInPlan.actionInvocation.actionId); // The action found is "say_hi", because it is needed to satisfy the preconditions of "ask_how_I_can_help"
   // When the action is finished we notify the planner
-  ogp::SetOfCallbacks setOfCallbacks;
   ogp::notifyActionDone(problem, domain, setOfCallbacks, firstActionInPlan, now);
 
   // Look for the next action to do
-  auto planResult2 = ogp::planForMoreImportantGoalPossible(problem, domain, true, now);
+  auto planResult2 = ogp::planForMoreImportantGoalPossible(problem, domain, setOfCallbacks, true, now);
   assert(planResult2.empty()); // No action found
 }
 

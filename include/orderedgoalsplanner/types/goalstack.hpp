@@ -231,6 +231,11 @@ struct ORDEREDGOALSPLANNER_API GoalStack
 
   std::set<ActionId> getEventsPredecessors() const;
 
+  bool isOrderedGoals() const;
+
+  /// Effect to apply automatically between ordered goals.
+  std::unique_ptr<ogp::WorldStateModification> effectBeweenGoals{};
+
 
 private:
   /// Map of priority to goals.

@@ -532,7 +532,7 @@ void _test_loadPddlDomain()
     (:domain construction)
     ;(:situation <situation_name>) ;deprecated
     (:objects
-        s1 - site
+        s1 s2 - site
         b - bricks
         w - windows
         c - cables
@@ -543,11 +543,16 @@ void _test_loadPddlDomain()
         (on-site w s1)
         (= (position) s1)
     )
-    (:goal (and ;; __ORDERED
-            (walls-built s1)
-            (cables-installed s1)
-            (windows-fitted s1)
-        )
+    (:ordered-goals
+        :effect-between-goals
+           (not (walls-built s2))
+
+        :goals
+            (ordered-list
+                (walls-built s1)
+                (cables-installed s1)
+                (windows-fitted s1)
+            )
     )
 ))", loadedDomains);
 
@@ -555,11 +560,12 @@ void _test_loadPddlDomain()
   std::string expectedProblem = R"((define
     (problem buildingahouse)
     (:domain construction)
+    (:requirements :ordered-goals)
 
     (:objects
         b - bricks
         c - cables
-        s1 - site
+        s1 s2 - site
         w - windows
     )
 
@@ -570,23 +576,16 @@ void _test_loadPddlDomain()
         (= (position) s1)
     )
 
-    (:goal
-        (and ;; __ORDERED
-            (walls-built s1)
-            (cables-installed s1)
-            (windows-fitted s1)
-        )
-    )
+    (:ordered-goals
+        :effect-between-goals
+            (not (walls-built s2))
 
-    (:constraints
-        (and ; These contraints are to specify the goals order
-            (preference p0
-                (sometime-after (walls-built s1) (cables-installed s1))
+        :goals
+            (ordered-list
+                (walls-built s1)
+                (cables-installed s1)
+                (windows-fitted s1)
             )
-            (preference p1
-                (sometime-after (cables-installed s1) (windows-fitted s1))
-            )
-        )
     )
 
 ))";

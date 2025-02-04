@@ -14,11 +14,12 @@
         (= (phone_of phone_2) user_2)
     )
 
-    (:goal
-        (and ;; __ORDERED
-            (exists (?u - user) (sent text_1 ?u))
-            (exists (?u - user) (sent text_2 ?u))
-        )
+    (:ordered-goals
+        :goals
+            (ordered-list
+               (exists (?u - user) (sent text_1 ?u))
+               (exists (?u - user) (sent text_2 ?u))
+            )
     )
 
 )

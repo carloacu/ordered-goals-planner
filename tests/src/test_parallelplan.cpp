@@ -74,10 +74,11 @@ void _addFact(ogp::WorldState& pWorldState,
 
 ogp::ActionInvocationWithGoal _lookForAnActionToDo(ogp::Problem& pProblem,
                                                   const ogp::Domain& pDomain,
+                                                  const ogp::SetOfCallbacks& pCallbacks = {},
                                                   const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
                                                   const ogp::Historical* pGlobalHistorical = nullptr)
 {
-  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, true, pNow, pGlobalHistorical);
+  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, true, pNow, pGlobalHistorical);
   if (!plan.empty())
     return plan.front();
   return ogp::ActionInvocationWithGoal("", std::map<ogp::Parameter, ogp::Entity>(), {}, 0);
@@ -87,9 +88,10 @@ ogp::ActionInvocationWithGoal _lookForAnActionToDo(ogp::Problem& pProblem,
 std::string _lookForAnActionToDoInParallelThenNotifyToStr(
     ogp::Problem& pProblem,
     const ogp::Domain& pDomain,
+    const ogp::SetOfCallbacks& pCallbacks = {},
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {})
 {
-  auto actionsToDoInParallel = ogp::actionsToDoInParallelNow(pProblem, pDomain, pNow);
+  auto actionsToDoInParallel = ogp::actionsToDoInParallelNow(pProblem, pDomain, pCallbacks, pNow);
   for (auto& currAction : actionsToDoInParallel.actions)
   {
     notifyActionStarted(pProblem, pDomain, _emptyCallbacks, currAction, pNow);
@@ -100,18 +102,20 @@ std::string _lookForAnActionToDoInParallelThenNotifyToStr(
 
 std::string _parallelPlanStr(ogp::Problem& pProblem,
                              const ogp::Domain& pDomain,
+                             const ogp::SetOfCallbacks& pCallbacks = {},
                              const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
                              ogp::Historical* pGlobalHistorical = nullptr)
 {
-  return ogp::parallelPlanToStr(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pNow, pGlobalHistorical));
+  return ogp::parallelPlanToStr(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pCallbacks, pNow, pGlobalHistorical));
 }
 
 std::string _parallelPlanPddl(ogp::Problem& pProblem,
                               const ogp::Domain& pDomain,
+                              const ogp::SetOfCallbacks& pCallbacks = {},
                               const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
                               ogp::Historical* pGlobalHistorical = nullptr)
 {
-  return ogp::parallelPlanToPddl(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pNow, pGlobalHistorical), pDomain);
+  return ogp::parallelPlanToPddl(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pCallbacks, pNow, pGlobalHistorical), pDomain);
 }
 
 
@@ -173,14 +177,14 @@ void _goalsToDoInParallel()
   _addFact(problem.worldState, _fact_d, problem.goalStack, ontology, setOfEventsMap, _now);
   _setGoalsForAPriority(problem, {_goal(_fact_e, ontology)}, ontology.constants);
 
-  EXPECT_EQ(action1 + "(?obj -> val3)", _lookForAnActionToDo(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ(action1 + "(?obj -> val3)", _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
 
-  EXPECT_EQ(action1 + "(?obj -> val3)", _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain, _now));
-  EXPECT_EQ(action4, _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain, _now));
-  EXPECT_EQ(action7 + _sep + action1 + "(?obj -> val1)", _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain, _now));
-  EXPECT_EQ(action2, _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain, _now));
-  EXPECT_EQ(action6, _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain, _now));
-  EXPECT_EQ("", _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain, _now));
+  EXPECT_EQ(action1 + "(?obj -> val3)", _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain));
+  EXPECT_EQ(action4, _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain));
+  EXPECT_EQ(action7 + _sep + action1 + "(?obj -> val1)", _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain));
+  EXPECT_EQ(action2, _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain));
+  EXPECT_EQ(action6, _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain));
+  EXPECT_EQ("", _lookForAnActionToDoInParallelThenNotifyToStr(problem, domain));
 }
 
 void _2actionsInParallel()
@@ -199,7 +203,7 @@ void _2actionsInParallel()
   ogp::Domain domain(std::move(actions), ontology);
   ogp::Problem problem;
   _setGoalsForAPriority(problem, {_goal(_fact_a + " & " + _fact_b, ontology)}, ontology.constants);
-  EXPECT_EQ("action1, action2", _parallelPlanStr(problem, domain, _now));
+  EXPECT_EQ("action1, action2", _parallelPlanStr(problem, domain));
 }
 
 
@@ -220,7 +224,7 @@ void _2actionsNotInParallelBecauseFrom2DifferentSkills()
   ogp::Problem problem;
   _setGoalsForAPriority(problem, {_goal(_fact_a, ontology), _goal(_fact_b, ontology)}, ontology.constants);
   EXPECT_EQ("action1\n"
-            "action2", _parallelPlanStr(problem, domain, _now));
+            "action2", _parallelPlanStr(problem, domain));
 }
 
 
@@ -250,12 +254,12 @@ void _moreThan2GoalsInParallel()
   auto problem2 = problem;
 
   EXPECT_EQ("action1, action3, action4\n"
-            "action2", _parallelPlanStr(problem, domain, _now));
+            "action2", _parallelPlanStr(problem, domain));
 
   EXPECT_EQ("00: (action1) [1]\n"
             "00: (action3) [1]\n"
             "00: (action4) [1]\n"
-            "01: (action2) [1]\n", _parallelPlanPddl(problem2, domain, _now));
+            "01: (action2) [1]\n", _parallelPlanPddl(problem2, domain));
 }
 
 
@@ -280,7 +284,7 @@ void _goalsToDoInParallelWithConflitingEffects()
   _setGoalsForAPriority(problem, {_goal(_fact_b + " & " + _fact_c, ontology)}, ontology.constants);
 
   EXPECT_EQ("action1\n"
-            "action2", _parallelPlanStr(problem, domain, _now));
+            "action2", _parallelPlanStr(problem, domain));
 }
 
 

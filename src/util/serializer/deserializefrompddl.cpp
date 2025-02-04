@@ -921,6 +921,68 @@ Action _durativeActionPddlToAction(const std::string& pStr,
   return res;
 }
 
+
+
+void _loadOrderedGoals(GoalStack& pGoalStack,
+                       const std::string& pStr,
+                       std::size_t& pPos,
+                       const WorldState& pWorldState,
+                       const Ontology& pOntology,
+                       const SetOfEntities& pObjects)
+{
+  std::unique_ptr<Condition> precondition;
+  std::unique_ptr<Condition> overAllCondition;
+  std::unique_ptr<WorldStateModification> effectAtStart;
+  std::unique_ptr<WorldStateModification> effectAtEnd;
+  std::unique_ptr<WorldStateModification> effectAtEndPotentially;
+
+  auto strSize = pStr.size();
+  while (pPos < strSize && pStr[pPos] != ')')
+  {
+    auto beginPos = pPos;
+    auto subToken = ExpressionParsed::parseTokenThatCanBeEmpty(pStr, pPos);
+    if (subToken == "")
+    {
+      if (pPos > beginPos)
+        continue;
+      break;
+    }
+
+    std::vector<Goal> goals;
+    if (subToken == ":effect-between-goals")
+    {
+      pGoalStack.effectBeweenGoals = pddlToWsModification(pStr, pPos, pOntology, pObjects, {});
+    }
+    else if (subToken == ":goals")
+    {
+      auto expressionParsed = ExpressionParsed::fromPddl(pStr, pPos, false);
+      if (expressionParsed.name == "ordered-list")
+      {
+        for (auto& currGoalExpParsed : expressionParsed.arguments)
+        {
+          auto goalPtr = _expressionParsedToGoal(currGoalExpParsed, pOntology, pObjects, -1, "", nullptr);
+          if (!goalPtr)
+            throw std::runtime_error("Failed to parse a pddl goal");
+          goals.emplace_back(std::move(*goalPtr));
+        }
+      }
+      else
+      {
+        auto goalPtr = _expressionParsedToGoal(expressionParsed, pOntology, pObjects, -1, "", nullptr);
+        if (!goalPtr)
+          throw std::runtime_error("Failed to parse a pddl goal");
+        goals.emplace_back(std::move(*goalPtr));
+      }
+
+      pGoalStack.addGoals(goals, pWorldState, pOntology.constants, pObjects, {});
+    }
+    else
+    {
+      throw std::runtime_error("Unknown axiom token \"" + subToken + "\" in: " + pStr.substr(beginPos, strSize - beginPos));
+    }
+  }
+}
+
 }
 
 Domain pddlToDomain(const std::string& pStr,
@@ -1121,32 +1183,39 @@ DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
           const auto& ontology = res.domainPtr->getOntology();
           std::vector<Goal> goals;
           const auto& worldState = res.problemPtr->worldState;
-          const auto& entities = res.problemPtr->objects;
+          const auto& objects = res.problemPtr->objects;
 
           auto expressionParsed = ExpressionParsed::fromPddl(pStr, pos, false);
-          if (expressionParsed.name == "and" && expressionParsed.tags.count("__ORDERED") > 0)
-          {
-            for (auto& currGoalExpParsed : expressionParsed.arguments)
-            {
-              auto goalPtr = _expressionParsedToGoal(currGoalExpParsed, ontology, entities, -1, "", nullptr);
-              if (!goalPtr)
-                throw std::runtime_error("Failed to parse a pddl goal");
-              goals.emplace_back(std::move(*goalPtr));
-            }
-          }
-          else
-          {
-            auto goalPtr = _expressionParsedToGoal(expressionParsed, ontology, entities, -1, "", nullptr);
-            if (!goalPtr)
-              throw std::runtime_error("Failed to parse a pddl goal");
-            goals.emplace_back(std::move(*goalPtr));
-          }
+          auto goalPtr = _expressionParsedToGoal(expressionParsed, ontology, objects, -1, "", nullptr);
+          if (!goalPtr)
+            throw std::runtime_error("Failed to parse a pddl goal");
+          goals.emplace_back(std::move(*goalPtr));
 
-          res.problemPtr->goalStack.addGoals(goals, worldState, ontology.constants, entities, {});
+          res.problemPtr->goalStack.addGoals(goals, worldState, ontology.constants, objects, {});
+        }
+        else if (token == ":ordered-goals")
+        {
+          if (!res.domainPtr)
+            throw std::runtime_error("problem objects are defined before the domain.");
+          if (!res.problemPtr)
+            throw std::runtime_error("problem not initialized before to set the goals.");
+          const auto& ontology = res.domainPtr->getOntology();
+          const auto& worldState = res.problemPtr->worldState;
+          const auto& objects = res.problemPtr->objects;
+          _loadOrderedGoals(res.problemPtr->goalStack, pStr, pos, worldState, ontology, objects);
         }
         else if (token == ":constraints")
         {
           break;
+        }
+        else if (token == ":requirements")
+        {
+          while (pos < strSize && pStr[pos] != ')')
+          {
+            auto requirement = ExpressionParsed::parseToken(pStr, pos);
+            if (requirement != ":ordered-goals")
+                throw std::runtime_error("Unexpected requirement defined in problem: \"" + requirement + "\"");
+          }
         }
         else
         {

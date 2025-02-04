@@ -63,11 +63,12 @@ void _setGoalsForAPriority(ogp::Problem& pProblem,
 
 
 ogp::ActionInvocationWithGoal _lookForAnActionToDo(ogp::Problem& pProblem,
-                                                  const ogp::Domain& pDomain,
-                                                  const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
-                                                  const ogp::Historical* pGlobalHistorical = nullptr)
+                                                   const ogp::Domain& pDomain,
+                                                   const ogp::SetOfCallbacks& pCallbacks = {},
+                                                   const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
+                                                   const ogp::Historical* pGlobalHistorical = nullptr)
 {
-  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, true, pNow, pGlobalHistorical);
+  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, true, pNow, pGlobalHistorical);
   if (!plan.empty())
     return plan.front();
   return ogp::ActionInvocationWithGoal("", std::map<ogp::Parameter, ogp::Entity>(), {}, 0);
@@ -75,28 +76,31 @@ ogp::ActionInvocationWithGoal _lookForAnActionToDo(ogp::Problem& pProblem,
 
 std::string _parallelPlanStr(ogp::Problem& pProblem,
                              const ogp::Domain& pDomain,
+                             const ogp::SetOfCallbacks& pCallbacks = {},
                              const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
                              ogp::Historical* pGlobalHistorical = nullptr)
 {
-  return ogp::parallelPlanToStr(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pNow, pGlobalHistorical));
+  return ogp::parallelPlanToStr(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pCallbacks, pNow, pGlobalHistorical));
 }
 
 std::string _parallelPlanPddl(ogp::Problem& pProblem,
                               const ogp::Domain& pDomain,
+                              const ogp::SetOfCallbacks& pCallbacks = {},
                               const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
                               ogp::Historical* pGlobalHistorical = nullptr)
 {
-  return ogp::parallelPlanToPddl(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pNow, pGlobalHistorical), pDomain);
+  return ogp::parallelPlanToPddl(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pCallbacks,
+                                                                pNow, pGlobalHistorical), pDomain);
 }
 
 
 std::string _lookForAnActionToDoInParallelThenNotifyToStr(
     ogp::Problem& pProblem,
     const ogp::Domain& pDomain,
-    const ogp::SetOfCallbacks& pCallbacks,
+    const ogp::SetOfCallbacks& pCallbacks = {},
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {})
 {
-  auto actionsToDoInParallel = ogp::actionsToDoInParallelNow(pProblem, pDomain, pNow);
+  auto actionsToDoInParallel = ogp::actionsToDoInParallelNow(pProblem, pDomain, pCallbacks, pNow);
   for (auto& currAction : actionsToDoInParallel.actions)
   {
     notifyActionStarted(pProblem, pDomain, pCallbacks, currAction, pNow);
