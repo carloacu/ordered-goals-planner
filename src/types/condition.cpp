@@ -236,20 +236,23 @@ bool _isTrueRec(ParameterValuesWithConstraints& pLocalParamToValue,
   auto* factOfConditionPtr = pCondition.fcFactPtr();
   if (factOfConditionPtr != nullptr)
   {
-    bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(factOfConditionPtr->factOptional, pPunctualFacts, pRemovedFacts,
+    const auto& condFactOptional = factOfConditionPtr->factOptional;
+    bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(condFactOptional, pPunctualFacts, pRemovedFacts,
                                                                      pConditionParametersToPossibleArguments, &pLocalParamToValue);
-    if (pMustBeTrueForAllParameters && !factOfConditionPtr->factOptional.isFactNegated)
+    if (pMustBeTrueForAllParameters && !condFactOptional.isFactNegated)
     {
       if (res)
         for (const auto& currLocalParamToValue : pLocalParamToValue)
-          if (currLocalParamToValue.second != pAllEntitiesForParam)
+          if (condFactOptional.fact.hasParameterOrValue(currLocalParamToValue.first) &&
+              currLocalParamToValue.second != pAllEntitiesForParam)
             return false;
     }
-    if (!pMustBeTrueForAllParameters && factOfConditionPtr->factOptional.isFactNegated)
+    if (!pMustBeTrueForAllParameters && condFactOptional.isFactNegated)
     {
       if (!res)
         for (const auto& currLocalParamToValue : pLocalParamToValue)
-          if (currLocalParamToValue.second != pAllEntitiesForParam)
+          if (condFactOptional.fact.hasParameterOrValue(currLocalParamToValue.first) &&
+              currLocalParamToValue.second != pAllEntitiesForParam)
             return true;
     }
     return res;

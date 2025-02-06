@@ -312,6 +312,33 @@ void _forallWithImplyAndFluentValuesEquality()
 }
 
 
+void _forallWithImplyWithThenThzatDoesNotDependOfTheVariable()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("entity return_type");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1(?p - entity) - return_type\n"
+                                                      "goal", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("r1 r2 r3 r4 r5 - return_type", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(goal)", ontology));
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("v1 v2 v3 v4 - entity", ontology.types);
+  _addFact(problem.worldState, "fact_1(v1)=r2", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  _addFact(problem.worldState, "fact_1(v3)=r2", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+
+  auto goalsStr = "(forall (?e - entity) (imply (= (fact_1 ?e) r2) (goal)))";
+  _setGoalsForAPriority(problem, {_pddlGoal(goalsStr, ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+}
+
 }
 
 
@@ -324,4 +351,5 @@ TEST(Planner, test_universalPreconditionsRequirement)
   _forallInsideAPath();
   _actionToSatisfyANotForall();
   _forallWithImplyAndFluentValuesEquality();
+  _forallWithImplyWithThenThzatDoesNotDependOfTheVariable();
 }
