@@ -208,6 +208,33 @@ void _test_pddlSerializationParts()
 }
 
 
+void _test_missing_objects()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("type1 type2 - entity");
+  {
+    std::size_t pos = 0;
+    ontology.predicates = ogp::SetOfPredicates::fromPddl("(pred ?e - type2)\n"
+                                                         "(fun ?e - type2) - type1", pos, ontology.types);
+  }
+
+  auto objs = ogp::worldStateModifPddlToMissingObjects("(pred missing_param)", ontology, {});
+  EXPECT_EQ(1, objs.size());
+  EXPECT_EQ("missing_param - type2", objs.front().toStr());
+
+  objs = ogp::worldStateModifPddlToMissingObjects("(assign (fun ?p) lol)", ontology, {});
+  EXPECT_EQ(1, objs.size());
+  EXPECT_EQ("lol - type1", objs.front().toStr());
+
+  objs = ogp::worldStateModifPddlToMissingObjects("(assign (fun p) lol)", ontology, {});
+  EXPECT_EQ(2, objs.size());
+  EXPECT_EQ("p - type2", objs.front().toStr());
+  EXPECT_EQ("lol - type1", (++objs.begin())->toStr());
+
+  EXPECT_TRUE(ogp::worldStateModifPddlToMissingObjects("(pred ?e)", ontology, {}).empty());
+}
+
+
 void _test_loadPddlDomain()
 {
   std::map<std::string, ogp::Domain> loadedDomains;
@@ -627,5 +654,6 @@ void _test_loadPddlDomain()
 TEST(Tool, test_pddlSerialization)
 {
   _test_pddlSerializationParts();
+  _test_missing_objects();
   _test_loadPddlDomain();
 }

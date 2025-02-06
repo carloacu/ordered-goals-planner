@@ -41,6 +41,10 @@ struct ExpressionParsed
                       bool pIsOkIfValueIsMissing,
                       const std::map<std::string, Entity>* pParameterNamesToEntityPtr) const;
 
+  void extractMissingObjects(std::list<Entity>& pRes,
+                             const Ontology& pOntology,
+                             const SetOfEntities& pObjects) const;
+
   static ExpressionParsed fromStr(const std::string& pStr,
                                   std::size_t& pPos);
 

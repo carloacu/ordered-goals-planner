@@ -131,6 +131,29 @@ Entity Entity::fromUsage(const std::string& pStr,
 }
 
 
+bool Entity::isParamOrDeclaredEntity(const std::string& pStr,
+                                     const Ontology& pOntology,
+                                     const SetOfEntities& pObjects)
+{
+  if (pStr.empty())
+    throw std::runtime_error("Empty entity usage!");
+
+  if (pStr[0] == '?')
+    return true;
+
+  auto* entityPtr = pOntology.constants.valueToEntity(pStr);
+  if (entityPtr != nullptr)
+    return true;
+
+  entityPtr = pObjects.valueToEntity(pStr);
+  if (entityPtr != nullptr)
+    return true;
+  if (pStr == Entity::anyEntityValue())
+    return true;
+  return isNumber(pStr);
+}
+
+
 std::string Entity::toStr() const
 {
   if (!type)

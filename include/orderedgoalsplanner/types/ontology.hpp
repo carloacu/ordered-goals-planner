@@ -17,6 +17,15 @@ struct ORDEREDGOALSPLANNER_API Ontology
   SetOfPredicates predicates;
   SetOfEntities constants;
   SetOfDerivedPredicates derivedPredicates;
+
+
+  const Predicate* nameToPredicatePtr(const std::string& pName) const
+  {
+    auto* predicatePtr = predicates.nameToPredicatePtr(pName);
+    if (predicatePtr != nullptr)
+      return predicatePtr;
+    return derivedPredicates.nameToPredicatePtr(pName);
+  }
 };
 
 } // namespace ogp

@@ -42,6 +42,10 @@ struct ORDEREDGOALSPLANNER_API Entity
                           const std::vector<Parameter>& pParameters,
                           const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
 
+  static bool isParamOrDeclaredEntity(const std::string& pStr,
+                                      const Ontology& pOntology,
+                                      const SetOfEntities& pObjects);
+
   std::string toStr() const;
   bool isAnyEntity() const;
   bool isAParameterToFill() const;

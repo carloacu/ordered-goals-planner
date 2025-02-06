@@ -1,6 +1,7 @@
 #ifndef INCLUDE_ORDEREDGOALSPLANNER_UTIL_SERIALIZER_DESERIALIZEFROMPDDL_HPP
 #define INCLUDE_ORDEREDGOALSPLANNER_UTIL_SERIALIZER_DESERIALIZEFROMPDDL_HPP
 
+#include <list>
 #include <map>
 #include <memory>
 #include <string>
@@ -68,6 +69,10 @@ std::unique_ptr<WorldStateModification> pddlToWsModification(const std::string& 
                                                              const SetOfEntities& pObjects,
                                                              const std::vector<Parameter>& pParameters);
 
+
+std::list<Entity> worldStateModifPddlToMissingObjects(const std::string& pStr,
+                                                      const Ontology& pOntology,
+                                                      const SetOfEntities& pObjects);
 
 std::unique_ptr<WorldStateModification> strToWsModification(const std::string& pStr,
                                                              const Ontology& pOntology,

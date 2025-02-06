@@ -179,9 +179,7 @@ Fact::Fact(const std::string& pName,
     _isValueNegated(pIsValueNegated),
     _factSignature()
 {
-  auto* predicatePtr = pOntology.predicates.nameToPredicatePtr(_name);
-  if (predicatePtr == nullptr)
-    predicatePtr = pOntology.derivedPredicates.nameToPredicatePtr(_name);
+  auto* predicatePtr = pOntology.nameToPredicatePtr(_name);
   if (predicatePtr == nullptr)
     throw std::runtime_error("\"" + pName + "\" is not a predicate name or a derived predicate name");
 

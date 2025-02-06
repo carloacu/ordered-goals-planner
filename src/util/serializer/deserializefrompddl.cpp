@@ -531,6 +531,121 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
   return res;
 }
 
+
+
+void _wsExpressionParsedToMissingObjects(std::list<Entity>& pRes,
+                                         const ExpressionParsed& pExpressionParsed,
+                                         const Ontology& pOntology,
+                                         const SetOfEntities& pObjects)
+{
+
+
+  if ((pExpressionParsed.name == _assignWsFunctionName ||
+       pExpressionParsed.name == _setWsFunctionName) && // set is deprecated
+      pExpressionParsed.arguments.size() == 2)
+  {
+    const auto& leftExp = pExpressionParsed.arguments.front();
+    const auto& rightOperandExp = *(++pExpressionParsed.arguments.begin());
+    if (rightOperandExp.arguments.empty() &&
+        !rightOperandExp.followingExpression && rightOperandExp.value == "" &&
+        rightOperandExp.name != Fact::getUndefinedEntity().value &&
+        pExpressionParsed.name == _assignWsFunctionName && !rightOperandExp.isAFunction &&
+        rightOperandExp.name != "")
+    {
+      if (!Entity::isParamOrDeclaredEntity(rightOperandExp.name, pOntology, pObjects))
+      {
+        auto leftExpCopied = leftExp.clone();
+        leftExpCopied.value = rightOperandExp.name;
+        _wsExpressionParsedToMissingObjects(pRes, leftExpCopied, pOntology, pObjects);
+      }
+    }
+    else
+    {
+      _wsExpressionParsedToMissingObjects(pRes, leftExp, pOntology, pObjects);
+      _wsExpressionParsedToMissingObjects(pRes, rightOperandExp, pOntology, pObjects);
+    }
+  }
+  else if (pExpressionParsed.name == _notWsFunctionName &&
+           pExpressionParsed.arguments.size() == 1)
+  {
+    _wsExpressionParsedToMissingObjects(pRes, pExpressionParsed.arguments.front(), pOntology, pObjects);
+  }
+  else if ((pExpressionParsed.name == _forAllWsFunctionName || pExpressionParsed.name == _forAllOldWsFunctionName) &&
+           (pExpressionParsed.arguments.size() == 2 || pExpressionParsed.arguments.size() == 3))
+  {
+    auto itArg = pExpressionParsed.arguments.begin();
+    ++itArg;
+    auto& secondArg = *itArg;
+    if (pExpressionParsed.arguments.size() == 3)
+    {
+      ++itArg;
+      auto& thridArg = *itArg;
+
+      secondArg.extractMissingObjects(pRes, pOntology, pObjects);
+      _wsExpressionParsedToMissingObjects(pRes, thridArg, pOntology, pObjects);
+    }
+    else if (secondArg.name == _whenWsFunctionName &&
+             secondArg.arguments.size() == 2)
+    {
+      auto itWhenArg = secondArg.arguments.begin();
+      auto& firstWhenArg = *itWhenArg;
+      ++itWhenArg;
+      auto& secondWhenArg = *itWhenArg;
+      firstWhenArg.extractMissingObjects(pRes, pOntology, pObjects);
+      _wsExpressionParsedToMissingObjects(pRes, secondWhenArg, pOntology, pObjects);
+    }
+  }
+  else if (pExpressionParsed.name == _andWsFunctionName &&
+           pExpressionParsed.arguments.size() >= 2)
+  {
+    for (auto& currExp : pExpressionParsed.arguments)
+      _wsExpressionParsedToMissingObjects(pRes, currExp, pOntology, pObjects);
+  }
+  else if ((pExpressionParsed.name == _increaseWsFunctionName || pExpressionParsed.name == _decreaseWsFunctionName ||
+            pExpressionParsed.name == _mutliplyWsFunctionName || pExpressionParsed.name == _addWsFunctionName) &&
+           pExpressionParsed.arguments.size() == 2)
+  {
+    auto itArg = pExpressionParsed.arguments.begin();
+    auto& firstArg = *itArg;
+    ++itArg;
+    auto& secondArg = *itArg;
+    std::unique_ptr<WorldStateModification> rightOpPtr;
+    try {
+      rightOpPtr = WorldStateModificationNumber::create(secondArg.name);
+    }  catch (...) {}
+    _wsExpressionParsedToMissingObjects(pRes, firstArg, pOntology, pObjects);
+    if (!rightOpPtr)
+      _wsExpressionParsedToMissingObjects(pRes, secondArg, pOntology, pObjects);
+  }
+  else if (pExpressionParsed.name == _whenWsFunctionName &&
+           pExpressionParsed.arguments.size() == 2)
+  {
+    auto itWhenArg = pExpressionParsed.arguments.begin();
+    auto& firstWhenArg = *itWhenArg;
+    ++itWhenArg;
+    auto& secondWhenArg = *itWhenArg;
+    firstWhenArg.extractMissingObjects(pRes, pOntology, pObjects);
+    _wsExpressionParsedToMissingObjects(pRes, secondWhenArg, pOntology, pObjects);
+  }
+  else
+  {
+    std::unique_ptr<WorldStateModificationNumber> nb;
+    if (pExpressionParsed.arguments.empty() && pExpressionParsed.value == "")
+    {
+      try {
+        nb = WorldStateModificationNumber::create(pExpressionParsed.name);
+      }  catch (...) {}
+    }
+
+    if (!nb)
+      pExpressionParsed.extractMissingObjects(pRes, pOntology, pObjects);
+  }
+
+  if (pExpressionParsed.followingExpression)
+    _wsExpressionParsedToMissingObjects(pRes, *pExpressionParsed.followingExpression, pOntology, pObjects);
+}
+
+
 std::vector<Parameter> _pddlToParameters(const std::string& pStr,
                                          std::size_t& pPos,
                                          const SetOfTypes& pSetOfTypes)
@@ -1301,6 +1416,18 @@ std::unique_ptr<WorldStateModification> pddlToWsModification(const std::string& 
 {
   auto expressionParsed = ExpressionParsed::fromPddl(pStr, pPos, false);
   return _expressionParsedToWsModification(expressionParsed, pOntology, pObjects, pParameters, false);
+}
+
+
+std::list<Entity> worldStateModifPddlToMissingObjects(const std::string& pStr,
+                                                      const Ontology& pOntology,
+                                                      const SetOfEntities& pObjects)
+{
+  std::size_t pos = 0;
+  auto expressionParsed = ExpressionParsed::fromPddl(pStr, pos, false);
+  std::list<Entity> res;
+  _wsExpressionParsedToMissingObjects(res, expressionParsed, pOntology, pObjects);
+  return res;
 }
 
 

@@ -107,6 +107,36 @@ FactOptional ExpressionParsed::toFact(const Ontology& pOntology,
 }
 
 
+
+void ExpressionParsed::extractMissingObjects(std::list<Entity>& pRes,
+                                             const Ontology& pOntology,
+                                             const SetOfEntities& pObjects) const
+{
+  auto* predicatePtr = pOntology.nameToPredicatePtr(name);
+  if (predicatePtr == nullptr)
+    throw std::runtime_error("Predicate name or a derived predicate name \"" + name + "\" not found");
+  auto& predicate = *predicatePtr;
+
+  auto itParam = predicate.parameters.begin();
+  for (const auto& currArg : arguments)
+  {
+    if (itParam == predicate.parameters.end())
+      throw std::runtime_error("Predicate usage of \"" + name + "\" has too maany arguments");
+    if (!Entity::isParamOrDeclaredEntity(currArg.name, pOntology, pObjects))
+      pRes.emplace_back(Entity(currArg.name, itParam->type));
+    ++itParam;
+  }
+
+  if (value != "" &&
+      !Entity::isParamOrDeclaredEntity(value, pOntology, pObjects))
+  {
+    if (!predicate.value)
+      throw std::runtime_error("Predicate usage of \"" + name + "\" has a value but must ont have one");
+    pRes.emplace_back(Entity(value, predicate.value));
+  }
+}
+
+
 ExpressionParsed ExpressionParsed::fromStr(const std::string& pStr,
                                            std::size_t& pPos)
 {
