@@ -1040,6 +1040,14 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
   return res;
 }
 
+std::list<std::string> _goalsToPddls(const std::list<Goal>& pGoals)
+{
+  std::list<std::string> res;
+  for (const auto& currGoal : pGoals)
+    res.emplace_back(currGoal.toPddl(0));
+  return res;
+}
+
 }
 
 
@@ -1306,7 +1314,8 @@ bool evaluate
   pProblem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(pProblem.worldState, ontology.constants, pProblem.objects, now);
   auto itBegin = planWithCache.begin();
   auto goals = extractSatisfiedGoals(pProblem, pDomain, itBegin, planWithCache, nullptr, now);
-  return goals == expectedGoalsSatisfied;
+  auto goalsPddls = _goalsToPddls(goals);
+  return goalsPddls == expectedGoalsSatisfied;
 }
 
 
