@@ -548,16 +548,12 @@ void _wsExpressionParsedToMissingObjects(std::list<Entity>& pRes,
     const auto& rightOperandExp = *(++pExpressionParsed.arguments.begin());
     if (rightOperandExp.arguments.empty() &&
         !rightOperandExp.followingExpression && rightOperandExp.value == "" &&
-        rightOperandExp.name != Fact::getUndefinedEntity().value &&
         pExpressionParsed.name == _assignWsFunctionName && !rightOperandExp.isAFunction &&
         rightOperandExp.name != "")
     {
-      if (!Entity::isParamOrDeclaredEntity(rightOperandExp.name, pOntology, pObjects))
-      {
-        auto leftExpCopied = leftExp.clone();
-        leftExpCopied.value = rightOperandExp.name;
-        _wsExpressionParsedToMissingObjects(pRes, leftExpCopied, pOntology, pObjects);
-      }
+      auto leftExpCopied = leftExp.clone();
+      leftExpCopied.value = rightOperandExp.name;
+      _wsExpressionParsedToMissingObjects(pRes, leftExpCopied, pOntology, pObjects);
     }
     else
     {

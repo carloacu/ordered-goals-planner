@@ -141,14 +141,17 @@ bool Entity::isParamOrDeclaredEntity(const std::string& pStr,
   if (pStr[0] == '?')
     return true;
 
+  if (pStr == Entity::anyEntityValue())
+    return true;
+  if (pStr == Fact::getUndefinedEntity().value)
+    return true;
+
   auto* entityPtr = pOntology.constants.valueToEntity(pStr);
   if (entityPtr != nullptr)
     return true;
 
   entityPtr = pObjects.valueToEntity(pStr);
   if (entityPtr != nullptr)
-    return true;
-  if (pStr == Entity::anyEntityValue())
     return true;
   return isNumber(pStr);
 }

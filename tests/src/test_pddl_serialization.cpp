@@ -231,6 +231,10 @@ void _test_missing_objects()
   EXPECT_EQ("p - type2", objs.front().toStr());
   EXPECT_EQ("lol - type1", (++objs.begin())->toStr());
 
+  objs = ogp::worldStateModifPddlToMissingObjects("(assign (fun p) undefined)", ontology, {});
+  EXPECT_EQ(1, objs.size());
+  EXPECT_EQ("p - type2", objs.front().toStr());
+
   EXPECT_TRUE(ogp::worldStateModifPddlToMissingObjects("(pred ?e)", ontology, {}).empty());
 }
 
