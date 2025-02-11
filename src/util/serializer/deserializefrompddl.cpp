@@ -1094,6 +1094,133 @@ void _loadOrderedGoals(GoalStack& pGoalStack,
   }
 }
 
+
+DomainAndProblemPtrs _pddlToProblem(const std::string& pStr,
+                                    const std::function<const Domain* (const std::string&)>& pNameToDmoain)
+{
+  DomainAndProblemPtrs res;
+  std::string problemName;
+
+  const std::string defineToken = "(define";
+  std::size_t found = pStr.find(defineToken);
+  if (found != std::string::npos)
+  {
+    auto strSize = pStr.size();
+    std::size_t pos = found + defineToken.size();
+
+    while (pos < strSize)
+    {
+      if (pStr[pos] == ';')
+      {
+        ExpressionParsed::moveUntilEndOfLine(pStr, pos);
+        ++pos;
+        continue;
+      }
+
+      if (pStr[pos] == '(')
+      {
+        ++pos;
+        auto token = ExpressionParsed::parseToken(pStr, pos);
+
+        if (token == "problem")
+        {
+          problemName = ExpressionParsed::parseToken(pStr, pos);
+        }
+        else if (token == ":domain")
+        {
+          while (pos < strSize && pStr[pos] != ')')
+          {
+            auto domainToExtend = ExpressionParsed::parseToken(pStr, pos);
+            auto domainPtr = pNameToDmoain(domainToExtend);
+            if (domainPtr == nullptr)
+              throw std::runtime_error("Domain \"" + domainToExtend + "\" is unknown!");
+            res.domainPtr = domainPtr;
+            res.problemPtr = std::make_unique<Problem>(&res.domainPtr->getTimelessFacts().setOfFacts());
+          }
+        }
+        else if (token == ":objects")
+        {
+          if (res.domainPtr == nullptr)
+            throw std::runtime_error("problem objects are defined before the domain.");
+          const auto& ontology = res.domainPtr->getOntology();
+          std::size_t beginPos = pos;
+          ExpressionParsed::moveUntilClosingParenthesis(pStr, pos);
+          std::string entitiesStr = pStr.substr(beginPos, pos - beginPos);
+          res.problemPtr->objects.addAllFromPddl(entitiesStr, ontology.types);
+        }
+        else if (token == ":init")
+        {
+          if (res.domainPtr == nullptr)
+            throw std::runtime_error("problem init are defined before the domain.");
+          const auto& ontology = res.domainPtr->getOntology();
+          auto& setOfEventsMap = res.domainPtr->getSetOfEvents();
+          const SetOfCallbacks callbacks;
+          res.problemPtr->worldState.modifyFactsFromPddl(pStr, pos, res.problemPtr->goalStack,
+                                                         setOfEventsMap, callbacks,
+                                                         ontology, res.problemPtr->objects, {});
+        }
+        else if (token == ":goal")
+        {
+          if (res.domainPtr == nullptr)
+            throw std::runtime_error("problem objects are defined before the domain.");
+          if (!res.problemPtr)
+            throw std::runtime_error("problem not initialized before to set the goals.");
+          const auto& ontology = res.domainPtr->getOntology();
+          std::vector<Goal> goals;
+          const auto& worldState = res.problemPtr->worldState;
+          const auto& objects = res.problemPtr->objects;
+
+          auto expressionParsed = ExpressionParsed::fromPddl(pStr, pos, false);
+          auto goalPtr = _expressionParsedToGoal(expressionParsed, ontology, objects, -1, "", nullptr);
+          if (!goalPtr)
+            throw std::runtime_error("Failed to parse a pddl goal");
+          goals.emplace_back(std::move(*goalPtr));
+
+          res.problemPtr->goalStack.addGoals(goals, worldState, ontology.constants, objects, {});
+        }
+        else if (token == ":ordered-goals")
+        {
+          if (res.domainPtr == nullptr)
+            throw std::runtime_error("problem objects are defined before the domain.");
+          if (!res.problemPtr)
+            throw std::runtime_error("problem not initialized before to set the goals.");
+          const auto& ontology = res.domainPtr->getOntology();
+          const auto& worldState = res.problemPtr->worldState;
+          const auto& objects = res.problemPtr->objects;
+          _loadOrderedGoals(res.problemPtr->goalStack, pStr, pos, worldState, ontology, objects);
+        }
+        else if (token == ":constraints")
+        {
+          break;
+        }
+        else if (token == ":requirements")
+        {
+          while (pos < strSize && pStr[pos] != ')')
+          {
+            auto requirement = ExpressionParsed::parseToken(pStr, pos);
+            if (requirement != ":ordered-goals")
+                throw std::runtime_error("Unexpected requirement defined in problem: \"" + requirement + "\"");
+          }
+        }
+        else
+        {
+          throw std::runtime_error("Unknown domain PDDL token: \"" + token + "\"");
+        }
+      }
+
+      ++pos;
+    }
+
+  } else {
+    throw std::runtime_error("No '(define' found in domain file");
+  }
+
+  if (!res.problemPtr)
+    throw std::runtime_error("problem not initialized");
+  res.problemPtr->name = problemName;
+  return res;
+}
+
 }
 
 Domain pddlToDomain(const std::string& pStr,
@@ -1221,130 +1348,26 @@ Domain pddlToDomain(const std::string& pStr,
 }
 
 
-DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
-                                   const std::map<std::string, Domain>& pLoadedDomains)
+DomainAndProblemPtrs pddlToProblemFromDomains(const std::string& pStr,
+                                              const std::map<std::string, Domain>& pLoadedDomains)
 {
-  DomainAndProblemPtrs res;
-  std::string problemName;
+  return _pddlToProblem(pStr, [&](const std::string& pDomainName) -> const Domain* {
+    auto itDomain = pLoadedDomains.find(pDomainName);
+    if (itDomain == pLoadedDomains.end())
+      return nullptr;
+    return &itDomain->second;
+  });
+}
 
-  const std::string defineToken = "(define";
-  std::size_t found = pStr.find(defineToken);
-  if (found != std::string::npos)
-  {
-    auto strSize = pStr.size();
-    std::size_t pos = found + defineToken.size();
 
-    while (pos < strSize)
-    {
-      if (pStr[pos] == ';')
-      {
-        ExpressionParsed::moveUntilEndOfLine(pStr, pos);
-        ++pos;
-        continue;
-      }
-
-      if (pStr[pos] == '(')
-      {
-        ++pos;
-        auto token = ExpressionParsed::parseToken(pStr, pos);
-
-        if (token == "problem")
-        {
-          problemName = ExpressionParsed::parseToken(pStr, pos);
-        }
-        else if (token == ":domain")
-        {
-          while (pos < strSize && pStr[pos] != ')')
-          {
-            auto domainToExtend = ExpressionParsed::parseToken(pStr, pos);
-            auto itDomain = pLoadedDomains.find(domainToExtend);
-            if (itDomain == pLoadedDomains.end())
-              throw std::runtime_error("Domain \"" + domainToExtend + "\" is unknown!");
-            res.domainPtr = std::make_unique<Domain>(itDomain->second);
-            res.problemPtr = std::make_unique<Problem>(&res.domainPtr->getTimelessFacts().setOfFacts());
-          }
-        }
-        else if (token == ":objects")
-        {
-          if (!res.domainPtr)
-            throw std::runtime_error("problem objects are defined before the domain.");
-          const auto& ontology = res.domainPtr->getOntology();
-          std::size_t beginPos = pos;
-          ExpressionParsed::moveUntilClosingParenthesis(pStr, pos);
-          std::string entitiesStr = pStr.substr(beginPos, pos - beginPos);
-          res.problemPtr->objects.addAllFromPddl(entitiesStr, ontology.types);
-        }
-        else if (token == ":init")
-        {
-          if (!res.domainPtr)
-            throw std::runtime_error("problem init are defined before the domain.");
-          const auto& ontology = res.domainPtr->getOntology();
-          auto& setOfEventsMap = res.domainPtr->getSetOfEvents();
-          const SetOfCallbacks callbacks;
-          res.problemPtr->worldState.modifyFactsFromPddl(pStr, pos, res.problemPtr->goalStack,
-                                                         setOfEventsMap, callbacks,
-                                                         ontology, res.problemPtr->objects, {});
-        }
-        else if (token == ":goal")
-        {
-          if (!res.domainPtr)
-            throw std::runtime_error("problem objects are defined before the domain.");
-          if (!res.problemPtr)
-            throw std::runtime_error("problem not initialized before to set the goals.");
-          const auto& ontology = res.domainPtr->getOntology();
-          std::vector<Goal> goals;
-          const auto& worldState = res.problemPtr->worldState;
-          const auto& objects = res.problemPtr->objects;
-
-          auto expressionParsed = ExpressionParsed::fromPddl(pStr, pos, false);
-          auto goalPtr = _expressionParsedToGoal(expressionParsed, ontology, objects, -1, "", nullptr);
-          if (!goalPtr)
-            throw std::runtime_error("Failed to parse a pddl goal");
-          goals.emplace_back(std::move(*goalPtr));
-
-          res.problemPtr->goalStack.addGoals(goals, worldState, ontology.constants, objects, {});
-        }
-        else if (token == ":ordered-goals")
-        {
-          if (!res.domainPtr)
-            throw std::runtime_error("problem objects are defined before the domain.");
-          if (!res.problemPtr)
-            throw std::runtime_error("problem not initialized before to set the goals.");
-          const auto& ontology = res.domainPtr->getOntology();
-          const auto& worldState = res.problemPtr->worldState;
-          const auto& objects = res.problemPtr->objects;
-          _loadOrderedGoals(res.problemPtr->goalStack, pStr, pos, worldState, ontology, objects);
-        }
-        else if (token == ":constraints")
-        {
-          break;
-        }
-        else if (token == ":requirements")
-        {
-          while (pos < strSize && pStr[pos] != ')')
-          {
-            auto requirement = ExpressionParsed::parseToken(pStr, pos);
-            if (requirement != ":ordered-goals")
-                throw std::runtime_error("Unexpected requirement defined in problem: \"" + requirement + "\"");
-          }
-        }
-        else
-        {
-          throw std::runtime_error("Unknown domain PDDL token: \"" + token + "\"");
-        }
-      }
-
-      ++pos;
-    }
-
-  } else {
-    throw std::runtime_error("No '(define' found in domain file");
-  }
-
-  if (!res.problemPtr)
-    throw std::runtime_error("problem not initialized");
-  res.problemPtr->name = problemName;
-  return res;
+DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
+                                   const Domain& pDomain)
+{
+  return _pddlToProblem(pStr, [&](const std::string& pDomainName) -> const Domain* {
+    if (pDomain.getName() != pDomainName)
+      return nullptr;
+    return &pDomain;
+  });
 }
 
 

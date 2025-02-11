@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
     std::cout << "Parsing domain file \"" << domain_file << "\" done successfully." << std::endl;
 
   auto problemContent = _getFileContent(problem_file);
-  ogp::DomainAndProblemPtrs domainAndProblemPtrs = ogp::pddlToProblem(problemContent, loadedDomains);
+  ogp::DomainAndProblemPtrs domainAndProblemPtrs = ogp::pddlToProblemFromDomains(problemContent, loadedDomains);
   auto& problem = *domainAndProblemPtrs.problemPtr;
   if (verbose)
     std::cout << "Parsing problem file \"" << problem_file << "\" done successfully." << std::endl;

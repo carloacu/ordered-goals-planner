@@ -558,7 +558,7 @@ void _test_loadPddlDomain()
   }
 
 
-  ogp::DomainAndProblemPtrs domainAndProblemPtrs = pddlToProblem(R"((define
+  ogp::DomainAndProblemPtrs domainAndProblemPtrs = pddlToProblemFromDomains(R"((define
     (problem buildingahouse)
     (:domain construction)
     ;(:situation <situation_name>) ;deprecated
@@ -622,7 +622,7 @@ void _test_loadPddlDomain()
 ))";
 
   auto outProblemPddl1 = ogp::problemToPddl(*domainAndProblemPtrs.problemPtr,
-                                           *domainAndProblemPtrs.domainPtr);
+                                            domain);
   if (outProblemPddl1 != expectedProblem)
   {
     std::cout << outProblemPddl1 << std::endl;
@@ -631,9 +631,7 @@ void _test_loadPddlDomain()
 
   // deserialize what is serialized
   auto domain2 = ogp::pddlToDomain(outDomainPddl1, {});
-  std::map<std::string, ogp::Domain> loadedDomains2;
-  loadedDomains2.emplace(domain2.getName(), domain2);
-  auto outDomainAndProblemPtrs2 = ogp::pddlToProblem(outProblemPddl1, loadedDomains2);
+  auto outDomainAndProblemPtrs2 = ogp::pddlToProblem(outProblemPddl1, domain2);
 
   // re serialize
   auto outDomainPddl2 = ogp::domainToPddl(domain2);
@@ -644,7 +642,7 @@ void _test_loadPddlDomain()
   }
 
   auto outProblemPddl2 = ogp::problemToPddl(*outDomainAndProblemPtrs2.problemPtr,
-                                           *outDomainAndProblemPtrs2.domainPtr);
+                                           domain2);
   if (outProblemPddl2 != expectedProblem)
   {
     std::cout << outProblemPddl2 << std::endl;

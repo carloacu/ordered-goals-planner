@@ -24,16 +24,18 @@ struct SetOfTypes;
 
 struct DomainAndProblemPtrs
 {
-  std::unique_ptr<Domain> domainPtr;
+  const Domain* domainPtr;
   std::unique_ptr<Problem> problemPtr;
 };
 
 Domain pddlToDomain(const std::string& pStr,
                     const std::map<std::string, Domain>& pPreviousDomains);
 
-DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
-                                   const std::map<std::string, Domain>& pPreviousDomains);
+DomainAndProblemPtrs pddlToProblemFromDomains(const std::string& pStr,
+                                              const std::map<std::string, Domain>& pPreviousDomains);
 
+DomainAndProblemPtrs pddlToProblem(const std::string& pStr,
+                                   const Domain& pDomain);
 
 std::unique_ptr<Condition> pddlToCondition(const std::string& pStr,
                                            std::size_t& pPos,
