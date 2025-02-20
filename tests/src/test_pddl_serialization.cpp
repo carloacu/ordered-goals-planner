@@ -16,9 +16,11 @@ namespace
 void _test_pddlSerializationParts()
 {
   ogp::Ontology ontology;
-  ontology.types = ogp::SetOfTypes::fromPddl("type1 type2 - entity");
+  ontology.types = ogp::SetOfTypes::fromPddl("type1 type2 - entity\n"
+                                             "room");
   ontology.constants = ogp::SetOfEntities::fromPddl("toto toto2 toto3 - type1\n"
-                                                   "titi - type2", ontology.types);
+                                                    "titi - type2\n"
+                                                    "room1 - room", ontology.types);
 
   ogp::Predicate pred("(pred_a ?e - entity)", true, ontology.types);
   EXPECT_EQ("pred_a(?e - entity)", pred.toStr());
@@ -98,6 +100,73 @@ void _test_pddlSerializationParts()
       FAIL() << "Expected std::runtime_error";
     } catch (const std::runtime_error& e) {
       EXPECT_EQ("This fact \"(= (pred_b) toto)\" should not have a value. The associated predicate is \"(pred_b)\". The exception was thrown while parsing fact: \"(= (pred_b) toto)\"",
+                std::string(e.what()));
+    }
+  }
+
+  {
+    std::size_t pos = 0;
+    try {
+      ogp::Fact::fromPddl("(= (pred_d toto) room1)", ontology, {}, {}, pos, &pos);
+      FAIL() << "Expected std::runtime_error";
+    } catch (const std::runtime_error& e) {
+      EXPECT_EQ("\"room1 - room\" is not a \"entity\" for predicate: \"(pred_d ?e - entity) - entity\". The exception was thrown while parsing fact: \"(= (pred_d toto) room1)\"",
+                std::string(e.what()));
+    }
+  }
+
+  {
+    std::size_t pos = 0;
+    try {
+      ogp::pddlToCondition("(= (pred_d toto) room1)", pos, ontology, {}, {});
+      FAIL() << "Expected std::runtime_error";
+    } catch (const std::runtime_error& e) {
+      EXPECT_EQ("\"room1 - room\" value in condition, is not a \"entity\" for predicate: \"(pred_d ?e - entity) - entity\"",
+                std::string(e.what()));
+    }
+  }
+
+  {
+    std::size_t pos = 0;
+    try {
+      ogp::pddlToGoal("(= (pred_d toto) room1)", pos, ontology, {});
+      FAIL() << "Expected std::runtime_error";
+    } catch (const std::runtime_error& e) {
+      EXPECT_EQ("\"room1 - room\" value in condition, is not a \"entity\" for predicate: \"(pred_d ?e - entity) - entity\"",
+                std::string(e.what()));
+    }
+  }
+
+  {
+    std::size_t pos = 0;
+    try {
+      ogp::pddlToGoal("(= (pred_d room1) toto)", pos, ontology, {});
+      FAIL() << "Expected std::runtime_error";
+    } catch (const std::runtime_error& e) {
+      EXPECT_EQ("\"room1 - room\" is not a \"entity\" for predicate: \"(pred_d ?e - entity) - entity\"",
+                std::string(e.what()));
+    }
+  }
+
+
+  {
+    std::size_t pos = 0;
+    try {
+      ogp::pddlToWsModification("(assign (pred_d toto) room1)", pos, ontology, {}, {});
+      FAIL() << "Expected std::runtime_error";
+    } catch (const std::runtime_error& e) {
+      EXPECT_EQ("\"room1 - room\" value in effect, is not a \"entity\" for predicate: \"(pred_d ?e - entity) - entity\"",
+                std::string(e.what()));
+    }
+  }
+
+  {
+    std::size_t pos = 0;
+    try {
+      ogp::pddlToWsModification("(assign (pred_d room1) toto)", pos, ontology, {}, {});
+      FAIL() << "Expected std::runtime_error";
+    } catch (const std::runtime_error& e) {
+      EXPECT_EQ("\"room1 - room\" is not a \"entity\" for predicate: \"(pred_d ?e - entity) - entity\"",
                 std::string(e.what()));
     }
   }

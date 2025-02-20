@@ -139,8 +139,14 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
       else if (pExpressionParsed.name == _equalsCharConditonFunctionName && !rightOperandExp.isAFunction &&
                rightOperandExp.name != "")
       {
-        leftFactPtr->factOptional.fact.setValue(
-              Entity::fromUsage(rightOperandExp.name, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
+        auto value = Entity::fromUsage(rightOperandExp.name, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr);
+        const auto& leftFactPredicate = leftFactPtr->factOptional.fact.predicate;
+        if (!leftFactPredicate.value)
+          throw std::runtime_error("Value \"" + value.toStr() + "\" in condition was not exprected for predicate: \"" + leftFactPredicate.toPddl() + "\"");
+        const auto& predicateValueExpectedType = *leftFactPredicate.value;
+        if (value.type && !value.type->isA(predicateValueExpectedType))
+          throw std::runtime_error("\"" + value.toStr() + "\" value in condition, is not a \"" + predicateValueExpectedType.name + "\" for predicate: \"" + leftFactPredicate.toPddl() + "\"");
+        leftFactPtr->factOptional.fact.setValue(std::move(value));
         res = std::make_unique<ConditionFact>(std::move(*leftFactPtr));
       }
     }
@@ -339,7 +345,14 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
       else if (pExpressionParsed.name == _assignWsFunctionName && !rightOperandExp.isAFunction &&
                rightOperandExp.name != "")
       {
-        leftFactPtr->factOptional.fact.setValue(Entity::fromUsage(rightOperandExp.name, pOntology, pObjects, pParameters));
+        auto value = Entity::fromUsage(rightOperandExp.name, pOntology, pObjects, pParameters);
+        const auto& leftFactPredicate = leftFactPtr->factOptional.fact.predicate;
+        if (!leftFactPredicate.value)
+          throw std::runtime_error("Value \"" + value.toStr() + "\" in effect was not exprected for predicate: \"" + leftFactPredicate.toPddl() + "\"");
+        const auto& predicateValueExpectedType = *leftFactPredicate.value;
+        if (value.type && !value.type->isA(predicateValueExpectedType))
+          throw std::runtime_error("\"" + value.toStr() + "\" value in effect, is not a \"" + predicateValueExpectedType.name + "\" for predicate: \"" + leftFactPredicate.toPddl() + "\"");
+        leftFactPtr->factOptional.fact.setValue(std::move(value));
         res = std::make_unique<WorldStateModificationFact>(std::move(*leftFactPtr));
       }
     }
