@@ -266,6 +266,7 @@ ExpressionParsed ExpressionParsed::fromPddl(const std::string& pStr,
   if (pStr[pPos] == '(')
   {
     ++pPos;
+    res.isAFunction = true;
     res.skipSpacesWithTagExtraction(pStr, pPos);
     std::size_t beginOfTokenPos = pPos;
 

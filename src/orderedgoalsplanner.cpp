@@ -135,7 +135,8 @@ struct PotentialNextAction
   const Action* actionPtr;
   ParameterValuesWithConstraints parameters;
 
-  std::list<ActionInvocationWithPtr> toActionInvocations() const;
+  std::list<ActionInvocationWithPtr> toActionInvocations(const SetOfEntities& pConstants,
+                                                         const SetOfEntities& pObjects);
 };
 
 
@@ -214,13 +215,31 @@ void _getPreferInContextStatistics(std::size_t& nbOfPreconditionsSatisfied,
 }
 
 
-std::list<ActionInvocationWithPtr> PotentialNextAction::toActionInvocations() const
+std::list<ActionInvocationWithPtr> PotentialNextAction::toActionInvocations(const SetOfEntities& pConstants,
+                                                                            const SetOfEntities& pObjects)
 {
   std::list<ActionInvocationWithPtr> res;
   if (parameters.empty())
   {
     res.emplace_back(ActionInvocation(actionId, std::map<Parameter, Entity>()), actionPtr);
     return res;
+  }
+
+  // remove any entities
+  for (auto& currParam : parameters)
+  {
+    for (auto itEntity = currParam.second.begin(); itEntity != currParam.second.end(); )
+    {
+      auto& currEntity = *itEntity;
+      if (currEntity.first.isAnyEntity() && currEntity.first.type)
+      {
+        auto possibleValues = typeToEntities(*currEntity.first.type, pConstants, pObjects);
+        itEntity = currParam.second.erase(itEntity);
+        currParam.second.insert(possibleValues.begin(), possibleValues.end());
+        continue;
+      }
+      ++itEntity;
+    }
   }
 
   std::list<std::map<Parameter, Entity>> parameterPossibilities;
@@ -917,7 +936,8 @@ ActionId _findFirstActionForAGoal(
                                     context, factsAlreadyChecked, currActionId) &&
             (!action.precondition || action.precondition->isTrue(pProblem.worldState, ontology.constants, pProblem.objects, {}, {}, &newPotRes.parameters)))
         {
-          auto actionInvocations = newPotRes.toActionInvocations();
+          const auto& constants = pDomain.getOntology().constants;
+          auto actionInvocations = newPotRes.toActionInvocations(constants, pProblem.objects);
           for (auto& currActionInvocation : actionInvocations)
           {
             if (_isMoreOptimalNextAction(potentialNextActionComparisonCacheOpt, pNextInPlanCanBeAnEvent,

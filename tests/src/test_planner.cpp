@@ -742,6 +742,65 @@ void _forallWithImplyAndFluentValuesEqualityOnPrecondition()
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }
 
+
+void _notEqualUndefinedGoal()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("return_type");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1 - return_type", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("r1 r2 - return_type", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> action1Parameters{ ogp::Parameter::fromStr("?p - return_type", ontology.types)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (fact_1) ?p)", ontology, action1Parameters));
+  actionObj1.parameters = std::move(action1Parameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  ogp::Problem problem;
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(not (= (fact_1) undefined))", ontology, problem.objects)}, ontology.constants);
+  auto actionInvocation = _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr();
+  EXPECT_TRUE(actionInvocation == "action1(?p -> r1)" || actionInvocation == "action1(?p -> r2)");
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+}
+
+
+void _notEqualUndefinedGoalAndAssignation()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("return_type");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1 - return_type\n"
+                                                      "fact_2 - return_type", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("r1 r2 - return_type", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> action1Parameters{ ogp::Parameter::fromStr("?p - return_type", ontology.types)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (fact_1) ?p)", ontology, action1Parameters));
+  actionObj1.parameters = std::move(action1Parameters);
+  actions.emplace(action1, actionObj1);
+
+  std::vector<ogp::Parameter> action2Parameters{ ogp::Parameter::fromStr("?p - return_type", ontology.types)};
+  ogp::Action actionObj2({}, _worldStateModification_fromPddl("(assign (fact_2) ?p)", ontology, action2Parameters));
+  actionObj2.parameters = std::move(action2Parameters);
+  actions.emplace(action2, actionObj2);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  ogp::Problem problem;
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(and (not (= (fact_1) undefined)) (= (fact_2) (fact_1)) )", ontology, problem.objects)}, ontology.constants);
+  auto actionInvocation1 = _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr();
+  EXPECT_TRUE(actionInvocation1 == "action1(?p -> r1)" || actionInvocation1 == "action1(?p -> r2)");
+  auto actionInvocation2 = _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr();
+  EXPECT_TRUE(actionInvocation2 == "action2(?p -> r1)" || actionInvocation2 == "action2(?p -> r2)");
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+}
+
 }
 
 
@@ -767,4 +826,6 @@ TEST(Planner, test_planner)
   _disjunctiveGoal();
   _disjunctivePrecondition();
   _forallWithImplyAndFluentValuesEqualityOnPrecondition();
+  _notEqualUndefinedGoal();
+  _notEqualUndefinedGoalAndAssignation();
 }
