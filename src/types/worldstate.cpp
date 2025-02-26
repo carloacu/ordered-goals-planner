@@ -174,8 +174,7 @@ bool WorldState::addFacts(const FACTS& pFacts,
   _addFacts(whatChanged, pFacts, pGoalStack, pSetOfEvents, pCallbacks, pOntology, pObjects, pNow, pCanFactsBeRemoved);
   pGoalStack._removeNoStackableGoalsAndNotifyGoalsChanged(*this, pOntology.constants, pObjects, pNow);
   bool goalChanged = false;
-  _notifyWhatChanged(whatChanged, goalChanged, pGoalStack, pSetOfEvents, pCallbacks,
-                     pOntology, pObjects, pNow);
+  _notifyWhatChanged(whatChanged, goalChanged, pGoalStack, pSetOfEvents, pCallbacks, pOntology, pObjects, pNow);
   return whatChanged.hasFactsToModifyInTheWorldForSure();
 }
 

@@ -1,6 +1,7 @@
 #ifndef INCLUDE_ORDEREDGOALSPLANNER_UTIL_SERIALIZER_DESERIALIZEFROMPDDL_HPP
 #define INCLUDE_ORDEREDGOALSPLANNER_UTIL_SERIALIZER_DESERIALIZEFROMPDDL_HPP
 
+#include <functional>
 #include <list>
 #include <map>
 #include <memory>
@@ -10,6 +11,7 @@
 namespace ogp
 {
 struct Condition;
+struct ConditionToCallback;
 struct Domain;
 struct Entity;
 struct FactOptional;
@@ -72,9 +74,12 @@ std::unique_ptr<WorldStateModification> pddlToWsModification(const std::string& 
                                                              const std::vector<Parameter>& pParameters);
 
 
-std::list<Entity> worldStateModifPddlToMissingObjects(const std::string& pStr,
+std::list<Entity> pddExpressionlToMissingObjects(const std::string& pStr,
                                                       const Ontology& pOntology,
                                                       const SetOfEntities& pObjects);
+
+std::list<Parameter> pddExpressionlToParameters(const std::string& pStr,
+                                                const Ontology& pOntology);
 
 std::unique_ptr<WorldStateModification> strToWsModification(const std::string& pStr,
                                                              const Ontology& pOntology,
@@ -91,6 +96,10 @@ FactOptional pddlToFactOptional(const std::string& pStr,
                                 const SetOfEntities& pObjects,
                                 const std::vector<Parameter>& pParameters = {},
                                 const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
+
+ConditionToCallback pddlToConditionToCallback(const std::string& pStr,
+                                              const Ontology& pOntology,
+                                              const std::function<void()>& pCallback);
 
 } // End of namespace ogp
 

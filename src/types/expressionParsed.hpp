@@ -45,6 +45,9 @@ struct ExpressionParsed
                              const Ontology& pOntology,
                              const SetOfEntities& pObjects) const;
 
+  void extractParameters(std::list<Parameter>& pRes,
+                         const Ontology& pOntology) const;
+
   static ExpressionParsed fromStr(const std::string& pStr,
                                   std::size_t& pPos);
 

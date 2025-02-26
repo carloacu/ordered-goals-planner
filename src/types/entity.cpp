@@ -131,14 +131,20 @@ Entity Entity::fromUsage(const std::string& pStr,
 }
 
 
-bool Entity::isParamOrDeclaredEntity(const std::string& pStr,
-                                     const Ontology& pOntology,
-                                     const SetOfEntities& pObjects)
+bool Entity::isParam(const std::string& pStr)
 {
   if (pStr.empty())
     throw std::runtime_error("Empty entity usage!");
 
-  if (pStr[0] == '?')
+  return pStr[0] == '?';
+}
+
+
+bool Entity::isParamOrDeclaredEntity(const std::string& pStr,
+                                     const Ontology& pOntology,
+                                     const SetOfEntities& pObjects)
+{
+  if (isParam(pStr))
     return true;
 
   if (pStr == Entity::anyEntityValue())

@@ -94,6 +94,8 @@ std::string WorldStateModificationNode::toStr(bool pPrintAnyValue) const
   case WorldStateModificationNodeType::FOR_ALL:
     if (!parameterOpt)
       throw std::runtime_error("for all statement without a parameter detected");
+    if (leftOperandStr.empty())
+      return "forall(" + parameterOpt->toStr() + ", " + rightOperandStr + ")";
     return "forall(" + parameterOpt->toStr() + ", when(" + leftOperandStr + ", " + rightOperandStr + "))";
   case WorldStateModificationNodeType::INCREASE:
     return "increase(" + leftOperandStr + ", " + rightOperandStr + ")";

@@ -197,6 +197,14 @@ void _test_pddlSerializationParts()
 
   {
     std::size_t pos = 0;
+    std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(and (forall (?e - entity) (= (pred_d ?e) undefined)) (forall (?ent - entity) (pred_c ?ent)))", pos, ontology, {}, {});
+    if (!cond)
+      FAIL();
+    EXPECT_EQ("forall(?e - entity, !pred_d(?e)=*) & forall(?ent - entity, pred_c(?ent))", cond->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
     std::map<std::string, ogp::Entity> parameterNamesToEntity{{"?e", ogp::Entity::fromUsage("toto", ontology, {}, {})}};
     std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(exists (?p - entity) (= (pred_d ?p) ?e))", pos, ontology, {}, {}, &parameterNamesToEntity);
     if (!cond)
@@ -250,6 +258,32 @@ void _test_pddlSerializationParts()
 
   {
     std::size_t pos = 0;
+    auto ws = ogp::pddlToWsModification("(forall (?ent - entity) (pred_c ?ent))", pos, ontology, {}, {});
+    if (!ws)
+      FAIL();
+    EXPECT_EQ("forall(?ent - entity, pred_c(?ent))", ws->toStr());
+    EXPECT_EQ("(forall (?ent - entity) (pred_c ?ent))", ogp::effectToPddl(*ws, 0));
+  }
+
+  {
+    std::size_t pos = 0;
+    auto ws = ogp::pddlToWsModification("(forall (?e - entity) (assign (pred_d ?e) undefined))", pos, ontology, {}, {});
+    if (!ws)
+      FAIL();
+    EXPECT_EQ("forall(?e - entity, !pred_d(?e)=*)", ws->toStr());
+    EXPECT_EQ("(forall (?e - entity) (assign (pred_d ?e) undefined))", ogp::effectToPddl(*ws, 0));
+  }
+
+  {
+    std::size_t pos = 0;
+    auto ws = ogp::pddlToWsModification("(and (forall (?e - entity) (assign (pred_d ?e) undefined)) (forall (?ent - entity) (pred_c ?ent)))", pos, ontology, {}, {});
+    if (!ws)
+      FAIL();
+    EXPECT_EQ("forall(?e - entity, !pred_d(?e)=*) & forall(?ent - entity, pred_c(?ent))", ws->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
     std::map<std::string, ogp::Entity> parameterNamesToEntity{{"?e", ogp::Entity::fromUsage("titi", ontology, {}, {})}};
     std::unique_ptr<ogp::Goal> goalPtr = ogp::pddlToGoal("(pred_c ?e)", pos, ontology, {}, -1, "", &parameterNamesToEntity);
     if (!goalPtr)
@@ -287,24 +321,24 @@ void _test_missing_objects()
                                                          "(fun ?e - type2) - type1", pos, ontology.types);
   }
 
-  auto objs = ogp::worldStateModifPddlToMissingObjects("(pred missing_param)", ontology, {});
+  auto objs = ogp::pddExpressionlToMissingObjects("(pred missing_param)", ontology, {});
   EXPECT_EQ(1, objs.size());
   EXPECT_EQ("missing_param - type2", objs.front().toStr());
 
-  objs = ogp::worldStateModifPddlToMissingObjects("(assign (fun ?p) lol)", ontology, {});
+  objs = ogp::pddExpressionlToMissingObjects("(assign (fun ?p) lol)", ontology, {});
   EXPECT_EQ(1, objs.size());
   EXPECT_EQ("lol - type1", objs.front().toStr());
 
-  objs = ogp::worldStateModifPddlToMissingObjects("(assign (fun p) lol)", ontology, {});
+  objs = ogp::pddExpressionlToMissingObjects("(assign (fun p) lol)", ontology, {});
   EXPECT_EQ(2, objs.size());
   EXPECT_EQ("p - type2", objs.front().toStr());
   EXPECT_EQ("lol - type1", (++objs.begin())->toStr());
 
-  objs = ogp::worldStateModifPddlToMissingObjects("(assign (fun p) undefined)", ontology, {});
+  objs = ogp::pddExpressionlToMissingObjects("(assign (fun p) undefined)", ontology, {});
   EXPECT_EQ(1, objs.size());
   EXPECT_EQ("p - type2", objs.front().toStr());
 
-  EXPECT_TRUE(ogp::worldStateModifPddlToMissingObjects("(pred ?e)", ontology, {}).empty());
+  EXPECT_TRUE(ogp::pddExpressionlToMissingObjects("(pred ?e)", ontology, {}).empty());
 }
 
 

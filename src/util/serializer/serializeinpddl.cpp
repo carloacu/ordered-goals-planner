@@ -601,6 +601,8 @@ std::string effectToPddl(
     case WorldStateModificationNodeType::FOR_ALL:
       if (!wsmNode.parameterOpt)
         throw std::runtime_error("for all statement without a parameter detected");
+      if (leftOperandStr.empty())
+        return "(forall (" + wsmNode.parameterOpt->toStr() + ") " + rightOperandStr + ")";
       return "(forall (" + wsmNode.parameterOpt->toStr() + ") (when " +
           leftOperandStr + " " + rightOperandStr + "))";
     case WorldStateModificationNodeType::INCREASE:
