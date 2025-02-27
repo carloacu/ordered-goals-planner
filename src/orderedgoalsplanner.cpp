@@ -647,11 +647,13 @@ bool _doesStatisfyTheGoal(ParameterValuesWithConstraints& pParameters,
     return false;
   };
 
+  const auto& constants = pContext.domain.getOntology().constants;
+  const auto& objects = pContext.problem.objects;
   if (pWorldStateModificationPtr1 &&
-      pWorldStateModificationPtr1->canSatisfyObjective(checkObjectiveCallback, pParameters, pContext.problem.worldState, pFromDeductionId))
+      pWorldStateModificationPtr1->canSatisfyObjective(checkObjectiveCallback, pParameters, pContext.problem.worldState, pFromDeductionId, constants, objects))
     return true;
   if (pWorldStateModificationPtr2 &&
-      pWorldStateModificationPtr2->canSatisfyObjective(checkObjectiveCallback, pParameters, pContext.problem.worldState, pFromDeductionId))
+      pWorldStateModificationPtr2->canSatisfyObjective(checkObjectiveCallback, pParameters, pContext.problem.worldState, pFromDeductionId, constants, objects))
     return true;
   return false;
 }
@@ -741,11 +743,13 @@ bool _lookForAPossibleEffect(ParameterValuesWithConstraints& pParametersWithTmpD
     return possibleEffect == PossibleEffect::SATISFIED;
     };
 
+  const auto& constants = pContext.domain.getOntology().constants;
+  const auto& objects = pContext.problem.objects;
   if (pWorldStateModificationPtr1)
-    if (pWorldStateModificationPtr1->iterateOnSuccessions(successionsCallback, pParametersWithTmpData, pContext.problem.worldState, canSatisfyThisGoal, pFromDeductionId))
+    if (pWorldStateModificationPtr1->iterateOnSuccessions(successionsCallback, pParametersWithTmpData, pContext.problem.worldState, canSatisfyThisGoal, pFromDeductionId, constants, objects))
       return true;
   if (pWorldStateModificationPtr2)
-    if (pWorldStateModificationPtr2->iterateOnSuccessions(successionsCallback, pParametersWithTmpData, pContext.problem.worldState, canSatisfyThisGoal, pFromDeductionId))
+    if (pWorldStateModificationPtr2->iterateOnSuccessions(successionsCallback, pParametersWithTmpData, pContext.problem.worldState, canSatisfyThisGoal, pFromDeductionId, constants, objects))
       return true;
   return false;
 }

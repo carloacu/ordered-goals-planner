@@ -86,13 +86,15 @@ std::string Action::printSuccessionCache() const
   return res;
 }
 
-void Action::throwIfNotValid(const SetOfFacts& pSetOfFact)
+void Action::throwIfNotValid(const SetOfFacts& pSetOfFact,
+                             const SetOfEntities& pConstants,
+                             const SetOfEntities& pObjects)
 {
   _throwIfNotValidForACondition(precondition);
   _throwIfNotValidForACondition(preferInContext);
-  _throwIfNotValidForAnWordStateModif(effect.worldStateModification, pSetOfFact);
-  _throwIfNotValidForAnWordStateModif(effect.potentialWorldStateModification, pSetOfFact);
-  _throwIfNotValidForAnWordStateModif(effect.worldStateModificationAtStart, pSetOfFact);
+  _throwIfNotValidForAnWordStateModif(effect.worldStateModification, pSetOfFact, pConstants, pObjects);
+  _throwIfNotValidForAnWordStateModif(effect.potentialWorldStateModification, pSetOfFact, pConstants, pObjects);
+  _throwIfNotValidForAnWordStateModif(effect.worldStateModificationAtStart, pSetOfFact, pConstants, pObjects);
 }
 
 
@@ -107,13 +109,15 @@ void Action::_throwIfNotValidForACondition(const std::unique_ptr<Condition>& pPr
 
 
 void Action::_throwIfNotValidForAnWordStateModif(const std::unique_ptr<WorldStateModification>& pWs,
-                                                 const SetOfFacts& pSetOfFact)
+                                                 const SetOfFacts& pSetOfFact,
+                                                 const SetOfEntities& pConstants,
+                                                 const SetOfEntities& pObjects)
 {
   if (pWs)
     pWs->forAll([&](const FactOptional& pFactOptional) {
       _throwIfNotValidForAFact(pFactOptional.fact);
       return ContinueOrBreak::CONTINUE;
-    }, pSetOfFact);
+    }, pSetOfFact, pConstants, pObjects);
 }
 
 

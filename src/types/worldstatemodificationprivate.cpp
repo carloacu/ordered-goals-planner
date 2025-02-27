@@ -115,14 +115,16 @@ std::string WorldStateModificationNode::toStr(bool pPrintAnyValue) const
 
 
 void WorldStateModificationNode::forAll(const std::function<void (const FactOptional&)>& pFactCallback,
-                                        const SetOfFacts& pSetOfFact) const
+                                        const SetOfFacts& pSetOfFact,
+                                        const SetOfEntities& pConstants,
+                                        const SetOfEntities& pObjects) const
 {
   if (nodeType == WorldStateModificationNodeType::AND)
   {
     if (leftOperand)
-      leftOperand->forAll(pFactCallback, pSetOfFact);
+      leftOperand->forAll(pFactCallback, pSetOfFact, pConstants, pObjects);
     if (rightOperand)
-      rightOperand->forAll(pFactCallback, pSetOfFact);
+      rightOperand->forAll(pFactCallback, pSetOfFact, pConstants, pObjects);
   }
   else if (nodeType == WorldStateModificationNodeType::ASSIGN && leftOperand && rightOperand)
   {
@@ -140,8 +142,8 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
     _forAllInstruction(
           [&](const WorldStateModification& pWsModification)
     {
-      pWsModification.forAll(pFactCallback, pSetOfFact);
-    }, pSetOfFact, parameters);
+      pWsModification.forAll(pFactCallback, pSetOfFact, pConstants, pObjects);
+    }, pSetOfFact, parameters, pConstants, pObjects);
   }
   else if (nodeType == WorldStateModificationNodeType::INCREASE && leftOperand && rightOperand)
   {
@@ -180,7 +182,7 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
     {
       auto factToCheck = leftFactPtr->factOptional;
       if (pSetOfFact.hasFact(factToCheck.fact))
-        rightOperand->forAll(pFactCallback, pSetOfFact);
+        rightOperand->forAll(pFactCallback, pSetOfFact, pConstants, pObjects);
     }
   }
 }
@@ -225,13 +227,15 @@ ContinueOrBreak WorldStateModificationNode::forAllThatCanBeModified(const std::f
 bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>& pFactCallback,
                                                      ParameterValuesWithConstraints& pParameters,
                                                      const WorldState& pWorldState,
-                                                     const std::string& pFromDeductionId) const
+                                                     const std::string& pFromDeductionId,
+                                                     const SetOfEntities& pConstants,
+                                                     const SetOfEntities& pObjects) const
 {
   const auto& setOfFacts = pWorldState.factsMapping();
 
   if (nodeType == WorldStateModificationNodeType::AND)
-    return (leftOperand && leftOperand->canSatisfyObjective(pFactCallback, pParameters, pWorldState, pFromDeductionId)) ||
-        (rightOperand && rightOperand->canSatisfyObjective(pFactCallback, pParameters, pWorldState, pFromDeductionId));
+    return (leftOperand && leftOperand->canSatisfyObjective(pFactCallback, pParameters, pWorldState, pFromDeductionId, pConstants, pObjects)) ||
+        (rightOperand && rightOperand->canSatisfyObjective(pFactCallback, pParameters, pWorldState, pFromDeductionId, pConstants, pObjects));
 
   if (nodeType == WorldStateModificationNodeType::ASSIGN && leftOperand && rightOperand)
   {
@@ -261,8 +265,8 @@ bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (c
           [&](const WorldStateModification& pWsModification)
     {
       if (!res)
-        res = pWsModification.canSatisfyObjective(pFactCallback, pParameters, pWorldState, pFromDeductionId);
-    }, setOfFacts, pParameters);
+        res = pWsModification.canSatisfyObjective(pFactCallback, pParameters, pWorldState, pFromDeductionId, pConstants, pObjects);
+    }, setOfFacts, pParameters, pConstants, pObjects);
     return res;
   }
 
@@ -300,7 +304,7 @@ bool WorldStateModificationNode::canSatisfyObjective(const std::function<bool (c
   }
 
   if (nodeType == WorldStateModificationNodeType::WHEN)
-    return rightOperand && rightOperand->canSatisfyObjective(pFactCallback, pParameters, pWorldState, pFromDeductionId);
+    return rightOperand && rightOperand->canSatisfyObjective(pFactCallback, pParameters, pWorldState, pFromDeductionId, pConstants, pObjects);
 
   return false;
 }
@@ -310,13 +314,15 @@ bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (
                                                       ParameterValuesWithConstraints& pParameters,
                                                       const WorldState& pWorldState,
                                                       bool pCanSatisfyThisGoal,
-                                                      const std::string& pFromDeductionId) const
+                                                      const std::string& pFromDeductionId,
+                                                      const SetOfEntities& pConstants,
+                                                      const SetOfEntities& pObjects) const
 {
   const auto& setOfFacts = pWorldState.factsMapping();
 
   if (nodeType == WorldStateModificationNodeType::AND)
-    return (leftOperand && leftOperand->iterateOnSuccessions(pCallback, pParameters, pWorldState, pCanSatisfyThisGoal, pFromDeductionId)) ||
-        (rightOperand && rightOperand->iterateOnSuccessions(pCallback, pParameters, pWorldState, pCanSatisfyThisGoal, pFromDeductionId));
+    return (leftOperand && leftOperand->iterateOnSuccessions(pCallback, pParameters, pWorldState, pCanSatisfyThisGoal, pFromDeductionId, pConstants, pObjects)) ||
+        (rightOperand && rightOperand->iterateOnSuccessions(pCallback, pParameters, pWorldState, pCanSatisfyThisGoal, pFromDeductionId, pConstants, pObjects));
 
   if (nodeType == WorldStateModificationNodeType::ASSIGN && leftOperand && rightOperand && (pCanSatisfyThisGoal || !_successions.empty()))
   {
@@ -346,8 +352,8 @@ bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (
           [&](const WorldStateModification& pWsModification)
     {
       if (!res)
-        res = pWsModification.iterateOnSuccessions(pCallback, pParameters, pWorldState, pCanSatisfyThisGoal, pFromDeductionId);
-    }, setOfFacts, pParameters);
+        res = pWsModification.iterateOnSuccessions(pCallback, pParameters, pWorldState, pCanSatisfyThisGoal, pFromDeductionId, pConstants, pObjects);
+    }, setOfFacts, pParameters, pConstants, pObjects);
     return res;
   }
 
@@ -386,7 +392,7 @@ bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (
 
   if (nodeType == WorldStateModificationNodeType::WHEN)
   {
-    return rightOperand && rightOperand->iterateOnSuccessions(pCallback, pParameters, pWorldState, pCanSatisfyThisGoal, pFromDeductionId);
+    return rightOperand && rightOperand->iterateOnSuccessions(pCallback, pParameters, pWorldState, pCanSatisfyThisGoal, pFromDeductionId, pConstants, pObjects);
   }
 
   return false;
@@ -540,9 +546,13 @@ std::optional<Entity> WorldStateModificationNode::getValue(const SetOfFacts& pSe
 
 void WorldStateModificationNode::_forAllInstruction(const std::function<void (const WorldStateModification &)>& pCallback,
                                                     const SetOfFacts& pSetOfFact,
-                                                    ParameterValuesWithConstraints& pParameters) const
+                                                    ParameterValuesWithConstraints& pParameters,
+                                                    const SetOfEntities& pConstants,
+                                                    const SetOfEntities& pObjects) const
 {
-  if (leftOperand && rightOperand && parameterOpt)
+  if (!rightOperand || !parameterOpt || !parameterOpt->type)
+    return;
+  if (leftOperand)
   {
     auto* leftFactPtr = toWmFact(*leftOperand);
     if (leftFactPtr != nullptr)
@@ -569,6 +579,16 @@ void WorldStateModificationNode::_forAllInstruction(const std::function<void (co
             entities.insert(currParam.second.begin(), currParam.second.end());
         }
       }
+    }
+  }
+  else
+  {
+    auto entities = typeToEntities(*parameterOpt->type, pConstants, pObjects);
+    for (const auto& currEntity : entities)
+    {
+      auto newWsModif = rightOperand->clone(nullptr);
+      newWsModif->replaceArgument(parameterOpt->toEntity(), currEntity.first);
+      pCallback(*newWsModif);
     }
   }
 }

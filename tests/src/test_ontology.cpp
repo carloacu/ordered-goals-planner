@@ -180,33 +180,33 @@ void _test_action_initialization()
                                                      "pred_name2(?v - my_type, ?o - my_type2) - return_type\n"
                                                      "pred_name3(?o - my_type2) - return_type", ontology.types);
 
-  ogp::SetOfEntities entities;
+  ogp::SetOfEntities objects;
 
-  ogp::Action action(ogp::strToCondition("pred_name(toto)", ontology, entities, {}),
-                    ogp::strToWsModification("pred_name2(toto, titi)=res", ontology, entities, {}));
-  action.throwIfNotValid(setOfFacts);
+  ogp::Action action(ogp::strToCondition("pred_name(toto)", ontology, objects, {}),
+                    ogp::strToWsModification("pred_name2(toto, titi)=res", ontology, objects, {}));
+  action.throwIfNotValid(setOfFacts, ontology.constants, objects);
 
   {
     std::vector<ogp::Parameter> parameters(1, ogp::Parameter::fromStr("?p - my_type", ontology.types));
-    ogp::Action action2(ogp::strToCondition("pred_name(?p)", ontology, entities, parameters),
-                      ogp::strToWsModification("pred_name2(toto, titi)=res", ontology, entities, parameters));
+    ogp::Action action2(ogp::strToCondition("pred_name(?p)", ontology, objects, parameters),
+                      ogp::strToWsModification("pred_name2(toto, titi)=res", ontology, objects, parameters));
     action2.parameters = std::move(parameters);
-    action2.throwIfNotValid(setOfFacts);
+    action2.throwIfNotValid(setOfFacts, ontology.constants, objects);
   }
 
   {
     std::vector<ogp::Parameter> parameters(1, ogp::Parameter::fromStr("?p - sub_my_type", ontology.types));
-    ogp::Action action3(ogp::strToCondition("pred_name(?p)", ontology, entities, parameters),
-                      ogp::strToWsModification("pred_name2(toto, titi)=res", ontology, entities, parameters));
+    ogp::Action action3(ogp::strToCondition("pred_name(?p)", ontology, objects, parameters),
+                      ogp::strToWsModification("pred_name2(toto, titi)=res", ontology, objects, parameters));
     action3.parameters = std::move(parameters);
-    action3.throwIfNotValid(setOfFacts);
+    action3.throwIfNotValid(setOfFacts, ontology.constants, objects);
   }
 
   try
   {
-    ogp::Action action4(ogp::strToCondition("pred_name(?p)", ontology, entities, {}),
-                       ogp::strToWsModification("pred_name2(toto, titi)=res", ontology, entities, {}));
-    action4.throwIfNotValid(setOfFacts);
+    ogp::Action action4(ogp::strToCondition("pred_name(?p)", ontology, objects, {}),
+                       ogp::strToWsModification("pred_name2(toto, titi)=res", ontology, objects, {}));
+    action4.throwIfNotValid(setOfFacts, ontology.constants, objects);
     EXPECT_TRUE(false);
   }
   catch (const std::exception& e)
@@ -218,10 +218,10 @@ void _test_action_initialization()
     std::vector<ogp::Parameter> parameters(1, ogp::Parameter::fromStr("?p - my_type", ontology.types));
     try
     {
-      ogp::Action action5(ogp::strToCondition("pred_name(?p)", ontology, entities, parameters),
-                         ogp::strToWsModification("pred_name2(toto, titi)=?r", ontology, entities, parameters));
+      ogp::Action action5(ogp::strToCondition("pred_name(?p)", ontology, objects, parameters),
+                         ogp::strToWsModification("pred_name2(toto, titi)=?r", ontology, objects, parameters));
       action5.parameters = std::move(parameters);
-      action5.throwIfNotValid(setOfFacts);
+      action5.throwIfNotValid(setOfFacts, ontology.constants, objects);
       EXPECT_TRUE(false);
     }
     catch (const std::exception& e)
@@ -230,14 +230,14 @@ void _test_action_initialization()
     }
   }
 
-  ogp::strToCondition("exists(?obj - my_type2, pred_name2(toto, ?obj)=res)", ontology, entities, {});
-  ogp::strToCondition("exists(?obj - my_type2, =(pred_name3(?obj), pred_name3(tutu)))", ontology, entities, {});
-  ogp::strToCondition("=(pred_name3(tutu), undefined)", ontology, entities, {});
-  ogp::strToCondition("=(pred_name3(tutu), res)", ontology, entities, {});
-  ogp::strToWsModification("forall(?obj - my_type2, pred_name2(toto, ?obj)=res, set(pred_name3(?obj), pred_name3(tutu)))", ontology, entities, {});
-  ogp::strToWsModification("assign(pred_name3(tutu), res)", ontology, entities, {});
+  ogp::strToCondition("exists(?obj - my_type2, pred_name2(toto, ?obj)=res)", ontology, objects, {});
+  ogp::strToCondition("exists(?obj - my_type2, =(pred_name3(?obj), pred_name3(tutu)))", ontology, objects, {});
+  ogp::strToCondition("=(pred_name3(tutu), undefined)", ontology, objects, {});
+  ogp::strToCondition("=(pred_name3(tutu), res)", ontology, objects, {});
+  ogp::strToWsModification("forall(?obj - my_type2, pred_name2(toto, ?obj)=res, set(pred_name3(?obj), pred_name3(tutu)))", ontology, objects, {});
+  ogp::strToWsModification("assign(pred_name3(tutu), res)", ontology, objects, {});
   std::vector<ogp::Parameter> returnParameter(1, ogp::Parameter::fromStr("?r - return_type", ontology.types));
-  ogp::strToWsModification("assign(pred_name3(tutu), ?r)", ontology, entities, returnParameter);
+  ogp::strToWsModification("assign(pred_name3(tutu), ?r)", ontology, objects, returnParameter);
 }
 
 

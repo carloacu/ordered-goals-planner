@@ -113,7 +113,9 @@ struct ORDEREDGOALSPLANNER_API Action
   std::string printSuccessionCache() const;
 
   // TODO: remove that function?
-  void throwIfNotValid(const SetOfFacts& pSetOfFact);
+  void throwIfNotValid(const SetOfFacts& pSetOfFact,
+                       const SetOfEntities& pConstants,
+                       const SetOfEntities& pObjects);
 
   /// Print the precondition in string.
   std::string precondition_str() const { return precondition ? precondition->toStr() : ""; }
@@ -144,7 +146,9 @@ struct ORDEREDGOALSPLANNER_API Action
 private:
   void _throwIfNotValidForACondition(const std::unique_ptr<Condition>& pPrecondition);
   void _throwIfNotValidForAnWordStateModif(const std::unique_ptr<WorldStateModification>& pWs,
-                                           const SetOfFacts& pSetOfFact);
+                                           const SetOfFacts& pSetOfFact,
+                                           const SetOfEntities& pConstants,
+                                           const SetOfEntities& pObjects);
   void _throwIfNotValidForAFact(const Fact& pFact);
 };
 

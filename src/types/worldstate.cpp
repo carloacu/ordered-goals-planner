@@ -374,7 +374,7 @@ void WorldState::_modify(WhatChanged& pWhatChanged,
       factsToRemove.emplace_back(pFactOptional.fact);
     else
       factsToAdd.emplace_back(pFactOptional.fact);
-  }, _factsMapping);
+  }, _factsMapping, pOntology.constants, pObjects);
 
   _addFacts(pWhatChanged, factsToAdd, pGoalStack, pSetOfEvents, pCallbacks, pOntology, pObjects, pNow, pCanFactsBeRemoved);
   _removeFacts(pWhatChanged, factsToRemove);

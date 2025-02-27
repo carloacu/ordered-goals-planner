@@ -91,7 +91,9 @@ struct ORDEREDGOALSPLANNER_API WorldStateModification
    * @param[in] pSetOfFact Facts to use to extract value of the facts.
    */
   virtual void forAll(const std::function<void (const FactOptional&)>& pFactCallback,
-                      const SetOfFacts& pSetOfFact) const = 0;
+                      const SetOfFacts& pSetOfFact,
+                      const SetOfEntities& pConstants,
+                      const SetOfEntities& pObjects) const = 0;
 
   virtual ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>& pFactCallback) const = 0;
 
@@ -105,13 +107,17 @@ struct ORDEREDGOALSPLANNER_API WorldStateModification
   virtual bool canSatisfyObjective(const std::function<bool (const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>& pFactCallback,
                                    ParameterValuesWithConstraints& pParameters,
                                    const WorldState& pWorldState,
-                                   const std::string& pFromDeductionId) const = 0;
+                                   const std::string& pFromDeductionId,
+                                   const SetOfEntities& pConstants,
+                                   const SetOfEntities& pObjects) const = 0;
 
   virtual bool iterateOnSuccessions(const std::function<bool (const Successions&, const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>& pCallback,
                                     ParameterValuesWithConstraints& pParameters,
                                     const WorldState& pWorldState,
                                     bool pCanSatisfyThisGoal,
-                                    const std::string& pFromDeductionId) const = 0;
+                                    const std::string& pFromDeductionId,
+                                    const SetOfEntities& pConstants,
+                                    const SetOfEntities& pObjects) const = 0;
 
   virtual void updateSuccesions(const Domain& pDomain,
                                 const WorldStateModificationContainerId& pContainerId,

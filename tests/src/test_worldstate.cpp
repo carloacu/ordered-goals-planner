@@ -6,6 +6,7 @@
 #include <orderedgoalsplanner/types/setofevents.hpp>
 #include <orderedgoalsplanner/types/setofpredicates.hpp>
 #include <orderedgoalsplanner/types/worldstate.hpp>
+#include <orderedgoalsplanner/util/serializer/deserializefrompddl.hpp>
 
 using namespace ogp;
 
@@ -33,7 +34,8 @@ TEST(Tool, test_wordstate)
 
   ogp::Ontology ontology;
   ontology.types = ogp::SetOfTypes::fromPddl("type1 type2 - entity");
-  ontology.constants = ogp::SetOfEntities::fromPddl("ent_a ent_b - entity", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("ent_a ent_b - entity\n"
+                                                    "v1 - type1\n", ontology.types);
 
   {
     std::size_t pos = 0;
@@ -44,7 +46,7 @@ TEST(Tool, test_wordstate)
                                                          "(pred_e ?e - entity) - type1", pos, ontology.types);
   }
 
-  auto objects = ogp::SetOfEntities::fromPddl("toto - type1\n"
+  auto objects = ogp::SetOfEntities::fromPddl("toto toto2 - type1\n"
                                               "titi - type2", ontology.types);
 
   _modifyFactsFromPddl(worldstate, "(pred_a toto)\n(pred_b)", ontology, objects);
@@ -61,6 +63,20 @@ TEST(Tool, test_wordstate)
   EXPECT_EQ("(pred_a ent_a)\n(pred_b)", worldstate.factsMapping().toPddl(0, true));
   _modifyFactsFromPddl(worldstate, "(= (pred_e ent_b) undefined)", ontology, objects);
   EXPECT_EQ("(pred_a ent_a)\n(pred_b)", worldstate.factsMapping().toPddl(0, true));
+  _modifyFactsFromPddl(worldstate, "(= (pred_e toto) toto)", ontology, objects);
+  EXPECT_EQ("(pred_a ent_a)\n(pred_b)\n(= (pred_e toto) toto)", worldstate.factsMapping().toPddl(0, true));
+  _modifyFactsFromPddl(worldstate, "(= (pred_e toto2) v1)\n(not (pred_a ent_a))", ontology, objects);
+  EXPECT_EQ("(pred_b)\n(= (pred_e toto) toto)\n(= (pred_e toto2) v1)", worldstate.factsMapping().toPddl(0, true));
+
+  // test apply of forall without when
+  {
+    std::size_t pos = 0;
+    auto effect = ogp::pddlToWsModification("(forall (?e - entity) (assign (pred_e ?e) undefined))", pos, ontology, {}, {});
+    bool goalChanged = false;
+    GoalStack goalStack;
+    worldstate.applyEffect({}, effect, goalChanged, goalStack, {}, {}, ontology, objects, {});
+  }
+  EXPECT_EQ("(pred_b)", worldstate.factsMapping().toPddl(0, true));
 }
 
 
