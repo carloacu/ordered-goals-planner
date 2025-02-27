@@ -1625,6 +1625,7 @@ FactOptional pddlToFactOptional(const std::string& pStr,
 
 ConditionToCallback pddlToConditionToCallback(const std::string& pStr,
                                               const Ontology& pOntology,
+                                              const SetOfEntities& pObjects,
                                               const std::function<void()>& pCallback)
 {
   std::size_t pos = 0;
@@ -1632,8 +1633,7 @@ ConditionToCallback pddlToConditionToCallback(const std::string& pStr,
   std::list<Parameter> paramList;
   _expressionParsedToParameters(paramList, expressionParsed, pOntology);
   std::vector<ogp::Parameter> parameters(paramList.begin(), paramList.end());
-  const SetOfEntities objects;
-  auto condition = _expressionParsedToCondition(expressionParsed, pOntology, objects, parameters, false, nullptr);
+  auto condition = _expressionParsedToCondition(expressionParsed, pOntology, pObjects, parameters, false, nullptr);
   return ogp::ConditionToCallback(std::move(condition), pCallback, parameters);
 }
 

@@ -237,7 +237,8 @@ void _test_callbacks_with_parameters()
 
   ogp::MutableSetOfCallbacks mutableSetOfCallbacks;
   std::size_t nbOfCallback1 = 0;
-  mutableSetOfCallbacks.add(ogp::pddlToConditionToCallback("(= (fact_a ?va) vb1)", ontology, [&]() { ++nbOfCallback1; }));
+  const ogp::SetOfEntities objects;
+  mutableSetOfCallbacks.add(ogp::pddlToConditionToCallback("(= (fact_a ?va) vb1)", ontology, objects, [&]() { ++nbOfCallback1; }));
   auto callbacks = ogp::SetOfCallbacks(mutableSetOfCallbacks.callbacks());
 
   std::map<std::string, ogp::Action> actions;

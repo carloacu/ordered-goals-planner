@@ -99,6 +99,7 @@ FactOptional pddlToFactOptional(const std::string& pStr,
 
 ConditionToCallback pddlToConditionToCallback(const std::string& pStr,
                                               const Ontology& pOntology,
+                                              const SetOfEntities& pObjects,
                                               const std::function<void()>& pCallback);
 
 } // End of namespace ogp
