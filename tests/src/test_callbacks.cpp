@@ -226,6 +226,31 @@ void _test_callbacks()
 }
 
 
+void _test_callbacks_with_fact()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("entity");
+  ontology.constants = ogp::SetOfEntities::fromPddl("v - entity", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr(_fact_a + "(?e - entity)", ontology.types);
+
+  ogp::MutableSetOfCallbacks mutableSetOfCallbacks;
+  std::size_t nbOfCallback1 = 0;
+  const ogp::SetOfEntities objects;
+  mutableSetOfCallbacks.add(ogp::pddlToConditionToCallback("(fact_a v)", ontology, objects, [&]() { ++nbOfCallback1; }));
+  auto callbacks = ogp::SetOfCallbacks(mutableSetOfCallbacks.callbacks());
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+
+  auto fact1 = _fact(_fact_a + "(v)", ontology);
+  EXPECT_EQ(0, nbOfCallback1);
+  problem.worldState.addFact(fact1, problem.goalStack, setOfEventsMap, callbacks, ontology, ogp::SetOfEntities(), _now);
+  EXPECT_EQ(1, nbOfCallback1);
+}
+
+
 
 void _test_callbacks_with_parameters()
 {
@@ -260,5 +285,6 @@ void _test_callbacks_with_parameters()
 TEST(Planner, test_callbacks)
 {
   _test_callbacks();
+  _test_callbacks_with_fact();
   _test_callbacks_with_parameters();
 }

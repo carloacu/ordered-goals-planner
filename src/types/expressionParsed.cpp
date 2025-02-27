@@ -155,7 +155,8 @@ void ExpressionParsed::extractParameters(std::list<Parameter>& pRes,
     ++itParam;
   }
 
-  if (Entity::isParam(value))
+  if (value != "" &&
+      Entity::isParam(value))
   {
     if (!predicate.value)
       throw std::runtime_error("Predicate usage of \"" + name + "\" has a value but must ont have one");
