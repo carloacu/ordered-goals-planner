@@ -339,6 +339,8 @@ void _test_missing_objects()
   EXPECT_EQ("p - type2", objs.front().toStr());
 
   EXPECT_TRUE(ogp::pddExpressionlToMissingObjects("(pred ?e)", ontology, {}).empty());
+
+  EXPECT_TRUE(ogp::pddExpressionlToMissingObjects("(exists (?e - type1) (pred ?e))", ontology, {}).empty());
 }
 
 

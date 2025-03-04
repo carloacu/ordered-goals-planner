@@ -585,7 +585,8 @@ void _expressionParsedToMissingObjects(std::list<Entity>& pRes,
   {
     _expressionParsedToMissingObjects(pRes, pExpressionParsed.arguments.front(), pOntology, pObjects);
   }
-  else if ((pExpressionParsed.name == _forAllWsFunctionName || pExpressionParsed.name == _forAllOldWsFunctionName) &&
+  else if ((pExpressionParsed.name == _forAllWsFunctionName ||
+            pExpressionParsed.name == _existsConditonFunctionName) &&
            (pExpressionParsed.arguments.size() == 2 || pExpressionParsed.arguments.size() == 3))
   {
     auto itArg = pExpressionParsed.arguments.begin();
@@ -693,7 +694,8 @@ void _expressionParsedToParameters(std::list<Parameter>& pRes,
   {
     _expressionParsedToParameters(pRes, pExpressionParsed.arguments.front(), pOntology);
   }
-  else if ((pExpressionParsed.name == _forAllWsFunctionName || pExpressionParsed.name == _forAllOldWsFunctionName) &&
+  else if ((pExpressionParsed.name == _forAllWsFunctionName ||
+            pExpressionParsed.name == _existsConditonFunctionName) &&
            (pExpressionParsed.arguments.size() == 2 || pExpressionParsed.arguments.size() == 3))
   {
     auto itArg = pExpressionParsed.arguments.begin();
