@@ -71,11 +71,23 @@ TEST(Tool, test_wordstate)
   // test apply of forall without when
   {
     std::size_t pos = 0;
-    auto effect = ogp::pddlToWsModification("(forall (?e - entity) (assign (pred_e ?e) undefined))", pos, ontology, {}, {});
+    auto effect = ogp::pddlToWsModification("(forall (?e - entity) (assign (pred_e ?e) undefined))", pos, ontology, objects, {});
     bool goalChanged = false;
     GoalStack goalStack;
     worldstate.applyEffect({}, effect, goalChanged, goalStack, {}, {}, ontology, objects, {});
   }
+  EXPECT_EQ("(pred_b)", worldstate.factsMapping().toPddl(0, true));
+
+  // test set with fluent with undefined value
+  objects.addAllIfNotExist(ogp::SetOfEntities::fromPddl("new_val - type1", ontology.types));
+  {
+    std::size_t pos = 0;
+    auto effect = ogp::pddlToWsModification("(assign (pred_e new_val) (pred_a new_val))", pos, ontology, objects, {});
+    bool goalChanged = false;
+    GoalStack goalStack;
+    worldstate.applyEffect({}, effect, goalChanged, goalStack, {}, {}, ontology, objects, {});
+  }
+  // As (pred_a new_val) as not value (pred_e new_val) is not added
   EXPECT_EQ("(pred_b)", worldstate.factsMapping().toPddl(0, true));
 }
 

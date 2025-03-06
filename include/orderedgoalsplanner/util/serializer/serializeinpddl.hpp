@@ -10,12 +10,16 @@ struct Condition;
 struct Domain;
 struct Problem;
 struct WorldStateModification;
+struct WorldState;
 
 
 std::string domainToPddl(const Domain& pDomain);
 
 std::string problemToPddl(const Problem& pProblem,
                           const Domain& pDomain);
+
+std::string worldStateToPddl(const WorldState& pWorldState,
+                             std::size_t pIdentation = 0);
 
 
 std::string conditionToPddl(const Condition& pCondition,

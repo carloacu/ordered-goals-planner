@@ -131,9 +131,13 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
     auto* leftFactPtr = toWmFact(*leftOperand);
     if (leftFactPtr != nullptr)
     {
-      auto factToCheck = leftFactPtr->factOptional;
-      factToCheck.fact.setValue(rightOperand->getValue(pSetOfFact));
-      return pFactCallback(factToCheck);
+      auto value = rightOperand->getValue(pSetOfFact);
+      if (value)
+      {
+        auto factToCheck = leftFactPtr->factOptional;
+        factToCheck.fact.setValue(std::move(value));
+        pFactCallback(factToCheck);
+      }
     }
   }
   else if (nodeType == WorldStateModificationNodeType::FOR_ALL)
@@ -152,7 +156,7 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(plusIntOrStr(leftOperand->getValue(pSetOfFact), rightOperand->getValue(pSetOfFact)));
-      return pFactCallback(factToCheck);
+      pFactCallback(factToCheck);
     }
   }
   else if (nodeType == WorldStateModificationNodeType::DECREASE && leftOperand && rightOperand)
@@ -162,7 +166,7 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(minusIntOrStr(leftOperand->getValue(pSetOfFact), rightOperand->getValue(pSetOfFact)));
-      return pFactCallback(factToCheck);
+      pFactCallback(factToCheck);
     }
   }
   else if (nodeType == WorldStateModificationNodeType::MULTIPLY && leftOperand && rightOperand)
@@ -172,7 +176,7 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
     {
       auto factToCheck = leftFactPtr->factOptional;
       factToCheck.fact.setValue(multiplyNbOrStr(leftOperand->getValue(pSetOfFact), rightOperand->getValue(pSetOfFact)));
-      return pFactCallback(factToCheck);
+      pFactCallback(factToCheck);
     }
   }
   else if (nodeType == WorldStateModificationNodeType::WHEN && leftOperand && rightOperand)

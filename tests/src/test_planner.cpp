@@ -7,6 +7,7 @@
 #include <orderedgoalsplanner/util/serializer/deserializefrompddl.hpp>
 #include <orderedgoalsplanner/util/trackers/goalsremovedtracker.hpp>
 #include <orderedgoalsplanner/util/print.hpp>
+#include <orderedgoalsplanner/util/serializer/serializeinpddl.hpp>
 #include "docexamples/test_planningDummyExample.hpp"
 #include "docexamples/test_planningExampleWithAPreconditionSolve.hpp"
 
@@ -801,6 +802,35 @@ void _notEqualUndefinedGoalAndAssignation()
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }
 
+
+
+void _assignAFluentWithoutValue()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("return_type");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fn_1 - return_type\n"
+                                                      "fn_2 - return_type\n"
+                                                      "pred_1", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("r1 r2 - return_type", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(and (pred_1) (assign (fn_1) (fn_2)))", ontology));
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  ogp::Problem problem;
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(pred_1)", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("action1", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+
+  EXPECT_EQ("(pred_1)", worldStateToPddl(problem.worldState));
+}
+
+
+
 }
 
 
@@ -828,4 +858,5 @@ TEST(Planner, test_planner)
   _forallWithImplyAndFluentValuesEqualityOnPrecondition();
   _notEqualUndefinedGoal();
   _notEqualUndefinedGoalAndAssignation();
+  _assignAFluentWithoutValue();
 }

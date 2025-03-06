@@ -371,11 +371,11 @@ std::string problemToPddl(const Problem& pProblem,
     res += "\n" + std::string(identation, ' ') + ")\n\n";
   }
 
-  const SetOfFacts& facts = pProblem.worldState.factsMapping();
-  if (!facts.empty())
+  auto wsStr = worldStateToPddl(pProblem.worldState, _identationOffset + identation);
+  if (!wsStr.empty())
   {
     res += std::string(identation, ' ') + "(:init\n";
-    res += facts.toPddl(_identationOffset + identation, false);
+    res += wsStr;
     res += "\n" + std::string(identation, ' ') + ")\n\n";
   }
 
@@ -433,6 +433,14 @@ std::string problemToPddl(const Problem& pProblem,
 }
 
 
+std::string worldStateToPddl(const WorldState& pWorldState,
+                             std::size_t pIdentation)
+{
+  const SetOfFacts& facts = pWorldState.factsMapping();
+  if (!facts.empty())
+    return facts.toPddl(pIdentation, false);
+  return "";
+}
 
 
 std::string conditionToPddl(const Condition& pCondition,
