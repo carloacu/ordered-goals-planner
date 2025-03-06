@@ -110,6 +110,7 @@ struct ORDEREDGOALSPLANNER_API Condition
                       const SetOfEntities& pConstants,
                       const SetOfEntities& pObjects,
                       const std::set<Fact>& pPunctualFacts = {},
+                      const std::set<Fact>& pAddedFacts = {},
                       const std::set<Fact>& pRemovedFacts = {},
                       ParameterValuesWithConstraints* pConditionParametersToPossibleArguments = nullptr,
                       bool pIsWrappingExpressionNegated = false) const = 0;
@@ -224,6 +225,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
               const SetOfEntities& pConstants,
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
+              const std::set<Fact>& pAddedFacts,
               const std::set<Fact>& pRemovedFacts,
               ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
@@ -291,6 +293,7 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
               const SetOfEntities& pConstants,
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
+              const std::set<Fact>& pAddedFacts,
               const std::set<Fact>& pRemovedFacts,
               ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
@@ -358,6 +361,7 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
               const SetOfEntities& pConstants,
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
+              const std::set<Fact>& pAddedFacts,
               const std::set<Fact>& pRemovedFacts,
               ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
@@ -424,6 +428,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
               const SetOfEntities& pConstants,
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
+              const std::set<Fact>& pAddedFacts,
               const std::set<Fact>& pRemovedFacts,
               ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
@@ -486,6 +491,7 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
               const SetOfEntities& pConstants,
               const SetOfEntities& pObjects,
               const std::set<Fact>& pPunctualFacts,
+              const std::set<Fact>& pAddedFacts,
               const std::set<Fact>& pRemovedFacts,
               ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
               bool pIsWrappingExpressionNegated) const override;
@@ -544,6 +550,7 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
   bool isTrue(const WorldState&,
               const SetOfEntities&,
               const SetOfEntities&,
+              const std::set<Fact>&,
               const std::set<Fact>&,
               const std::set<Fact>&,
               ParameterValuesWithConstraints*,

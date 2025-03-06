@@ -230,6 +230,7 @@ bool _isTrueRec(ParameterValuesWithConstraints& pLocalParamToValue,
                 const Condition& pCondition,
                 const WorldState& pWorldState,
                 const std::set<Fact>& pPunctualFacts,
+                const std::set<Fact>& pAddedFacts,
                 const std::set<Fact>& pRemovedFacts,
                 EntitiesWithParamConstaints& pAllEntitiesForParam)
 {
@@ -237,7 +238,7 @@ bool _isTrueRec(ParameterValuesWithConstraints& pLocalParamToValue,
   if (factOfConditionPtr != nullptr)
   {
     const auto& condFactOptional = factOfConditionPtr->factOptional;
-    bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(condFactOptional, pPunctualFacts, pRemovedFacts,
+    bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(condFactOptional, pPunctualFacts, pAddedFacts, pRemovedFacts,
                                                                      pConditionParametersToPossibleArguments, &pLocalParamToValue);
     if (pMustBeTrueForAllParameters && !condFactOptional.isFactNegated)
     {
@@ -270,34 +271,34 @@ bool _isTrueRec(ParameterValuesWithConstraints& pLocalParamToValue,
     if (nodeOfConditionPtr->nodeType == ConditionNodeType::AND)
     {
       if (!_isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
-                     *nodeOfConditionPtr->leftOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam))
+                     *nodeOfConditionPtr->leftOperand, pWorldState, pPunctualFacts, pAddedFacts, pRemovedFacts, pAllEntitiesForParam))
         return false;
       updateAllEntitiesForParam(pLocalParamToValue);
       return  _isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
-                     *nodeOfConditionPtr->rightOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam);
+                     *nodeOfConditionPtr->rightOperand, pWorldState, pPunctualFacts, pAddedFacts, pRemovedFacts, pAllEntitiesForParam);
     }
     if (nodeOfConditionPtr->nodeType == ConditionNodeType::OR)
     {
       if (_isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
-                              *nodeOfConditionPtr->leftOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam))
+                              *nodeOfConditionPtr->leftOperand, pWorldState, pPunctualFacts, pAddedFacts, pRemovedFacts, pAllEntitiesForParam))
         return true;
       updateAllEntitiesForParam(pLocalParamToValue);
       return _isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
-                        *nodeOfConditionPtr->rightOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam);
+                        *nodeOfConditionPtr->rightOperand, pWorldState, pPunctualFacts, pAddedFacts, pRemovedFacts, pAllEntitiesForParam);
     }
 
     if (nodeOfConditionPtr->nodeType == ConditionNodeType::IMPLY)
     {
       auto implyLocalParamToValue = pLocalParamToValue;
       if (_isTrueRec(implyLocalParamToValue, pConditionParametersToPossibleArguments, false,
-                     *nodeOfConditionPtr->leftOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam))
+                     *nodeOfConditionPtr->leftOperand, pWorldState, pPunctualFacts, pAddedFacts, pRemovedFacts, pAllEntitiesForParam))
       {
         // For exists (!pMustBeTrueForAllParameters) if one parameter makes that imply not satisfied it is ok
         if (!pMustBeTrueForAllParameters && !implyLocalParamToValue.empty() && pAllEntitiesForParam != implyLocalParamToValue.begin()->second)
           return true;
         updateAllEntitiesForParam(implyLocalParamToValue);
         return _isTrueRec(pLocalParamToValue, pConditionParametersToPossibleArguments, pMustBeTrueForAllParameters,
-                          *nodeOfConditionPtr->rightOperand, pWorldState, pPunctualFacts, pRemovedFacts, pAllEntitiesForParam);
+                          *nodeOfConditionPtr->rightOperand, pWorldState, pPunctualFacts, pAddedFacts, pRemovedFacts, pAllEntitiesForParam);
       }
       return true;
     }
@@ -501,7 +502,7 @@ bool ConditionNode::findConditionCandidateFromFactFromEffect(
   else if (nodeType == ConditionNodeType::IMPLY)
   {
     auto conditionParametersToPossibleArguments = pConditionParametersToPossibleArguments;
-    if (leftOperand && leftOperand->isTrue(pWorldState, pConstants, pObjects, {}, {}, &conditionParametersToPossibleArguments) &&
+    if (leftOperand && leftOperand->isTrue(pWorldState, pConstants, pObjects, {}, {}, {}, &conditionParametersToPossibleArguments) &&
         rightOperand && rightOperand->findConditionCandidateFromFactFromEffect(pDoesConditionFactMatchFactFromEffect, pWorldState, pConstants, pObjects,
                                                                                pFactFromEffect, pFactFromEffectParameters, pFactFromEffectTmpParametersPtr,
                                                                                pConditionParametersToPossibleArguments, pIsWrappingExpressionNegated))
@@ -593,33 +594,34 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
                            const SetOfEntities& pConstants,
                            const SetOfEntities& pObjects,
                            const std::set<Fact>& pPunctualFacts,
+                           const std::set<Fact>& pAddedFacts,
                            const std::set<Fact>& pRemovedFacts,
                            ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                            bool pIsWrappingExpressionNegated) const
 {
   if (nodeType == ConditionNodeType::AND)
   {
-    if (leftOperand && !leftOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
+    if (leftOperand && !leftOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pAddedFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
       return pIsWrappingExpressionNegated;
-    if (rightOperand && !rightOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
+    if (rightOperand && !rightOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pAddedFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
       return pIsWrappingExpressionNegated;
     return !pIsWrappingExpressionNegated;
   }
 
   if (nodeType == ConditionNodeType::OR)
   {
-    if (leftOperand && leftOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
+    if (leftOperand && leftOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pAddedFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
       return !pIsWrappingExpressionNegated;
-    if (rightOperand && rightOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
+    if (rightOperand && rightOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pAddedFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
       return !pIsWrappingExpressionNegated;
     return pIsWrappingExpressionNegated;
   }
 
   if (nodeType == ConditionNodeType::IMPLY)
   {
-    if (leftOperand && leftOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
+    if (leftOperand && leftOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pAddedFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
     {
-      if (rightOperand && !rightOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
+      if (rightOperand && !rightOperand->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pAddedFacts, pRemovedFacts, pConditionParametersToPossibleArguments, false))
         return pIsWrappingExpressionNegated;
     }
     return !pIsWrappingExpressionNegated;
@@ -880,6 +882,7 @@ bool ConditionExists::isTrue(const WorldState& pWorldState,
                              const SetOfEntities& pConstants,
                              const SetOfEntities& pObjects,
                              const std::set<Fact>& pPunctualFacts,
+                             const std::set<Fact>& pAddedFacts,
                              const std::set<Fact>& pRemovedFacts,
                              ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                              bool pIsWrappingExpressionNegated) const
@@ -894,7 +897,7 @@ bool ConditionExists::isTrue(const WorldState& pWorldState,
   {
     ParameterValuesWithConstraints localParamToValue{{parameter, {}}};
     return _isTrueRec(localParamToValue, pConditionParametersToPossibleArguments, false, *condition, pWorldState,
-                      pPunctualFacts, pRemovedFacts, entities) == !pIsWrappingExpressionNegated;
+                      pPunctualFacts, pAddedFacts, pRemovedFacts, entities) == !pIsWrappingExpressionNegated;
   }
   return !pIsWrappingExpressionNegated;
 }
@@ -1048,6 +1051,7 @@ bool ConditionForall::isTrue(const WorldState& pWorldState,
                              const SetOfEntities& pConstants,
                              const SetOfEntities& pObjects,
                              const std::set<Fact>& pPunctualFacts,
+                             const std::set<Fact>& pAddedFacts,
                              const std::set<Fact>& pRemovedFacts,
                              ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                              bool pIsWrappingExpressionNegated) const
@@ -1062,7 +1066,7 @@ bool ConditionForall::isTrue(const WorldState& pWorldState,
   {
     ParameterValuesWithConstraints localParamToValue{{parameter, {}}};
     return _isTrueRec(localParamToValue, pConditionParametersToPossibleArguments, true,
-                      *condition, pWorldState, pPunctualFacts, pRemovedFacts,
+                      *condition, pWorldState, pPunctualFacts, pAddedFacts, pRemovedFacts,
                       entities) == !pIsWrappingExpressionNegated;
   }
   return !pIsWrappingExpressionNegated;
@@ -1194,12 +1198,13 @@ bool ConditionNot::isTrue(const WorldState& pWorldState,
                           const SetOfEntities& pConstants,
                           const SetOfEntities& pObjects,
                           const std::set<Fact>& pPunctualFacts,
+                          const std::set<Fact>& pAddedFacts,
                           const std::set<Fact>& pRemovedFacts,
                           ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                           bool pIsWrappingExpressionNegated) const
 {
   if (condition)
-    return condition->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, !pIsWrappingExpressionNegated);
+    return condition->isTrue(pWorldState, pConstants, pObjects, pPunctualFacts, pAddedFacts, pRemovedFacts, pConditionParametersToPossibleArguments, !pIsWrappingExpressionNegated);
   return !pIsWrappingExpressionNegated;
 }
 
@@ -1282,11 +1287,12 @@ bool ConditionFact::isTrue(const WorldState& pWorldState,
                            const SetOfEntities& pConstants,
                            const SetOfEntities& pObjects,
                            const std::set<Fact>& pPunctualFacts,
+                           const std::set<Fact>& pAddedFacts,
                            const std::set<Fact>& pRemovedFacts,
                            ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                            bool pIsWrappingExpressionNegated) const
 {
-  bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(factOptional, pPunctualFacts, pRemovedFacts, pConditionParametersToPossibleArguments, nullptr);
+  bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(factOptional, pPunctualFacts, pAddedFacts, pRemovedFacts, pConditionParametersToPossibleArguments, nullptr);
   if (!pIsWrappingExpressionNegated)
     return res;
   return !res;

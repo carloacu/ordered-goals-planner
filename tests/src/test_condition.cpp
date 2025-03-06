@@ -77,13 +77,13 @@ void _test_checkConditionWithOntology()
   {
     std::vector<ogp::Parameter> parameters(1, ogp::Parameter::fromStr("?p - my_type", ontology.types));
     auto parametersMap = _toParameterMap(parameters);
-    EXPECT_TRUE(ogp::strToCondition("pred_name(?p)", ontology, {}, parameters)->isTrue(worldState, ontology.constants, objects, {}, {}, &parametersMap));
+    EXPECT_TRUE(ogp::strToCondition("pred_name(?p)", ontology, {}, parameters)->isTrue(worldState, ontology.constants, objects, {}, {}, {}, &parametersMap));
   }
 
   {
     std::vector<ogp::Parameter> parameters(1, ogp::Parameter::fromStr("?p - my_type2", ontology.types));
     auto parametersMap = _toParameterMap(parameters);
-    EXPECT_FALSE(ogp::strToCondition("pred_name(?p)", ontology, {}, parameters)->isTrue(worldState, ontology.constants, objects, {}, {}, &parametersMap));
+    EXPECT_FALSE(ogp::strToCondition("pred_name(?p)", ontology, {}, parameters)->isTrue(worldState, ontology.constants, objects, {}, {}, {}, &parametersMap));
   }
 
   EXPECT_FALSE(_isTrue("(exists (?p - my_type3) (= (fun1 ?p) undefined))", ontology, worldState, objects));

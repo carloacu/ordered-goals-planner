@@ -131,13 +131,18 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
     auto* leftFactPtr = toWmFact(*leftOperand);
     if (leftFactPtr != nullptr)
     {
+      auto factToCheck = leftFactPtr->factOptional;
       auto value = rightOperand->getValue(pSetOfFact);
       if (value)
       {
-        auto factToCheck = leftFactPtr->factOptional;
         factToCheck.fact.setValue(std::move(value));
-        pFactCallback(factToCheck);
       }
+      else
+      {
+        factToCheck.fact.setValue(Entity::createAnyEntity());
+        factToCheck.isFactNegated = true;
+      }
+      pFactCallback(factToCheck);
     }
   }
   else if (nodeType == WorldStateModificationNodeType::FOR_ALL)

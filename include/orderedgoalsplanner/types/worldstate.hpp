@@ -223,6 +223,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
    */
   bool isOptionalFactSatisfiedInASpecificContext(const FactOptional& pFactOptional,
                                                  const std::set<Fact>& pPunctualFacts,
+                                                 const std::set<Fact>& pAddedFacts,
                                                  const std::set<Fact>& pRemovedFacts,
                                                  ParameterValuesWithConstraints* pParametersToPossibleArgumentsPtr,
                                                  ParameterValuesWithConstraints* pParametersToModifyInPlacePtr) const;

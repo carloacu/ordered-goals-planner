@@ -938,7 +938,7 @@ ActionId _findFirstActionForAGoal(
         if (_lookForAPossibleEffect(newPotRes.parameters, dataRelatedToOptimisation, *newTreePtr,
                                     action.effect.worldStateModification, action.effect.potentialWorldStateModification,
                                     context, factsAlreadyChecked, currActionId) &&
-            (!action.precondition || action.precondition->isTrue(pProblem.worldState, ontology.constants, pProblem.objects, {}, {}, &newPotRes.parameters)))
+            (!action.precondition || action.precondition->isTrue(pProblem.worldState, ontology.constants, pProblem.objects, {}, {}, {}, &newPotRes.parameters)))
         {
           const auto& constants = pDomain.getOntology().constants;
           auto actionInvocations = newPotRes.toActionInvocations(constants, pProblem.objects);

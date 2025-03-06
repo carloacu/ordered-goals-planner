@@ -311,6 +311,7 @@ void WorldState::_addAFact(WhatChanged& pWhatChanged,
            (!pFact.isValueNegated() && currExistingFact.isValueNegated())))
       {
         WhatChanged subWhatChanged;
+        subWhatChanged.addedFacts.insert(pFact);
         _removeFacts(subWhatChanged, std::vector<ogp::Fact>{currExistingFact});
         pGoalStack._removeNoStackableGoalsAndNotifyGoalsChanged(*this, pOntology.constants, pObjects, pNow);
         bool goalChanged = false;
@@ -450,6 +451,7 @@ bool WorldState::canBeModifiedBy(const FactOptional& pFactOptional,
 
 bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& pFactOptional,
                                                            const std::set<Fact>& pPunctualFacts,
+                                                           const std::set<Fact>& pAddedFacts,
                                                            const std::set<Fact>& pRemovedFacts,
                                                            ParameterValuesWithConstraints* pParametersToPossibleArgumentsPtr,
                                                            ParameterValuesWithConstraints* pParametersToModifyInPlacePtr) const
@@ -463,6 +465,12 @@ bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& p
     bool res = pFactOptional.fact.isInOtherFacts(pRemovedFacts, &newParameters, pParametersToPossibleArgumentsPtr, pParametersToModifyInPlacePtr);
     if (res)
     {
+      if (!pFactOptional.fact.value() || pFactOptional.fact.value()->isAnyEntity())
+      {
+        bool isAdded = pFactOptional.fact.isInOtherFacts(pAddedFacts, &newParameters, pParametersToPossibleArgumentsPtr, pParametersToModifyInPlacePtr);
+        if (isAdded)
+          return false;
+      }
       if (pParametersToPossibleArgumentsPtr != nullptr)
         applyNewParams(*pParametersToPossibleArgumentsPtr, newParameters);
       return true;
@@ -590,7 +598,9 @@ bool WorldState::_tryToApplyEvent(std::set<EventId>& pEventsAlreadyApplied,
         for (const auto& currParam : currEvent.parameters)
           parametersToValues[currParam];
         if (!currEvent.precondition || currEvent.precondition->isTrue(*this, pOntology.constants, pObjects,
-                                                                      pWhatChanged.punctualFacts, pWhatChanged.removedFacts,
+                                                                      pWhatChanged.punctualFacts,
+                                                                      pWhatChanged.addedFacts,
+                                                                      pWhatChanged.removedFacts,
                                                                       &parametersToValues))
         {
           if (currEvent.factsToModify)
@@ -659,7 +669,9 @@ void WorldState::_tryToCallCallback(std::set<CallbackId>& pCallbackAlreadyCalled
       for (const auto& currParam : currCallback.parameters)
         parametersToValues[currParam];
       if (currCallback.condition && currCallback.condition->isTrue(*this, pConstants, pObjects,
-                                                                   pWhatChanged.punctualFacts, pWhatChanged.removedFacts,
+                                                                   pWhatChanged.punctualFacts,
+                                                                   pWhatChanged.addedFacts,
+                                                                   pWhatChanged.removedFacts,
                                                                    &parametersToValues))
       {
         pCallbackAlreadyCalled.insert(pCallbackId);
@@ -739,7 +751,9 @@ void WorldState::_notifyWhatChanged(WhatChanged& pWhatChanged,
               for (const auto& currParam : currCallback.parameters)
                 parametersToValues[currParam];
               if (currCallback.condition && currCallback.condition->isTrue(*this, pOntology.constants, pObjects,
-                                                                           pWhatChanged.punctualFacts, pWhatChanged.removedFacts,
+                                                                           pWhatChanged.punctualFacts,
+                                                                           pWhatChanged.addedFacts,
+                                                                           pWhatChanged.removedFacts,
                                                                            &parametersToValues))
               {
                 callbackAlreadyCalled.insert(pCallbackId);
