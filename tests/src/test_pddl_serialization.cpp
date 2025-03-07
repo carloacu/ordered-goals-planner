@@ -320,6 +320,7 @@ void _test_missing_objects()
     ontology.predicates = ogp::SetOfPredicates::fromPddl("(pred ?e - type2)\n"
                                                          "(fun ?e - type2) - type1", pos, ontology.types);
   }
+  ontology.constants = ogp::SetOfEntities::fromPddl("v1 - type1", ontology.types);
 
   auto objs = ogp::pddExpressionlToMissingObjects("(pred missing_param)", ontology, {});
   EXPECT_EQ(1, objs.size());
@@ -341,6 +342,7 @@ void _test_missing_objects()
   EXPECT_TRUE(ogp::pddExpressionlToMissingObjects("(pred ?e)", ontology, {}).empty());
 
   EXPECT_TRUE(ogp::pddExpressionlToMissingObjects("(exists (?e - type1) (pred ?e))", ontology, {}).empty());
+  EXPECT_TRUE(ogp::pddExpressionlToMissingObjects("(forall (?e - type1) (when (= (fun ?e) v1) (not (pred ?e)))", ontology, {}).empty());
 }
 
 

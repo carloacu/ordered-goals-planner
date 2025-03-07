@@ -597,7 +597,7 @@ void _expressionParsedToMissingObjects(std::list<Entity>& pRes,
       ++itArg;
       auto& thridArg = *itArg;
 
-      secondArg.extractMissingObjects(pRes, pOntology, pObjects);
+      _expressionParsedToMissingObjects(pRes, secondArg, pOntology, pObjects);
       _expressionParsedToMissingObjects(pRes, thridArg, pOntology, pObjects);
     }
     else if (secondArg.name == _whenWsFunctionName &&
@@ -607,7 +607,7 @@ void _expressionParsedToMissingObjects(std::list<Entity>& pRes,
       auto& firstWhenArg = *itWhenArg;
       ++itWhenArg;
       auto& secondWhenArg = *itWhenArg;
-      firstWhenArg.extractMissingObjects(pRes, pOntology, pObjects);
+      _expressionParsedToMissingObjects(pRes, firstWhenArg, pOntology, pObjects);
       _expressionParsedToMissingObjects(pRes, secondWhenArg, pOntology, pObjects);
     }
   }
@@ -640,7 +640,7 @@ void _expressionParsedToMissingObjects(std::list<Entity>& pRes,
     auto& firstWhenArg = *itWhenArg;
     ++itWhenArg;
     auto& secondWhenArg = *itWhenArg;
-    firstWhenArg.extractMissingObjects(pRes, pOntology, pObjects);
+    _expressionParsedToMissingObjects(pRes, firstWhenArg, pOntology, pObjects);
     _expressionParsedToMissingObjects(pRes, secondWhenArg, pOntology, pObjects);
   }
   else
