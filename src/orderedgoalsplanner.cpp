@@ -228,17 +228,25 @@ std::list<ActionInvocationWithPtr> PotentialNextAction::toActionInvocations(cons
   // remove any entities
   for (auto& currParam : parameters)
   {
-    for (auto itEntity = currParam.second.begin(); itEntity != currParam.second.end(); )
+    if (currParam.second.empty())
     {
-      auto& currEntity = *itEntity;
-      if (currEntity.first.isAnyEntity() && currEntity.first.type)
+      if (currParam.first.type)
+        currParam.second = typeToEntities(*currParam.first.type, pConstants, pObjects);
+    }
+    else
+    {
+      for (auto itEntity = currParam.second.begin(); itEntity != currParam.second.end(); )
       {
-        auto possibleValues = typeToEntities(*currEntity.first.type, pConstants, pObjects);
-        itEntity = currParam.second.erase(itEntity);
-        currParam.second.insert(possibleValues.begin(), possibleValues.end());
-        continue;
+        auto& currEntity = *itEntity;
+        if (currEntity.first.isAnyEntity() && currEntity.first.type)
+        {
+          auto possibleValues = typeToEntities(*currEntity.first.type, pConstants, pObjects);
+          itEntity = currParam.second.erase(itEntity);
+          currParam.second.insert(possibleValues.begin(), possibleValues.end());
+          continue;
+        }
+        ++itEntity;
       }
-      ++itEntity;
     }
   }
 
