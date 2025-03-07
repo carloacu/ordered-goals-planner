@@ -308,7 +308,7 @@ void _fluentAssignWithUselessParameterToFillWithASubType()
 }
 
 
-/*
+
 void _test_fluent_negation_in_precondition()
 {
   const std::string action1 = "action1";
@@ -326,7 +326,7 @@ void _test_fluent_negation_in_precondition()
   actions.emplace(action1, ogp::Action({}, _worldStateModification_fromPddl("(assign (fact_a p1) ent)", ontology)));
 
   std::vector<ogp::Parameter> action2Parameters{_parameter("?p - param", ontology), _parameter("?e - entity", ontology)};
-  ogp::Action actionObj2(_condition_fromPddl("(not (= (fact_a ?p) ?e)", ontology, action2Parameters),
+  ogp::Action actionObj2(_condition_fromPddl("(not (= (fact_a ?p) ?e))", ontology, action2Parameters),
                          _worldStateModification_fromPddl("(assign (fact_b ?p) ?e)", ontology, action2Parameters));
   actionObj2.parameters = std::move(action2Parameters);
   actions.emplace(action2, actionObj2);
@@ -334,12 +334,12 @@ void _test_fluent_negation_in_precondition()
   ogp::Domain domain(std::move(actions), ontology);
   auto& setOfEventsMap = domain.getSetOfEvents();
   ogp::Problem problem;
-  _addFact(problem.worldState, "(= (fact_a p1) ent2)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  _addFact(problem.worldState, "(= (fact_a p1) ent)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
 
   _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_b p1) ent)", ontology, problem.objects)}, ontology.constants);
-  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
-*/
+
 }
 
 
@@ -353,4 +353,5 @@ TEST(Planner, test_fluent_requirement)
   _andListWithFluentValueEquality();
   _fluentAssignWithUselessParameter();
   _fluentAssignWithUselessParameterToFillWithASubType();
+  _test_fluent_negation_in_precondition();
 }
