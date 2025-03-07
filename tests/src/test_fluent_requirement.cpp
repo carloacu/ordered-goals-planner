@@ -260,11 +260,37 @@ void _fluentAssignWithUselessParameter()
   const std::string action1 = "action1";
 
   ogp::Ontology ontology;
-  ontology.types = ogp::SetOfTypes::fromPddl("location physical_object - entity\n"
-                                             "user rune - physical_object");
+  ontology.types = ogp::SetOfTypes::fromPddl("location user");
   ontology.predicates = ogp::SetOfPredicates::fromStr("fun - location", ontology.types);
   ontology.constants = ogp::SetOfEntities::fromPddl("unknown_human - user\n"
                                                     "loc1 - location", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{_parameter("?loc - location", ontology)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (fun) undefined)", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _addFact(problem.worldState, "(= (fun) loc1)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(= (fun) undefined)", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("action1(?loc -> loc1)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+}
+
+
+void _fluentAssignWithUselessParameterToFillWithASubType()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("location user\n"
+                                             "sub_loc - location");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fun - location", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("unknown_human - user\n"
+                                                    "loc1 - sub_loc", ontology.types);
 
   std::map<std::string, ogp::Action> actions;
   std::vector<ogp::Parameter> actionParameters{_parameter("?loc - location", ontology)};
@@ -326,4 +352,5 @@ TEST(Planner, test_fluent_requirement)
   _fluentEqualityInPrecondition();
   _andListWithFluentValueEquality();
   _fluentAssignWithUselessParameter();
+  _fluentAssignWithUselessParameterToFillWithASubType();
 }
