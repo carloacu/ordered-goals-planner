@@ -25,6 +25,17 @@ struct ORDEREDGOALSPLANNER_API SetOfFacts
 {
   SetOfFacts();
 
+  struct Delta
+  {
+    std::set<Fact> addedFacts;
+    std::set<Fact> removedFacts;
+
+    bool empty() const { return addedFacts.empty() && removedFacts.empty(); }
+    std::string toPddl() const;
+  };
+
+  Delta deltaFrom(const SetOfFacts& pOldSetOfFacts) const;
+
   static SetOfFacts fromPddl(const std::string& pStr,
                              std::size_t& pPos,
                              const Ontology& pOntology,

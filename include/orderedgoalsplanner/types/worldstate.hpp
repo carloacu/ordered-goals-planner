@@ -52,6 +52,15 @@ struct ORDEREDGOALSPLANNER_API WorldState
                            const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                            bool pCanFactsBeRemoved = true);
 
+  bool applyDelta(const SetOfFacts::Delta& pDelta,
+                  GoalStack& pGoalStack,
+                  const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
+                  const SetOfCallbacks& pCallbacks,
+                  const Ontology& pOntology,
+                  const SetOfEntities& pObjects,
+                  const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
+                  bool pCanFactsBeRemoved = true);
+
   /**
    * @brief Notify that an action has been done.
    * @param[in] pParameters Effect parameters.

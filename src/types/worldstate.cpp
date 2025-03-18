@@ -117,6 +117,25 @@ bool WorldState::modifyFactsFromPddl(const std::string& pStr,
 }
 
 
+bool WorldState::applyDelta(const SetOfFacts::Delta& pDelta,
+                            GoalStack& pGoalStack,
+                            const std::map<SetOfEventsId, SetOfEvents>& pSetOfEvents,
+                            const SetOfCallbacks& pCallbacks,
+                            const Ontology& pOntology,
+                            const SetOfEntities& pObjects,
+                            const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
+                            bool pCanFactsBeRemoved)
+{
+  WhatChanged whatChanged;
+  _addFacts(whatChanged, pDelta.addedFacts, pGoalStack, pSetOfEvents, pCallbacks, pOntology, pObjects, pNow, pCanFactsBeRemoved);
+  _removeFacts(whatChanged, pDelta.removedFacts);
+  pGoalStack._removeNoStackableGoalsAndNotifyGoalsChanged(*this, pOntology.constants, pObjects, pNow);
+  bool goalChanged = false;
+  _notifyWhatChanged(whatChanged, goalChanged, pGoalStack, pSetOfEvents, pCallbacks, pOntology, pObjects, pNow);
+  return whatChanged.hasFactsToModifyInTheWorldForSure();
+}
+
+
 void WorldState::applyEffect(const std::map<Parameter, Entity>& pParameters,
                              const std::unique_ptr<WorldStateModification>& pEffect,
                              bool& pGoalChanged,

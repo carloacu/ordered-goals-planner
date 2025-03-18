@@ -19,6 +19,16 @@ struct ORDEREDGOALSPLANNER_API SetOfEntities
 {
   SetOfEntities();
 
+  struct Delta
+  {
+    std::set<Entity> addedEntities;
+    std::set<Entity> removedEntities;
+
+    std::string toStr() const;
+  };
+
+  Delta deltaFrom(const SetOfEntities& pOldSetOfEntities) const;
+
   static SetOfEntities fromPddl(const std::string& pStr,
                                const SetOfTypes& pSetOfTypes);
 

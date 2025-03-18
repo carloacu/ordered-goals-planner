@@ -54,6 +54,57 @@ SetOfFacts::SetOfFacts()
 }
 
 
+std::string SetOfFacts::Delta::toPddl() const
+{
+  std::string res;
+  for (const auto& currFact : addedFacts)
+  {
+    if (res != "")
+      res += "\n";
+    res += "+" + currFact.toPddl(false);
+  }
+  for (const auto& currFact : removedFacts)
+  {
+    if (res != "")
+      res += "\n";
+    res += "-" + currFact.toPddl(false);
+  }
+  return res;
+}
+
+
+SetOfFacts::Delta SetOfFacts::deltaFrom(const SetOfFacts& pOldSetOfFacts) const
+{
+  Delta res;
+  for (const auto& currFact : _facts)
+  {
+    auto it = pOldSetOfFacts._facts.find(currFact.first);
+    if (it == pOldSetOfFacts._facts.end())
+      res.addedFacts.insert(currFact.first);
+  }
+
+  for (const auto& currFact : pOldSetOfFacts._facts)
+  {
+    auto it = _facts.find(currFact.first);
+    if (it == _facts.end())
+    {
+      bool canBeRemoved = true;
+      for (const auto& addedFact : res.addedFacts)
+      {
+        if (addedFact.areEqualWithoutValueConsideration(currFact.first))
+        {
+          canBeRemoved = false;
+          break;
+        }
+      }
+      if (canBeRemoved)
+        res.removedFacts.insert(currFact.first);
+    }
+  }
+  return res;
+}
+
+
 SetOfFacts SetOfFacts::fromPddl(const std::string& pStr,
                                 std::size_t& pPos,
                                 const Ontology& pOntology,

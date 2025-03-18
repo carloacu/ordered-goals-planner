@@ -14,6 +14,43 @@ SetOfEntities::SetOfEntities()
 {
 }
 
+std::string SetOfEntities::Delta::toStr() const
+{
+  std::string res;
+  for (const auto& currEntity : addedEntities)
+  {
+    if (res != "")
+      res += "\n";
+    res += "+" + currEntity.value;
+  }
+  for (const auto& currEntity : removedEntities)
+  {
+    if (res != "")
+      res += "\n";
+    res += "-" + currEntity.value;
+  }
+  return res;
+}
+
+
+SetOfEntities::Delta SetOfEntities::deltaFrom(const SetOfEntities& pOldSetOfEntities) const
+{
+  Delta res;
+  for (const auto& currEntity : _valueToEntity)
+  {
+    auto it = pOldSetOfEntities._valueToEntity.find(currEntity.first);
+    if (it == pOldSetOfEntities._valueToEntity.end())
+      res.addedEntities.insert(currEntity.second);
+  }
+
+  for (const auto& currEntity : pOldSetOfEntities._valueToEntity)
+  {
+    auto it = _valueToEntity.find(currEntity.first);
+    if (it == _valueToEntity.end())
+      res.removedEntities.insert(currEntity.second);
+  }
+  return res;
+}
 
 SetOfEntities SetOfEntities::fromPddl(const std::string& pStr,
                                       const SetOfTypes& pSetOfTypes)
