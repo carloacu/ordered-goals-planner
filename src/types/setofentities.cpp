@@ -14,25 +14,6 @@ SetOfEntities::SetOfEntities()
 {
 }
 
-std::string SetOfEntities::Delta::toStr() const
-{
-  std::string res;
-  for (const auto& currEntity : addedEntities)
-  {
-    if (res != "")
-      res += "\n";
-    res += "+" + currEntity.value;
-  }
-  for (const auto& currEntity : removedEntities)
-  {
-    if (res != "")
-      res += "\n";
-    res += "-" + currEntity.value;
-  }
-  return res;
-}
-
-
 SetOfEntities::Delta SetOfEntities::deltaFrom(const SetOfEntities& pOldSetOfEntities) const
 {
   Delta res;

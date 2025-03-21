@@ -54,20 +54,25 @@ SetOfFacts::SetOfFacts()
 }
 
 
+std::vector<std::string> SetOfFacts::Delta::toPddlModificationList() const
+{
+  std::vector<std::string> res(addedFacts.size() + removedFacts.size());
+  std::size_t i = 0;
+  for (const auto& currFact : addedFacts)
+    res[i++] = "+" + currFact.toPddl(false);
+  for (const auto& currFact : removedFacts)
+    res[i++] = "-" + currFact.toPddl(false);
+  return res;
+}
+
 std::string SetOfFacts::Delta::toPddl() const
 {
   std::string res;
-  for (const auto& currFact : addedFacts)
+  for (const auto& currFactModif : toPddlModificationList())
   {
     if (res != "")
       res += "\n";
-    res += "+" + currFact.toPddl(false);
-  }
-  for (const auto& currFact : removedFacts)
-  {
-    if (res != "")
-      res += "\n";
-    res += "-" + currFact.toPddl(false);
+    res += currFactModif;
   }
   return res;
 }

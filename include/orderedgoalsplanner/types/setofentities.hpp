@@ -23,8 +23,6 @@ struct ORDEREDGOALSPLANNER_API SetOfEntities
   {
     std::set<Entity> addedEntities;
     std::set<Entity> removedEntities;
-
-    std::string toStr() const;
   };
 
   Delta deltaFrom(const SetOfEntities& pOldSetOfEntities) const;

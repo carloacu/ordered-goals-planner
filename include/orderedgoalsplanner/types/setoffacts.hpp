@@ -31,6 +31,7 @@ struct ORDEREDGOALSPLANNER_API SetOfFacts
     std::set<Fact> removedFacts;
 
     bool empty() const { return addedFacts.empty() && removedFacts.empty(); }
+    std::vector<std::string> toPddlModificationList() const;
     std::string toPddl() const;
   };
 
