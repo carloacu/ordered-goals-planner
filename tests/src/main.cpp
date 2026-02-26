@@ -3,7 +3,7 @@
 
 std::string PlannerUsingExternalData::dataPath = "";
 
-// Arguments to set: --dataPath ../../data/
+// Arguments to set: --dataPath ../../doc/examples/
 
 
 int main(int argc, char **argv)
@@ -19,7 +19,7 @@ int main(int argc, char **argv)
   }
 
   if (PlannerUsingExternalData::dataPath.empty())
-    throw std::runtime_error("--dataPath option is missing. (For ex do: --dataPath ../../data/)");
+    throw std::runtime_error("--dataPath option is missing. (For ex do: --dataPath ../../doc/examples/)");
 
   ogp::ORDEREDGOALSPLANNER_DEBUG_FOR_TESTS = true;
   ::testing::InitGoogleTest(&argc, argv);
