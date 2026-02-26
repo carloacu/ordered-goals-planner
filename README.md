@@ -3,8 +3,8 @@
 
 ## Description
 
-This is C++ library to do planification PDDL.<br/>
-The specificity of this planner is that it can handles goals sorted by priorities.<br/>
+A C++ library for PDDL planning.<br/>
+The specificity of this planner is that it can handle goals sorted by priorities.<br/>
 
 For specification about the PDDL language, please look at:<br/>
 https://en.wikipedia.org/wiki/Planning_Domain_Definition_Language
@@ -14,8 +14,8 @@ A Kotlin version for Android (that needs to be updated) is also available here h
 
 ## Ordered goals requirement
 
-For this it managed a problem requirement called `:ordered-goals`.<br/>
-Each pieces of goals inside the `ordered-list` function will be satisfied one after another.<br/>
+For this it manages a problem requirement called `:ordered-goals`.<br/>
+Each piece of goals inside the `ordered-list` function will be satisfied one after another.<br/>
 And before each piece of goal the effect defined in `:effect-between-goals` will be applied.
 
 Example:
@@ -59,12 +59,12 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_ORDERED_GOALS_PLANNER_TESTS=ON .
 
 ## Quickstart
 
-There is a PDDL example in `data/simple`.
+There is a PDDL example in `doc/examples/simple`.
 
 After the compilation you can test the planner by doing
 
 ```bash
-./build/bin/oderedgoalsplanner -d data/simple/domain.pddl -p data/simple/problem.pddl
+./build/bin/ordered_goals_planner -d doc/examples/simple/domain.pddl -p doc/examples/simple/problem.pddl
 ```
 
 The output should be:
@@ -76,6 +76,15 @@ The output should be:
 03: (drop robot1 box1 locationC) [1]
 04: (move robot1 locationC locationA) [1]
 ```
+
+You can also use the `--dp` shortcut to point to a directory containing `domain.pddl` and `problem.pddl`:
+
+```bash
+./build/bin/ordered_goals_planner --dp doc/examples/simple
+```
+
+Add `--verbose` for additional information (successions cache, etc.).
+
 
 ## Features
 
@@ -110,38 +119,55 @@ And the problem requirement specific for this lib
 
 ### Definition of words
 
- * Action: Axiomatic thing that the bot can do
- * Domain: Set of all the actions that the bot can do.
- * Fact: Axiomatic knowledge
- * World: Set of facts currently true
- * Goal: Characteristics that the world should have. It is the motivation of the bot for doing actions to respect these characteristics.
- * Problem: Current world, goal for the world and historical of actions done.
+ * **Action**: Axiomatic thing that the bot can do.
+ * **Domain**: Set of all the actions that the bot can do.
+ * **Fact**: Axiomatic knowledge.
+ * **World**: Set of facts currently true.
+ * **Goal**: Characteristics that the world should have. It is the motivation of the bot for doing actions to respect these characteristics.
+ * **Problem**: Current world, goal for the world and historical of actions done.
 
 
 ### Drawbacks of existing planners
 
-The plannification language has some drawbacks when it is applied to chatbot or to social robotics.
+The planning language has some drawbacks when it is applied to chatbots or to social robotics.
 
- * The choice of actions to do is led by minimizing the planning cost. (a planning cost is equal to the number of actions to do generaly)
-   But for chatbot or social robotics we are often more interested about the most revelant action for the current context than shortest number of actions.
+ * The choice of actions to do is led by minimizing the planning cost (a planning cost is equal to the number of actions to do generally).
+   But for chatbots or social robotics we are often more interested about the most relevant action for the current context than the shortest number of actions.
 
  * The associated algorithms are often costly. But in chatbot and social robotics we need reactivity.
 
 
 
-### Improvements that this library is trying to solve
+### How this library addresses these issues
 
 
 The improvements for chatbot and social robotics are:
 
- * The actions to do are chosen because each of them bring a significant step toward the goal resolution and
-   because they are revelant according to the context. (context = facts already present in world)
-   In other words, the planner tries to find a path to the goal that is the most revelant according to the context.
+ * The actions to do are chosen because each of them brings a significant step toward the goal resolution and
+   because they are relevant according to the context. (context = facts already present in world)
+   In other words, the planner tries to find a path to the goal that is the most relevant according to the context.
 
- * As we do not have to find the shortest path (because we focus about the context instead) and as we only need to find the next
+ * As we do not have to find the shortest path (because we focus on the context instead) and as we only need to find the next
    action, there is the possibility to have a solution much more optimized. For chatbot or social robotics it is important
-   to be reactive even if the domain and the goals are bigs.
+   to be reactive even if the domain and the goals are big.
 
+
+### How the solver works
+
+The solver uses a **forward search with backward chaining heuristic**:
+
+1. **Goal iteration by priority**: Goals are processed from highest to lowest priority. For `:ordered-goals`, an intermediate effect can be applied between each goal.
+
+2. **Backward chaining**: For each unsatisfied goal, the planner looks at which actions can produce the needed effects (using a pre-computed **successions cache**). It recursively checks if the action's preconditions are satisfiable.
+
+3. **Action selection**: Among all candidate actions, the planner picks the most relevant one by:
+   - Avoiding actions marked as "high importance of not repeating"
+   - Maximizing the `preferInContext` score (how well the action fits the current world state)
+   - Preferring actions that have been used less frequently (historical diversity)
+
+4. **Recursive plan construction**: The chosen action is simulated on a copy of the world state. If the goal is satisfied after applying it, the action is added to the plan. Otherwise, the planner recurses to find additional actions.
+
+5. **Optional cost optimization**: When enabled (`tryToDoMoreOptimalSolution`), the planner simulates the full plan for competing candidates and picks the one with the lowest total cost.
 
 
 ## Code documentation
@@ -151,17 +177,19 @@ The improvements for chatbot and social robotics are:
 
 ### Types
 
-Here are the types providec by this library:
+Here are the types provided by this library:
 
  * [Action](include/orderedgoalsplanner/types/action.hpp): Axiomatic thing that the bot can do.
  * [Domain](include/orderedgoalsplanner/types/domain.hpp): Set of all the actions that the bot can do.
- * [Expression](include/orderedgoalsplanner/types/expression.hpp): Expression for making arithmetic comparisons between facts.
  * [Fact](include/orderedgoalsplanner/types/fact.hpp): Axiomatic knowledge that can be contained in the world.
  * [Goal](include/orderedgoalsplanner/types/goal.hpp): A characteristic that the world should have. It is the motivation of the bot for doing actions to respect this characteristic of the world.
+ * [GoalStack](include/orderedgoalsplanner/types/goalstack.hpp): Stack of goals ordered by priority.
  * [Historical](include/orderedgoalsplanner/types/historical.hpp): Container of the actions already done.
- * [Problem](include/orderedgoalsplanner/types/historical.hpp): Current world, goal for the world and historical of actions done.
+ * [Ontology](include/orderedgoalsplanner/types/ontology.hpp): Types, predicates and constants used by the domain.
+ * [Problem](include/orderedgoalsplanner/types/problem.hpp): Current world, goal for the world and historical of actions done.
  * [SetOfFacts](include/orderedgoalsplanner/types/setoffacts.hpp): Container of a set of fact modifications to apply in the world.
- * [WorldModification](include/orderedgoalsplanner/types/worldmodification.hpp): Specification of a modification of the world.
+ * [WorldState](include/orderedgoalsplanner/types/worldstate.hpp): Current state of the world, composed of a set of facts.
+ * [WorldStateModification](include/orderedgoalsplanner/types/worldstatemodification.hpp): Specification of a modification of the world.
 
 
 
