@@ -1334,9 +1334,13 @@ DomainAndProblemPtrs _pddlToProblem(const std::string& pStr,
             ExpressionParsed::skipSpaces(pStr, pos);
           }
         }
+        else if (token == ":metric")
+        {
+          ExpressionParsed::moveUntilClosingParenthesis(pStr, pos);
+        }
         else
         {
-          throw std::runtime_error("Unknown domain PDDL token: \"" + token + "\"");
+          throw std::runtime_error("Unknown problem PDDL token: \"" + token + "\"");
         }
       }
 
