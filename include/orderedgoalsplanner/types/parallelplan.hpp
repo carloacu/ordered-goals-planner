@@ -9,12 +9,12 @@
 namespace ogp
 {
 
-struct ORDEREDGOALSPLANNER_API ParallelPan
+struct ORDEREDGOALSPLANNER_API ParallelPlan
 {
   /// Ordered list of actions set to do in parallel
   std::list<ActionsToDoInParallel> actionsToDoInParallel;
 
-  std::list<std::string> extractSatisiedGoals() const;
+  std::list<std::string> extractSatisfiedGoals() const;
 
   std::size_t cost() const;
 };

@@ -32,7 +32,7 @@ struct ORDEREDGOALSPLANNER_API Problem
   {
   }
 
-  /// BName of the problem.
+  /// Name of the problem.
   std::string name;
 
   /// Objects of the problem.

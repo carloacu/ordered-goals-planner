@@ -72,7 +72,7 @@ void _setGoalsForAPriority(ogp::Problem& pProblem,
   pProblem.goalStack.setGoals(pGoals, pProblem.worldState, pConstants, pProblem.objects, pNow, pPriority);
 }
 
-bool _evaluate(ogp::ParallelPan& pPlan,
+bool _evaluate(ogp::ParallelPlan& pPlan,
                ogp::Problem& pProblem,
                const ogp::Domain& pDomain)
 {

@@ -4,7 +4,7 @@ namespace ogp
 {
 
 
-std::list<std::string> ParallelPan::extractSatisiedGoals() const
+std::list<std::string> ParallelPlan::extractSatisfiedGoals() const
 {
    std::list<std::string> res;
    for (auto& currActionsInParallel : actionsToDoInParallel)
@@ -24,7 +24,7 @@ std::list<std::string> ParallelPan::extractSatisiedGoals() const
 }
 
 
-std::size_t ParallelPan::cost() const
+std::size_t ParallelPlan::cost() const
 {
   return actionsToDoInParallel.size();
 }

@@ -29,9 +29,9 @@ struct ORDEREDGOALSPLANNER_API ProblemModification
 
   /**
    * @brief Construct a problem modification from some world state modifications.
-   * @param[in] pWorldStateModification Modification of the world used both for planification and to actually apply when wanted.
-   * @param[in] pPotentialWorldStateModification Modification of the world used only for planification.<br/>
-   * We supposed it will be potentially applied inderectly by extractors.
+   * @param[in] pWorldStateModification Modification of the world used both for planning and to actually apply when wanted.
+   * @param[in] pPotentialWorldStateModification Modification of the world used only for planning.<br/>
+   * We suppose it will be potentially applied indirectly by extractors.
    */
   ProblemModification(std::unique_ptr<ogp::WorldStateModification> pWorldStateModification,
                       std::unique_ptr<ogp::WorldStateModification> pPotentialWorldStateModification = std::unique_ptr<ogp::WorldStateModification>())

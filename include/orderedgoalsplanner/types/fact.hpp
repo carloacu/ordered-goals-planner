@@ -58,7 +58,7 @@ struct ORDEREDGOALSPLANNER_API Fact
   Fact& operator=(const Fact& pOther);
   Fact& operator=(Fact&& pOther) noexcept;
 
-  /// Specify an order beween facts. It alows to use this type as key of map containers.
+  /// Specify an order between facts. It allows to use this type as key of map containers.
   bool operator<(const Fact& pOther) const;
 
   /// Check equality with another fact.

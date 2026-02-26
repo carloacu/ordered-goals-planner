@@ -56,10 +56,10 @@ struct ORDEREDGOALSPLANNER_API Goal
    */
   bool isInactiveForTooLong(const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow) const;
 
-  /// Notify that the gaol is active. (so in top of the goals stack)
+  /// Notify that the goal is active. (so in top of the goals stack)
   void notifyActivity();
 
-  /// Get the time when this goal became incative. It is a null pointer if the goal is active.
+  /// Get the time when this goal became inactive. It is a null pointer if the goal is active.
   const std::unique_ptr<std::chrono::steady_clock::time_point>& getInactiveSince() const { return _inactiveSince; }
 
   /// Convert this goal to a string.

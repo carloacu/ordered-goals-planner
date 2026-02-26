@@ -12,12 +12,12 @@ namespace ogp
 struct ActionInvocationWithGoal;
 struct Domain;
 struct Goal;
-struct ParallelPan;
+struct ParallelPlan;
 struct Problem;
 struct WorldState;
 
 
-ParallelPan toParallelPlan
+ParallelPlan toParallelPlan
 (std::list<ActionInvocationWithGoal>& pSequentialPlan,
  bool pParalleliseOnyFirstStep,
  Problem& pProblem,

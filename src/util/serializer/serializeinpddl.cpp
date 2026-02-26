@@ -396,10 +396,10 @@ std::string problemToPddl(const Problem& pProblem,
       std::size_t subIdentation = identation + _identationOffset;
       std::size_t subSubIdentation = subIdentation + _identationOffset;
 
-      if (pProblem.goalStack.effectBeweenGoals)
+      if (pProblem.goalStack.effectBetweenGoals)
       {
         res += std::string(subIdentation, ' ') + ":effect-between-goals\n";
-        res += std::string(subSubIdentation, ' ') + effectToPddl(*pProblem.goalStack.effectBeweenGoals, subSubIdentation) + "\n";
+        res += std::string(subSubIdentation, ' ') + effectToPddl(*pProblem.goalStack.effectBetweenGoals, subSubIdentation) + "\n";
         res += "\n";
       }
 

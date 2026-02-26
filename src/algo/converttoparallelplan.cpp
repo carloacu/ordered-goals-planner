@@ -38,7 +38,7 @@ void _notifyActionsDoneAndRemoveCorrespondingGoals(std::list<Goal>& pGoals,
 }
 
 
-ParallelPan toParallelPlan
+ParallelPlan toParallelPlan
 (std::list<ActionInvocationWithGoal>& pSequentialPlan,
  bool pParalleliseOnyFirstStep,
  Problem& pProblem,
@@ -57,7 +57,7 @@ ParallelPan toParallelPlan
     ActionInvocationWithGoal& actionInvWithGoal = pSequentialPlan.front();
     auto itAction = actions.find(actionInvWithGoal.actionInvocation.actionId);
     if (itAction == actions.end())
-      throw std::runtime_error("ActionId \"" + actionInvWithGoal.actionInvocation.actionId + "\" not found in algorithm to manaage parralelisation");
+      throw std::runtime_error("ActionId \"" + actionInvWithGoal.actionInvocation.actionId + "\" not found in algorithm to manage parallelisation");
     std::list<ActionDataForParallelisation> actionInASubList;
     actionInASubList.emplace_back(itAction->second, std::move(actionInvWithGoal));
     currentRes.emplace_back(std::move(actionInASubList));
@@ -120,7 +120,7 @@ ParallelPan toParallelPlan
     _notifyActionsDoneAndRemoveCorrespondingGoals(pGoals, *itPlanStep, pProblem, pDomain, callbacks, pNow);
   }
 
-  ParallelPan res;
+  ParallelPlan res;
   for (auto& currResStep : currentRes)
   {
     ActionsToDoInParallel subRes;

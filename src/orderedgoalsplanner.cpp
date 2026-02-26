@@ -1055,10 +1055,10 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
   pProblem.goalStack.iterateOnGoalsAndRemoveNonPersistent(
         [&](const Goal& pGoal, int pPriority){
 
-            if (pProblem.goalStack.effectBeweenGoals)
+            if (pProblem.goalStack.effectBetweenGoals)
             {
               bool goalChanged = false;
-              pProblem.worldState.applyEffect({}, pProblem.goalStack.effectBeweenGoals, goalChanged, pProblem.goalStack,
+              pProblem.worldState.applyEffect({}, pProblem.goalStack.effectBetweenGoals, goalChanged, pProblem.goalStack,
                                               pDomain.getSetOfEvents(), pCallbacks, pDomain.getOntology(), pProblem.objects, pNow);
             }
 
@@ -1209,7 +1209,7 @@ std::list<ActionInvocationWithGoal> planForEveryGoals(
 }
 
 
-ParallelPan parallelPlanForEveryGoals(
+ParallelPlan parallelPlanForEveryGoals(
     Problem& pProblem,
     const Domain& pDomain,
     const SetOfCallbacks& pCallbacks,
@@ -1243,7 +1243,7 @@ std::string planToStr(const std::list<ActionInvocationWithGoal>& pPlan,
 }
 
 
-std::string parallelPlanToStr(const ParallelPan& pPlan)
+std::string parallelPlanToStr(const ParallelPlan& pPlan)
 {
   std::string res;
   for (const auto& currAcctionsInParallel : pPlan.actionsToDoInParallel)
@@ -1278,7 +1278,7 @@ std::string planToPddl(const std::list<ActionInvocationWithGoal>& pPlan,
 }
 
 
-std::string parallelPlanToPddl(const ParallelPan& pPlan,
+std::string parallelPlanToPddl(const ParallelPlan& pPlan,
                                const Domain& pDomain)
 {
   std::size_t step = 0;
@@ -1317,7 +1317,7 @@ std::string goalsToStr(const std::list<Goal>& pGoals,
 
 
 bool evaluate
-(ParallelPan& pPlan,
+(ParallelPlan& pPlan,
  Problem& pProblem,
  const Domain& pDomain)
 {
@@ -1332,14 +1332,14 @@ bool evaluate
     {
       auto itAction = actions.find(currAction.actionInvocation.actionId);
       if (itAction == actions.end())
-        throw std::runtime_error("ActionId \"" + currAction.actionInvocation.actionId + "\" not found in algorithm to manaage parralelisation");
+        throw std::runtime_error("ActionId \"" + currAction.actionInvocation.actionId + "\" not found in algorithm to manage parallelisation");
       actionInASubList.emplace_back(itAction->second, std::move(currAction));
     }
     if (!actionInASubList.empty())
       planWithCache.emplace_back(std::move(actionInASubList));
   }
 
-  auto expectedGoalsSatisfied = pPlan.extractSatisiedGoals();
+  auto expectedGoalsSatisfied = pPlan.extractSatisfiedGoals();
 
   std::unique_ptr<std::chrono::steady_clock::time_point> now;
   pProblem.goalStack.refreshIfNeeded(pDomain);

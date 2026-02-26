@@ -1192,7 +1192,7 @@ void _loadOrderedGoals(GoalStack& pGoalStack,
     std::vector<Goal> goals;
     if (subToken == ":effect-between-goals")
     {
-      pGoalStack.effectBeweenGoals = pddlToWsModification(pStr, pPos, pOntology, pObjects, {});
+      pGoalStack.effectBetweenGoals = pddlToWsModification(pStr, pPos, pOntology, pObjects, {});
     }
     else if (subToken == ":goals")
     {

@@ -54,7 +54,7 @@ struct ORDEREDGOALSPLANNER_API FactOptional
                         std::size_t pBeginPos = 0,
                         std::size_t* pResPos = nullptr);
 
-  /// Specify an order beween optional facts. It alows to use this type as key of map containers.
+  /// Specify an order between optional facts. It allows to use this type as key of map containers.
   bool operator<(const FactOptional& pOther) const;
 
   /// Set content from another optional fact.

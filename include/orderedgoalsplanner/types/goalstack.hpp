@@ -234,7 +234,7 @@ struct ORDEREDGOALSPLANNER_API GoalStack
   bool isOrderedGoals() const;
 
   /// Effect to apply automatically between ordered goals.
-  std::unique_ptr<ogp::WorldStateModification> effectBeweenGoals{};
+  std::unique_ptr<ogp::WorldStateModification> effectBetweenGoals{};
 
 
 private:

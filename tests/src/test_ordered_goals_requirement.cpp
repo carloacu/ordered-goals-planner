@@ -59,7 +59,7 @@ ogp::ActionInvocationWithGoal _lookForAnActionToDoThenNotify(
 
 
 
-void _test_effect_beween_goals()
+void _test_effect_between_goals()
 {
   const std::string action1 = "action1";
   const std::string action2 = "action2";
@@ -80,7 +80,7 @@ void _test_effect_beween_goals()
   ogp::Problem problem;
   _setGoalsForAPriority(problem, {_pddlGoal("(fact_a)", ontology, problem.objects),
                                   _pddlGoal("(fact_b)", ontology, problem.objects)}, ontology.constants);
-  problem.goalStack.effectBeweenGoals = _worldStateModification_fromPddl("(not (fact_a))", ontology);
+  problem.goalStack.effectBetweenGoals = _worldStateModification_fromPddl("(not (fact_a))", ontology);
 
   EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
   EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
@@ -93,5 +93,5 @@ void _test_effect_beween_goals()
 
 TEST(Planner, test_ordered_goals_requirement)
 {
-  _test_effect_beween_goals();
+  _test_effect_between_goals();
 }
