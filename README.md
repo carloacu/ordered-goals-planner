@@ -64,7 +64,7 @@ There is a PDDL example in `doc/examples/simple`.
 After the compilation you can test the planner by doing
 
 ```bash
-./build/bin/ordered_goals_planner -d doc/examples/simple/domain.pddl -p doc/examples/simple/problem.pddl
+./build/app/ordered_goals_planner -d doc/examples/simple/domain.pddl -p doc/examples/simple/problem.pddl
 ```
 
 The output should be:
@@ -80,7 +80,7 @@ The output should be:
 You can also use the `--dp` shortcut to point to a directory containing `domain.pddl` and `problem.pddl`:
 
 ```bash
-./build/bin/ordered_goals_planner --dp doc/examples/simple
+./build/app/ordered_goals_planner --dp doc/examples/simple
 ```
 
 Add `--verbose` for additional information (successions cache, etc.).

@@ -1,20 +1,7 @@
-cmake_minimum_required(VERSION 3.8)
-
-project(ordered_goals_planner_tests)
-
-include_directories(".")
-
-if(NOT ORDEREDGOALSPLANNER_FOUND)
-  find_package(ordered_goals_planner_lib)
-endif()
-
 enable_testing()
 find_package(GTest REQUIRED)
 
-
-add_executable(
-  ordered_goals_planner_tests
-
+add_executable(ordered_goals_planner_tests
   src/plannerusingexternaldata.hpp
 
   src/test_arithmeticevaluator.cpp
@@ -46,14 +33,13 @@ add_executable(
   src/docexamples/test_planningExampleWithAPreconditionSolve.hpp
   src/docexamples/test_planningExampleWithAPreconditionSolve.cpp
   src/test_util.cpp
-  src/test_pddl_serialization.cpp
   src/main.cpp
 )
 
-
 target_link_libraries(ordered_goals_planner_tests
-  ${GTEST_LIBRARIES}
-  ${ORDEREDGOALSPLANNER_LIBRARIES}
+  PRIVATE
+    GTest::GTest
+    ordered_goals_planner_lib
 )
 
 add_test(

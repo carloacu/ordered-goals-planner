@@ -1,0 +1,2 @@
+add_executable(ordered_goals_planner main.cpp)
+target_link_libraries(ordered_goals_planner PRIVATE ordered_goals_planner_lib)

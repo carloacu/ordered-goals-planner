@@ -9,7 +9,7 @@ option(
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
-include(orderedgoalsplanner-config.cmake)
+include(cmake/orderedgoalsplanner-config.cmake)
 
 # Making a lib
 set(ORDERED_GOALS_PLANNER_HPPS
@@ -151,7 +151,7 @@ install(EXPORT ordered_goals_planner_lib
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ordered_goals_planner
 )
 
-add_subdirectory(bin)
+add_subdirectory(app)
 
 
 if (BUILD_ORDERED_GOALS_PLANNER_TESTS)
