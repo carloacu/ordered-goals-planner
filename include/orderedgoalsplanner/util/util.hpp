@@ -2,6 +2,7 @@
 #define INCLUDE_ORDEREDGOALSPLANNER_UTIL_UTIL_HPP
 
 #include "api.hpp"
+#include <algorithm>
 #include <functional>
 #include <list>
 #include <map>
