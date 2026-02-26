@@ -108,6 +108,8 @@ std::string WorldStateModificationNode::toStr(bool pPrintAnyValue) const
   case WorldStateModificationNodeType::MINUS:
     return leftOperandStr + " - " + rightOperandStr;
   case WorldStateModificationNodeType::WHEN:
+    if (conditionForWhen)
+      return "when(" + conditionForWhen->toStr(nullptr, false) + ", " + rightOperandStr + ")";
     return "when(" + leftOperandStr + ", " + rightOperandStr + ")";
   }
   return "";
@@ -184,15 +186,22 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
       pFactCallback(factToCheck);
     }
   }
-  else if (nodeType == WorldStateModificationNodeType::WHEN && leftOperand && rightOperand)
+  else if (nodeType == WorldStateModificationNodeType::WHEN && rightOperand)
   {
-    auto* leftFactPtr = toWmFact(*leftOperand);
-    if (leftFactPtr != nullptr)
+    bool conditionSatisfied = false;
+    if (leftOperand)
     {
-      auto factToCheck = leftFactPtr->factOptional;
-      if (pSetOfFact.hasFact(factToCheck.fact))
-        rightOperand->forAll(pFactCallback, pSetOfFact, pConstants, pObjects);
+      auto* leftFactPtr = toWmFact(*leftOperand);
+      if (leftFactPtr != nullptr)
+        conditionSatisfied = pSetOfFact.hasFact(leftFactPtr->factOptional.fact);
     }
+    else if (conditionForWhen)
+    {
+      WorldState tmpWs(&pSetOfFact);
+      conditionSatisfied = conditionForWhen->isTrue(tmpWs, pConstants, pObjects);
+    }
+    if (conditionSatisfied)
+      rightOperand->forAll(pFactCallback, pSetOfFact, pConstants, pObjects);
   }
 }
 

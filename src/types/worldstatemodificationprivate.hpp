@@ -3,6 +3,7 @@
 
 #include <memory>
 #include <optional>
+#include <orderedgoalsplanner/types/condition.hpp>
 #include <orderedgoalsplanner/types/worldstatemodification.hpp>
 #include <orderedgoalsplanner/util/util.hpp>
 
@@ -122,6 +123,8 @@ struct WorldStateModificationNode : public WorldStateModification
           rightOperand ? rightOperand->clone(pParametersToArgumentPtr) : std::unique_ptr<WorldStateModification>(),
           parameterOpt);
     res->_successions = _successions;
+    if (conditionForWhen)
+      res->conditionForWhen = conditionForWhen->clone();
     return res;
   }
 
@@ -133,6 +136,7 @@ struct WorldStateModificationNode : public WorldStateModification
   std::unique_ptr<WorldStateModification> leftOperand;
   std::unique_ptr<WorldStateModification> rightOperand;
   std::optional<Parameter> parameterOpt;
+  std::unique_ptr<Condition> conditionForWhen;
 
 private:
   Successions _successions;

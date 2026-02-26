@@ -576,7 +576,11 @@ std::string effectToPddl(
   {
     const auto& wsmNode = *wsmNodePtr;
     std::string leftOperandStr;
-    if (wsmNode.leftOperand)
+    if (wsmNode.conditionForWhen && wsmNode.nodeType == WorldStateModificationNodeType::WHEN)
+    {
+      leftOperandStr = conditionToPddl(*wsmNode.conditionForWhen, 0);
+    }
+    else if (wsmNode.leftOperand)
     {
       bool actuallyItIsACondition = wsmNode.nodeType == WorldStateModificationNodeType::FOR_ALL ||
           wsmNode.nodeType == WorldStateModificationNodeType::WHEN;
