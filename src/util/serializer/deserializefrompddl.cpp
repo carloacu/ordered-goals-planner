@@ -1325,11 +1325,13 @@ DomainAndProblemPtrs _pddlToProblem(const std::string& pStr,
         }
         else if (token == ":requirements")
         {
+          ExpressionParsed::skipSpaces(pStr, pos);
           while (pos < strSize && pStr[pos] != ')')
           {
             auto requirement = ExpressionParsed::parseToken(pStr, pos);
             if (requirement != ":ordered-goals")
                 throw std::runtime_error("Unexpected requirement defined in problem: \"" + requirement + "\"");
+            ExpressionParsed::skipSpaces(pStr, pos);
           }
         }
         else
@@ -1405,8 +1407,12 @@ Domain pddlToDomain(const std::string& pStr,
         }
         else if (token == ":requirements")
         {
+          ExpressionParsed::skipSpaces(pStr, pos);
           while (pos < strSize && pStr[pos] != ')')
+          {
             requirements.insert(ExpressionParsed::parseToken(pStr, pos));
+            ExpressionParsed::skipSpaces(pStr, pos);
+          }
         }
         else if (token == ":types")
         {
