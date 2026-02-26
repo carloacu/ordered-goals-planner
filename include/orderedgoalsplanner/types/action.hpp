@@ -74,7 +74,7 @@ struct ORDEREDGOALSPLANNER_API Action
   }
 
   /// Copy operator.
-  void operator=(const Action& pAction)
+  Action& operator=(const Action& pAction)
   {
     parameters = pAction.parameters;
     precondition = pAction.precondition ? pAction.precondition->clone() : std::unique_ptr<Condition>();
@@ -87,6 +87,7 @@ struct ORDEREDGOALSPLANNER_API Action
     actionsPredecessorsCache = pAction.actionsPredecessorsCache;
     eventsPredecessorsCache = pAction.eventsPredecessorsCache;
     duration = pAction.duration;
+    return *this;
   }
 
   /// Check equality with another action.
