@@ -249,6 +249,19 @@ void _test_pddlSerializationParts()
 
   {
     std::size_t pos = 0;
+    std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(when (>= (battery-amount toto) 4) (pred_c toto3)", pos, ontology, {}, {});
+    if (!ws)
+      FAIL();
+    EXPECT_EQ("(when (>= (battery-amount toto) 4) (pred_c toto3))", ogp::effectToPddl(*ws, 0));
+
+    std::unique_ptr<ogp::WorldStateModification> wsClone = ws->clone(nullptr);
+    if (!wsClone)
+      FAIL();
+    EXPECT_EQ("(when (>= (battery-amount toto) 4) (pred_c toto3))", ogp::effectToPddl(*wsClone, 0));
+  }
+
+  {
+    std::size_t pos = 0;
     auto parameters = ogp::pddlToParameters("(?e - entity)", ontology.types);
     std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(pred_c ?e)", pos, ontology, {}, parameters);
     if (!ws)

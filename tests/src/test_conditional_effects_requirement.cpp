@@ -138,6 +138,60 @@ void _doNotApplyWhenEffectWithNotValidatedCondition()
 }
 
 
+void _applyWhenEffectWithValidatedNumericCondition()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("worker");
+  ontology.constants = ogp::SetOfEntities::fromPddl("bob - worker", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("hours(?w - worker) - number\n"
+                                                      "fact_b\n"
+                                                      "fact_c", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(and (fact_c) (when (>= (hours bob) 40) (fact_b)))", ontology));
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_c)", ontology)}, ontology.constants);
+  _addFact(problem.worldState, "hours(bob)=42", problem.goalStack, ontology, setOfEventsMap, _now);
+
+  EXPECT_FALSE(_hasFact(problem.worldState, "fact_b", ontology));
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_TRUE(_hasFact(problem.worldState, "fact_b", ontology));
+}
+
+
+void _doNotApplyWhenEffectWithNotValidatedNumericCondition()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("worker");
+  ontology.constants = ogp::SetOfEntities::fromPddl("bob - worker", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("hours(?w - worker) - number\n"
+                                                      "fact_b\n"
+                                                      "fact_c", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(and (fact_c) (when (>= (hours bob) 40) (fact_b)))", ontology));
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_c)", ontology)}, ontology.constants);
+  _addFact(problem.worldState, "hours(bob)=20", problem.goalStack, ontology, setOfEventsMap, _now);
+
+  EXPECT_FALSE(_hasFact(problem.worldState, "fact_b", ontology));
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_FALSE(_hasFact(problem.worldState, "fact_b", ontology));
+}
+
+
 void _whenToSatisfyThenGoal()
 {
   const std::string action1 = "action1";
@@ -316,6 +370,8 @@ TEST(Planner, test_contionalEffectsRequirement)
 {
   _applyWhenEffectWithValidatedCondition();
   _doNotApplyWhenEffectWithNotValidatedCondition();
+  _applyWhenEffectWithValidatedNumericCondition();
+  _doNotApplyWhenEffectWithNotValidatedNumericCondition();
   _whenToSatisfyThenGoal();
   _useWhenEffectInsideAPath();
   _whenRemoveAFact();
