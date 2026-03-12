@@ -183,7 +183,8 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
                                                                       const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                                                                       const Historical* pGlobalHistorical,
                                                                       LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr,
-                                                                      const ActionPtrWithGoal* pPreviousActionPtr);
+                                                                      const ActionPtrWithGoal* pPreviousActionPtr,
+                                                                      std::size_t pNbOfPotentialRetries);
 
 void _getPreferInContextStatistics(std::size_t& nbOfPreconditionsSatisfied,
                                    std::size_t& nbOfPreconditionsNotSatisfied,
@@ -790,7 +791,7 @@ PlanCost _extractPlanCost(
 
     const SetOfCallbacks callbacks;
     auto subPlan = _planForMoreImportantGoalPossible(pProblem, pDomain, callbacks, false,
-                                                     pNow, pGlobalHistorical, &pLookForAnActionOutputInfos, &pPreviousAction);
+                                                     pNow, pGlobalHistorical, &pLookForAnActionOutputInfos, &pPreviousAction, 10);
     if (subPlan.empty())
       break;
     const auto& actions = pDomain.getActions();
@@ -905,6 +906,7 @@ ActionId _findFirstActionForAGoal(
     const Domain& pDomain,
     bool pTryToDoMoreOptimalSolution,
     std::size_t pLength,
+    const std::set<std::string>& pFirstActionInvocationsAlreadyDone,
     const Historical* pGlobalHistorical,
     const ActionPtrWithGoal* pPreviousActionPtr)
 {
@@ -948,6 +950,8 @@ ActionId _findFirstActionForAGoal(
           auto actionInvocations = newPotRes.toActionInvocations(constants, pProblem.objects);
           for (auto& currActionInvocation : actionInvocations)
           {
+            if (!pFirstActionInvocationsAlreadyDone.empty() && pFirstActionInvocationsAlreadyDone.count(currActionInvocation.actionInvocation.toStr()) > 0)
+              continue;
             if (_isMoreOptimalNextAction(potentialNextActionComparisonCacheOpt, pNextInPlanCanBeAnEvent,
                                          currActionInvocation, res, pProblem, pDomain,
                                          dataRelatedToOptimisation, pLength, pGoal, pGlobalHistorical))
@@ -970,6 +974,7 @@ bool _goalToPlanRec(
     std::list<ActionInvocationWithGoal>& pActionInvocations,
     Problem& pProblem,
     std::map<std::string, std::size_t>& pActionAlreadyInPlan,
+    std::set<std::string>& pFirstActionInvocationsAlreadyDone,
     const Domain& pDomain,
     bool pTryToDoMoreOptimalSolution,
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
@@ -987,7 +992,7 @@ bool _goalToPlanRec(
     auto actionId =
         _findFirstActionForAGoal(parameters, nextInPlanCanBeAnEvent, treeOfAlreadyDonePath, pGoal, pProblem,
                                  pDomain, pTryToDoMoreOptimalSolution, 0,
-                                 pGlobalHistorical, pPreviousActionPtr);
+                                 pFirstActionInvocationsAlreadyDone, pGlobalHistorical, pPreviousActionPtr);
     if (!actionId.empty())
       potentialRes = std::make_unique<ActionInvocationWithGoal>(actionId, parameters, pGoal.clone(), pPriority);
   }
@@ -995,6 +1000,7 @@ bool _goalToPlanRec(
   if (potentialRes && potentialRes->fromGoal)
   {
     const auto& actionToDoStr = potentialRes->actionInvocation.toStr();
+    pFirstActionInvocationsAlreadyDone.insert(actionToDoStr);
     auto itAlreadyFoundAction = pActionAlreadyInPlan.find(actionToDoStr);
     if (itAlreadyFoundAction == pActionAlreadyInPlan.end())
     {
@@ -1019,8 +1025,10 @@ bool _goalToPlanRec(
                                                            pDomain, pNow, nullptr, nullptr);
       ActionPtrWithGoal previousAction(potActionPtr, pGoal);
       auto* previousActionPtr = nextInPlanCanBeAnEvent ? nullptr : &previousAction;
+      std::set<std::string> firstActionInvocationsAlreadyDone;
       if (problemForPlanCost.worldState.isGoalSatisfied(pGoal, ontology.constants, problemForPlanCost.objects) ||
           _goalToPlanRec(pActionInvocations, problemForPlanCost, pActionAlreadyInPlan,
+                         firstActionInvocationsAlreadyDone,
                          pDomain, pTryToDoMoreOptimalSolution, pNow, nullptr, pGoal, pPriority, previousActionPtr))
       {
         potentialRes->fromGoal->notifyActivity();
@@ -1037,13 +1045,14 @@ bool _goalToPlanRec(
 }
 
 std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& pProblem,
-                                                                     const Domain& pDomain,
-                                                                     const SetOfCallbacks& pCallbacks,
-                                                                     bool pTryToDoMoreOptimalSolution,
-                                                                     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
-                                                                     const Historical* pGlobalHistorical,
-                                                                     LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr,
-                                                                     const ActionPtrWithGoal* pPreviousActionPtr)
+                                                                      const Domain& pDomain,
+                                                                      const SetOfCallbacks& pCallbacks,
+                                                                      bool pTryToDoMoreOptimalSolution,
+                                                                      const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
+                                                                      const Historical* pGlobalHistorical,
+                                                                      LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr,
+                                                                      const ActionPtrWithGoal* pPreviousActionPtr,
+                                                                      std::size_t pNbOfPotentialRetries)
 {
   const auto& ontology = pDomain.getOntology();
   std::list<ActionInvocationWithGoal> res;
@@ -1058,10 +1067,23 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
                                               pDomain.getSetOfEvents(), pCallbacks, pDomain.getOntology(), pProblem.objects, pNow);
             }
 
-            std::map<std::string, std::size_t> actionAlreadyInPlan;
-            return _goalToPlanRec(res, pProblem, actionAlreadyInPlan,
-                                  pDomain, pTryToDoMoreOptimalSolution, pNow, pGlobalHistorical, pGoal, pPriority,
-                                  pPreviousActionPtr);
+            std::set<std::string> firstActionInvocationsAlreadyDone;
+            std::size_t firstActionInvocationsAlreadyDoneLastSize = 0;
+            for (std::size_t i = 0; i < pNbOfPotentialRetries; ++i)
+            {
+              std::map<std::string, std::size_t> actionAlreadyInPlan;
+              if (_goalToPlanRec(res, pProblem, actionAlreadyInPlan,
+                                 firstActionInvocationsAlreadyDone,
+                                 pDomain, pTryToDoMoreOptimalSolution, pNow, pGlobalHistorical, pGoal, pPriority,
+                                 pPreviousActionPtr))
+                return true;
+
+              auto newSize = firstActionInvocationsAlreadyDone.size();
+              if (newSize == firstActionInvocationsAlreadyDoneLastSize)
+                break;
+              firstActionInvocationsAlreadyDoneLastSize = newSize;
+            }
+            return false;
           },
         pProblem.worldState, ontology.constants, pProblem.objects, pNow,
         pLookForAnActionOutputInfosPtr);
@@ -1088,7 +1110,7 @@ std::list<ActionInvocationWithGoal> planForMoreImportantGoalPossible(Problem& pP
                                                                      LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr)
 {
   return _planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, pTryToDoMoreOptimalSolution, pNow,
-                                           pGlobalHistorical, pLookForAnActionOutputInfosPtr, nullptr);
+                                           pGlobalHistorical, pLookForAnActionOutputInfosPtr, nullptr, 100);
 }
 
 
@@ -1174,7 +1196,7 @@ std::list<ActionInvocationWithGoal> planForEveryGoals(
   while (!pProblem.goalStack.goals().empty())
   {
     auto subPlan = _planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, tryToDoMoreOptimalSolution,
-                                                     pNow, pGlobalHistorical, &lookForAnActionOutputInfos, nullptr);
+                                                     pNow, pGlobalHistorical, &lookForAnActionOutputInfos, nullptr, 100);
     if (subPlan.empty())
       break;
     for (auto& currActionInSubPlan : subPlan)
