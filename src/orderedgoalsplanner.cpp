@@ -857,7 +857,7 @@ bool _isMoreOptimalNextAction(
       LookForAnActionOutputInfos lookForAnActionOutputInfos;
       updateProblemForNextPotentialPlannerResult(localProblem1, goalChanged, oneStepOfPlannerResult1, pDomain, now, nullptr, &lookForAnActionOutputInfos);
       ActionPtrWithGoal actionPtrWithGoal(pNewPotentialNextAction.actionPtr, pCurrentGoal);
-      auto* actionPtrWithGoalPtr = nextStepIsAnEvent ? nullptr : &actionPtrWithGoal;
+      auto* actionPtrWithGoalPtr = &actionPtrWithGoal; // nextStepIsAnEvent ? nullptr : &actionPtrWithGoal;
       newCost = _extractPlanCost(localProblem1, pDomain, now, nullptr, lookForAnActionOutputInfos, actionPtrWithGoalPtr);
     }
 
@@ -869,8 +869,8 @@ bool _isMoreOptimalNextAction(
       updateProblemForNextPotentialPlannerResult(localProblem2, goalChanged, oneStepOfPlannerResult2, pDomain, now, nullptr, &lookForAnActionOutputInfos);
       pPotentialNextActionComparisonCacheOpt = PotentialNextActionComparisonCache();
       ActionPtrWithGoal actionPtrWithGoal(currentNextAction.actionPtr, pCurrentGoal);
-      bool nextStepIsAnEventForCurrentAction = currentNextAction.nextStepIsAnEvent(pDataRelatedToOptimisation.parameterToEntitiesFromEvent);
-      auto* actionPtrWithGoalPtr = nextStepIsAnEventForCurrentAction ? nullptr : &actionPtrWithGoal;
+      //bool nextStepIsAnEventForCurrentAction = currentNextAction.nextStepIsAnEvent(pDataRelatedToOptimisation.parameterToEntitiesFromEvent);
+      auto* actionPtrWithGoalPtr = &actionPtrWithGoal; // nextStepIsAnEventForCurrentAction ? nullptr : &actionPtrWithGoal;
       pPotentialNextActionComparisonCacheOpt->currentCost = _extractPlanCost(localProblem2, pDomain, now, nullptr, lookForAnActionOutputInfos, actionPtrWithGoalPtr);
     }
 
