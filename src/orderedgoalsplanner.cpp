@@ -769,13 +769,13 @@ PlanCost _extractPlanCost(
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
     Historical* pGlobalHistorical,
     LookForAnActionOutputInfos& pLookForAnActionOutputInfos,
-    const ActionPtrWithGoal* pPreviousActionPtr)
+    const ActionPtrWithGoal& pPreviousAction)
 {
   PlanCost res;
-  if (pPreviousActionPtr != nullptr && pPreviousActionPtr->actionPtr != nullptr)
+  if (pPreviousAction.actionPtr != nullptr)
   {
-    res.costForFirstGoal += pPreviousActionPtr->actionPtr->duration;
-    res.totalCost += pPreviousActionPtr->actionPtr->duration;
+    res.costForFirstGoal += pPreviousAction.actionPtr->duration;
+    res.totalCost += pPreviousAction.actionPtr->duration;
   }
 
   std::set<std::string> actionAlreadyInPlan;
@@ -790,7 +790,7 @@ PlanCost _extractPlanCost(
 
     const SetOfCallbacks callbacks;
     auto subPlan = _planForMoreImportantGoalPossible(pProblem, pDomain, callbacks, false,
-                                                     pNow, pGlobalHistorical, &pLookForAnActionOutputInfos, pPreviousActionPtr);
+                                                     pNow, pGlobalHistorical, &pLookForAnActionOutputInfos, &pPreviousAction);
     if (subPlan.empty())
       break;
     const auto& actions = pDomain.getActions();
@@ -850,15 +850,13 @@ bool _isMoreOptimalNextAction(
     std::unique_ptr<std::chrono::steady_clock::time_point> now;
 
     PlanCost newCost;
-    bool nextStepIsAnEvent = pNewPotentialNextAction.nextStepIsAnEvent(pDataRelatedToOptimisation.parameterToEntitiesFromEvent);
     {
       auto localProblem1 = pProblem;
       bool goalChanged = false;
       LookForAnActionOutputInfos lookForAnActionOutputInfos;
       updateProblemForNextPotentialPlannerResult(localProblem1, goalChanged, oneStepOfPlannerResult1, pDomain, now, nullptr, &lookForAnActionOutputInfos);
       ActionPtrWithGoal actionPtrWithGoal(pNewPotentialNextAction.actionPtr, pCurrentGoal);
-      auto* actionPtrWithGoalPtr = nextStepIsAnEvent ? nullptr : &actionPtrWithGoal;
-      newCost = _extractPlanCost(localProblem1, pDomain, now, nullptr, lookForAnActionOutputInfos, actionPtrWithGoalPtr);
+      newCost = _extractPlanCost(localProblem1, pDomain, now, nullptr, lookForAnActionOutputInfos, actionPtrWithGoal);
     }
 
     if (!pPotentialNextActionComparisonCacheOpt)
@@ -869,16 +867,14 @@ bool _isMoreOptimalNextAction(
       updateProblemForNextPotentialPlannerResult(localProblem2, goalChanged, oneStepOfPlannerResult2, pDomain, now, nullptr, &lookForAnActionOutputInfos);
       pPotentialNextActionComparisonCacheOpt = PotentialNextActionComparisonCache();
       ActionPtrWithGoal actionPtrWithGoal(currentNextAction.actionPtr, pCurrentGoal);
-      bool nextStepIsAnEventForCurrentAction = currentNextAction.nextStepIsAnEvent(pDataRelatedToOptimisation.parameterToEntitiesFromEvent);
-      auto* actionPtrWithGoalPtr = nextStepIsAnEventForCurrentAction ? nullptr : &actionPtrWithGoal;
-      pPotentialNextActionComparisonCacheOpt->currentCost = _extractPlanCost(localProblem2, pDomain, now, nullptr, lookForAnActionOutputInfos, actionPtrWithGoalPtr);
+      pPotentialNextActionComparisonCacheOpt->currentCost = _extractPlanCost(localProblem2, pDomain, now, nullptr, lookForAnActionOutputInfos, actionPtrWithGoal);
     }
 
     if (newCost.isBetterThan(pPotentialNextActionComparisonCacheOpt->currentCost))
     {
       pPotentialNextActionComparisonCacheOpt->currentCost = newCost;
       pPotentialNextActionComparisonCacheOpt->effectsWithWorseCosts.push_back(&currentNextAction.actionPtr->effect);
-      pNextInPlanCanBeAnEvent = nextStepIsAnEvent;
+      pNextInPlanCanBeAnEvent = pNewPotentialNextAction.nextStepIsAnEvent(pDataRelatedToOptimisation.parameterToEntitiesFromEvent);
       return true;
     }
     if (pPotentialNextActionComparisonCacheOpt->currentCost.isBetterThan(newCost))
