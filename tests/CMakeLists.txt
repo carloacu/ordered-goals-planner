@@ -22,7 +22,7 @@ add_executable(ordered_goals_planner_tests
   src/test_ordered_goals_requirement.cpp
   src/test_parallelplan.cpp
   src/test_pddl_serialization.cpp
-  src/test_problems_in_data.cpp
+  src/test_examples.cpp
   src/test_setofentities.cpp
   src/test_setoffacts.cpp
   src/test_successionscache.cpp

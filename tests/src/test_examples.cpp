@@ -97,3 +97,13 @@ TEST_F(PlannerUsingExternalData, test_problemsInData_move_and_tell)
 {
   _test_dataDirectory(PlannerUsingExternalData::dataPath, "move_and_tell");
 }
+
+TEST_F(PlannerUsingExternalData, test_problemsInData_investigate)
+{
+  _test_dataDirectory(PlannerUsingExternalData::dataPath, "investigate");
+}
+
+TEST_F(PlannerUsingExternalData, test_problemsInData_investigate_2)
+{
+  _test_dataDirectory(PlannerUsingExternalData::dataPath, "investigate_2");
+}
