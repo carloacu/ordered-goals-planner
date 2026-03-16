@@ -2045,7 +2045,7 @@ void _testGoalUnderPersist()
     ogp::Problem problem;
     _addGoalsForAPriority(problem, {"persist(!" + _fact_a + ")"}, ontology, now, ogp::GoalStack::getDefaultPriority() + 2);
     _addGoalsForAPriority(problem, {_goal(_fact_b, ontology, 0)}, ontology.constants, now, ogp::GoalStack::getDefaultPriority());
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, {});
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem, ontology, {});
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain));
   }
 
@@ -2070,7 +2070,7 @@ void _testGoalUnderPersist()
     ogp::Problem problem;
     _addGoalsForAPriority(problem, {"persist(" + _fact_c + ")"}, ontology, now, ogp::GoalStack::getDefaultPriority() + 2);
     EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.actionId);
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, {});
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem, ontology, {});
     _addGoalsForAPriority(problem, {_goal(_fact_b, ontology, 0)}, ontology.constants, now, ogp::GoalStack::getDefaultPriority());
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain));
   }
@@ -2079,7 +2079,7 @@ void _testGoalUnderPersist()
     ogp::Problem problem;
     _addGoalsForAPriority(problem, {_fact_c}, ontology, now, ogp::GoalStack::getDefaultPriority() + 2);
     EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.actionId);
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, {});
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem, ontology, {});
     _addGoalsForAPriority(problem, {_goal(_fact_b, ontology, 0)}, ontology.constants, now, ogp::GoalStack::getDefaultPriority());
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain));
   }
@@ -2089,7 +2089,7 @@ void _testGoalUnderPersist()
     problem.goalStack.pushBackGoal({_goal("persist(!" + _fact_e + ")", ontology)}, problem.worldState, ontology.constants, problem.objects, now, ogp::GoalStack::getDefaultPriority() + 2);
     problem.goalStack.pushBackGoal(_goal(_fact_c, ontology), problem.worldState, ontology.constants, problem.objects, now, ogp::GoalStack::getDefaultPriority() + 2);
     EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, now).actionInvocation.actionId);
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, now);
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem, ontology, now);
     _addGoalsForAPriority(problem, {_goal(_fact_b, ontology, 1)}, ontology.constants, now, ogp::GoalStack::getDefaultPriority());
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain, _emptyCallbacks, now));
     EXPECT_EQ(action1, _lookForAnActionToDoStr(problem, domain, _emptyCallbacks, now));
@@ -2102,7 +2102,7 @@ void _testGoalUnderPersist()
     now = std::make_unique<std::chrono::steady_clock::time_point>(std::chrono::steady_clock::now() + std::chrono::minutes(5));
     ogp::notifyActionDone(problem, domain, _emptyCallbacks, plannerResult, now);
 
-    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, now);
+    problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem, ontology, now);
     EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, now).actionInvocation.actionId); // Not action1 because it was inactive for too long
   }
 
@@ -2162,7 +2162,7 @@ void _oneStepTowards()
   _setGoals(problem, {{11, {implyGoal}},
                       {10, {_goal("oneStepTowards(" + _fact_greeted + ")", ontology, 0)}},
                       {9, {_goal(_fact_checkedIn, ontology, 0), _goal(_fact_beHappy, ontology)}}}, ontology.constants, _now);
-  problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem.worldState, ontology.constants, problem.objects, _now);
+  problem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(problem, ontology, _now);
   EXPECT_EQ(_action_greet, _lookForAnActionToDoStr(problem, domain));
   EXPECT_EQ(_action_greet, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.actionId);
   EXPECT_EQ(_action_goodBoy, _lookForAnActionToDoStr(problem, domain));

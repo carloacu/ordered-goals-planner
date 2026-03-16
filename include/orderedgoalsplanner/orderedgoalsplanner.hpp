@@ -30,7 +30,8 @@ struct ParallelPlan;
  */
 ORDEREDGOALSPLANNER_API
 std::list<ActionInvocationWithGoal> planForMoreImportantGoalPossible(Problem& pProblem,
-                                                                     const Domain& pDomain, const SetOfCallbacks& pCallbacks,
+                                                                     const Domain& pDomain,
+                                                                     const SetOfCallbacks& pCallbacks,
                                                                      bool pTryToDoMoreOptimalSolution,
                                                                      const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                                                                      const Historical* pGlobalHistorical = nullptr,

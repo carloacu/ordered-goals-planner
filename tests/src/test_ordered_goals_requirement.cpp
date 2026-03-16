@@ -87,6 +87,35 @@ void _test_effect_between_goals()
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
 
+
+void _test_immutable_facts_reset_between_ordered_goals()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+
+  ogp::Ontology ontology;
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_a\n"
+                                                      "fact_b", ontology.types);
+  ontology.updateImmutablePredicates();
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(fact_a)", ontology));
+  actions.emplace(action1, actionObj1);
+
+  ogp::Action actionObj2({}, _worldStateModification_fromPddl("(fact_b)", ontology));
+  actions.emplace(action2, actionObj2);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  ogp::Problem problem;
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_a)", ontology, problem.objects),
+                                  _pddlGoal("(imply (" + ogp::Predicate::getImmutablePrefix() + "fact_a) (fact_b))", ontology, problem.objects)}, ontology.constants);
+
+  EXPECT_EQ(action1, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ(action2, _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+}
+
+
 }
 
 
@@ -94,4 +123,5 @@ void _test_effect_between_goals()
 TEST(Planner, test_ordered_goals_requirement)
 {
   _test_effect_between_goals();
+  _test_immutable_facts_reset_between_ordered_goals();
 }

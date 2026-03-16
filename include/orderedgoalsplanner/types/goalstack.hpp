@@ -15,6 +15,7 @@
 namespace ogp
 {
 struct Domain;
+struct Problem;
 struct ProblemModification;
 struct SetOfEvents;
 struct ActionInvocationWithGoal;
@@ -36,17 +37,16 @@ struct ORDEREDGOALSPLANNER_API GoalStack
    * @param pNow Current time.
    * @param pGoalsToAdd Priorities to goals to add.
    * @param pGoalsToAddInCurrentPriority Goals to add in current priority.
-   * @param[in] pWorldState World state to consider.
+   * @param[in] pDomain World state to consider.
    * @param[out] pLookForAnActionOutputInfosPtr Output to know informations (is the goal satified, does the goal resolution failed, how many goals was solved, ...)
    * @return True, if the goal stack has changed.
    */
-  bool notifyActionDone(const ActionInvocationWithGoal& pOneStepOfPlannerResult,
+  bool notifyActionDone(Problem& pProblem,
+                        const ActionInvocationWithGoal& pOneStepOfPlannerResult,
                         const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                         const std::map<int, std::vector<Goal>>* pGoalsToAdd,
                         const std::vector<Goal>* pGoalsToAddInCurrentPriority,
-                        const WorldState& pWorldState,
-                        const SetOfEntities& pConstants,
-                        const SetOfEntities& pObjects,
+                        const Domain& pDomain,
                         LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr);
 
   /// Be notified when goals changed.
@@ -69,7 +69,8 @@ struct ORDEREDGOALSPLANNER_API GoalStack
    * @param pNow Current time.
    * @param[out] pLookForAnActionOutputInfosPtr Output to know informations (is the goal satified, does the goal resolution failed, how many goals was solved, ...)
    */
-  void iterateOnGoalsAndRemoveNonPersistent(const std::function<bool (Goal&, int)>& pManageGoal,
+  void iterateOnGoalsAndRemoveNonPersistent(const std::function<void ()>& pCallbackBeforeEachGoal,
+                                            const std::function<bool (Goal&, int)>& pManageGoal,
                                             const WorldState& pWorldState,
                                             const SetOfEntities& pConstants,
                                             const SetOfEntities& pObjects,
@@ -202,12 +203,11 @@ struct ORDEREDGOALSPLANNER_API GoalStack
 
   /**
    * @brief Remove the first goals that are already satisfied.
-   * @param[in] pWorldState World state to consider.
+   * @param[in] pProblem World state to consider.
    * @param[in] pNow Current time.
    */
-  void removeFirstGoalsThatAreAlreadySatisfied(const WorldState& pWorldState,
-                                               const SetOfEntities& pConstants,
-                                               const SetOfEntities& pObjects,
+  void removeFirstGoalsThatAreAlreadySatisfied(Problem& pProblem,
+                                               const Ontology& pOntology,
                                                const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow);
 
   /// Goals to satisfy.
@@ -255,9 +255,8 @@ private:
    * @param[out] pLookForAnActionOutputInfosPtr Output to know informations (is the goal satified, does the goal resolution failed, how many goals was solved, ...)
    * @return True, if the goal stack has changed.
    */
-  bool _removeFirstGoalsThatAreAlreadySatisfied(const WorldState& pWorldState,
-                                                const SetOfEntities& pConstants,
-                                                const SetOfEntities& pObjects,
+  bool _removeFirstGoalsThatAreAlreadySatisfied(Problem& pProblem,
+                                                const Ontology& pOntology,
                                                 const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                                                 LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr);
 
@@ -269,7 +268,8 @@ private:
    * @param[out] pLookForAnActionOutputInfosPtr Output to know informations (is the goal satified, does the goal resolution failed, how many goals was solved, ...)
    * @return True, if the goal stack has changed.
    */
-  bool _iterateOnGoalsAndRemoveNonPersistent(const std::function<bool (Goal&, int)>& pManageGoal,
+  bool _iterateOnGoalsAndRemoveNonPersistent(const std::function<void ()>& pCallbackBeforeEachGoal,
+                                             const std::function<bool (Goal&, int)>& pManageGoal,
                                              const WorldState& pWorldState,
                                              const SetOfEntities& pConstants,
                                              const SetOfEntities& pObjects,

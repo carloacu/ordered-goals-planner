@@ -178,10 +178,10 @@ std::list<Goal> extractSatisfiedGoals(
       if (!somethingChanged)
         return {};
 
-      pProblem.goalStack.notifyActionDone(currAction.actionInvWithGoal, pNow,
+      pProblem.goalStack.notifyActionDone(pProblem, currAction.actionInvWithGoal, pNow,
                                           &currAction.action.effect.goalsToAdd,
-                                          &currAction.action.effect.goalsToAddInCurrentPriority, pProblem.worldState,
-                                          ontology.constants, pProblem.objects, &lookForAnActionOutputInfos);
+                                          &currAction.action.effect.goalsToAddInCurrentPriority,
+                                          pDomain, &lookForAnActionOutputInfos);
     }
     ++pCurrItInPlan;
   }

@@ -1044,7 +1044,7 @@ bool _goalToPlanRec(
   return false;
 }
 
-std::list<ActionInvocationWithGoal>   _planForMoreImportantGoalPossible(Problem& pProblem,
+std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& pProblem,
                                                                       const Domain& pDomain,
                                                                       const SetOfCallbacks& pCallbacks,
                                                                       bool pTryToDoMoreOptimalSolution,
@@ -1058,15 +1058,16 @@ std::list<ActionInvocationWithGoal>   _planForMoreImportantGoalPossible(Problem&
   std::list<ActionInvocationWithGoal> res;
   pProblem.goalStack.refreshIfNeeded(pDomain);
   pProblem.goalStack.iterateOnGoalsAndRemoveNonPersistent(
-        [&](const Goal& pGoal, int pPriority){
-
+        [&]() {
             if (pProblem.goalStack.effectBetweenGoals)
             {
               bool goalChanged = false;
               pProblem.worldState.applyEffect({}, pProblem.goalStack.effectBetweenGoals, goalChanged, pProblem.goalStack,
                                               pDomain.getSetOfEvents(), pCallbacks, pDomain.getOntology(), pProblem.objects, pNow);
             }
-
+            pProblem.worldState.updateImmutableFacts(ontology);
+        },
+        [&](const Goal& pGoal, int pPriority){
             std::set<std::string> firstActionInvocationsAlreadyDone;
             std::size_t firstActionInvocationsAlreadyDoneLastSize = 0;
             for (std::size_t i = 0; i < pNbOfPotentialRetries; ++i)
@@ -1169,9 +1170,8 @@ bool notifyActionDone(Problem& pProblem,
   {
     auto& setOfEvents = pDomain.getSetOfEvents();
     bool goalChanged = false;
-    const auto& ontology = pDomain.getOntology();
     notifyActionInvocationDone(pProblem, goalChanged, setOfEvents, pCallbacks, pOnStepOfPlannerResult,
-                               itAction->second.effect.worldStateModification, ontology, pNow,
+                               itAction->second.effect.worldStateModification, pDomain, pNow,
                                &itAction->second.effect.goalsToAdd, &itAction->second.effect.goalsToAddInCurrentPriority,
                                pLookForAnActionOutputInfosPtr);
     return true;
@@ -1361,7 +1361,7 @@ bool evaluate
 
   std::unique_ptr<std::chrono::steady_clock::time_point> now;
   pProblem.goalStack.refreshIfNeeded(pDomain);
-  pProblem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(pProblem.worldState, ontology.constants, pProblem.objects, now);
+  pProblem.goalStack.removeFirstGoalsThatAreAlreadySatisfied(pProblem, ontology, now);
   auto itBegin = planWithCache.begin();
   auto goals = extractSatisfiedGoals(pProblem, pDomain, itBegin, planWithCache, nullptr, now);
   auto goalsPddls = _goalsToPddls(goals);

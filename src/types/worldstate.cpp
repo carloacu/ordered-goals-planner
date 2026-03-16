@@ -439,6 +439,12 @@ void WorldState::setFacts(const std::set<Fact>& pFacts,
 }
 
 
+void WorldState::updateImmutableFacts(const Ontology& pOntology)
+{
+  _factsMapping.updateImmutableFacts(pOntology);
+}
+
+
 bool WorldState::isOptionalFactSatisfied(const FactOptional& pFactOptional) const
 {
   const auto& facts = _factsMapping.facts();

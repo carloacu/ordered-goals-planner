@@ -26,6 +26,12 @@ struct ORDEREDGOALSPLANNER_API Ontology
       return predicatePtr;
     return derivedPredicates.nameToPredicatePtr(pName);
   }
+
+  void updateImmutablePredicates()
+  {
+    predicates.updateImmutablePredicates();
+    derivedPredicates.updateImmutablePredicates();
+  }
 };
 
 } // namespace ogp

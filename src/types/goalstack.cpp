@@ -3,6 +3,7 @@
 #include <sstream>
 #include <orderedgoalsplanner/types/domain.hpp>
 #include <orderedgoalsplanner/types/actioninvocationwithgoal.hpp>
+#include <orderedgoalsplanner/types/problem.hpp>
 #include <orderedgoalsplanner/types/setofevents.hpp>
 #include <orderedgoalsplanner/util/util.hpp>
 #include <orderedgoalsplanner/types/lookforanactionoutputinfos.hpp>
@@ -31,33 +32,36 @@ GoalStack& GoalStack::operator=(const GoalStack& pOther)
 }
 
 
-bool GoalStack::notifyActionDone(const ActionInvocationWithGoal& pOnStepOfPlannerResult,
+bool GoalStack::notifyActionDone(Problem& pProblem,
+                                 const ActionInvocationWithGoal& pOnStepOfPlannerResult,
                                  const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                                  const std::map<int, std::vector<Goal>>* pGoalsToAdd,
                                  const std::vector<Goal>* pGoalsToAddInCurrentPriority,
-                                 const WorldState& pWorldState,
-                                 const SetOfEntities& pConstants,
-                                 const SetOfEntities& pObjects,
+                                 const Domain& pDomain,
                                  LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr)
 {
   bool goalChanged = false;
 
   // Remove current goal if it was one step towards
-  int currentPriority = _getCurrentPriority(pWorldState, pConstants, pObjects);
+  const auto& worldState = pProblem.worldState;
+  const auto& ontology = pDomain.getOntology();
+  const auto& constants = ontology.constants;
+  const auto& objects = pProblem.objects;
+  int currentPriority = _getCurrentPriority(worldState, constants, objects);
   if (pOnStepOfPlannerResult.fromGoal && pOnStepOfPlannerResult.fromGoal->isOneStepTowards())
   {
     auto isNotGoalThatHasDoneOneStepForward = [&](const Goal& pGoal, int){ return pGoal != *pOnStepOfPlannerResult.fromGoal; };
-    goalChanged = _iterateOnGoalsAndRemoveNonPersistent(isNotGoalThatHasDoneOneStepForward, pWorldState, pConstants, pObjects, pNow, pLookForAnActionOutputInfosPtr);
+    goalChanged = _iterateOnGoalsAndRemoveNonPersistent([]{}, isNotGoalThatHasDoneOneStepForward, worldState, constants, objects, pNow, pLookForAnActionOutputInfosPtr);
   }
   else // Else remove only the first goals already satisfied
   {
-    goalChanged = _removeFirstGoalsThatAreAlreadySatisfied(pWorldState, pConstants, pObjects, pNow, pLookForAnActionOutputInfosPtr);
+    goalChanged = _removeFirstGoalsThatAreAlreadySatisfied(pProblem, ontology, pNow, pLookForAnActionOutputInfosPtr);
   }
 
   if (pGoalsToAdd != nullptr && !pGoalsToAdd->empty())
-    goalChanged = _addGoals(*pGoalsToAdd, pWorldState, pConstants, pObjects, pNow) || goalChanged;
+    goalChanged = _addGoals(*pGoalsToAdd, worldState, constants, objects, pNow) || goalChanged;
   if (pGoalsToAddInCurrentPriority != nullptr && !pGoalsToAddInCurrentPriority->empty())
-    goalChanged = _addGoals(std::map<int, std::vector<ogp::Goal>>{{currentPriority, *pGoalsToAddInCurrentPriority}}, pWorldState, pConstants, pObjects, pNow) || goalChanged;
+    goalChanged = _addGoals(std::map<int, std::vector<ogp::Goal>>{{currentPriority, *pGoalsToAddInCurrentPriority}}, worldState, constants, objects, pNow) || goalChanged;
 
   if (goalChanged)
   {
@@ -68,18 +72,19 @@ bool GoalStack::notifyActionDone(const ActionInvocationWithGoal& pOnStepOfPlanne
 }
 
 
-bool GoalStack::_removeFirstGoalsThatAreAlreadySatisfied(const WorldState& pWorldState,
-                                                         const SetOfEntities& pConstants,
-                                                         const SetOfEntities& pObjects,
+bool GoalStack::_removeFirstGoalsThatAreAlreadySatisfied(Problem& pProblem,
+                                                         const Ontology& pOntology,
                                                          const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                                                          LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr)
 {
+  auto ufiCallback = [&]() { pProblem.worldState.updateImmutableFacts(pOntology); };
   auto alwaysTrue = [&](const Goal&, int){ return true; };
-  return _iterateOnGoalsAndRemoveNonPersistent(alwaysTrue, pWorldState, pConstants, pObjects, pNow, pLookForAnActionOutputInfosPtr);
+  return _iterateOnGoalsAndRemoveNonPersistent(ufiCallback, alwaysTrue, pProblem.worldState, pOntology.constants, pProblem.objects, pNow, pLookForAnActionOutputInfosPtr);
 }
 
 
 bool GoalStack::_iterateOnGoalsAndRemoveNonPersistent(
+    const std::function<void()>& pCallbackBeforeEachGoal,
     const std::function<bool(Goal&, int)>& pManageGoal,
     const WorldState& pWorldState,
     const SetOfEntities& pConstants,
@@ -105,6 +110,7 @@ bool GoalStack::_iterateOnGoalsAndRemoveNonPersistent(
         continue;
       }
 
+      pCallbackBeforeEachGoal();
       if (!pWorldState.isGoalSatisfied(*itGoal, pConstants, pObjects))
       {
         _currentGoalPtr = &*itGoal;
@@ -199,6 +205,7 @@ const Goal* GoalStack::getCurrentGoalPtr() const
 
 
 void GoalStack::iterateOnGoalsAndRemoveNonPersistent(
+    const std::function<void()>& pCallbackBeforeEachGoal,
     const std::function<bool(Goal&, int)>& pManageGoal,
     const WorldState& pWorldState,
     const SetOfEntities& pConstants,
@@ -206,7 +213,7 @@ void GoalStack::iterateOnGoalsAndRemoveNonPersistent(
     const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
     LookForAnActionOutputInfos* pLookForAnActionOutputInfosPtr)
 {
-  if (_iterateOnGoalsAndRemoveNonPersistent(pManageGoal, pWorldState, pConstants, pObjects,
+  if (_iterateOnGoalsAndRemoveNonPersistent(pCallbackBeforeEachGoal, pManageGoal, pWorldState, pConstants, pObjects,
                                             pNow, pLookForAnActionOutputInfosPtr))
     onGoalsChanged(_goals);
 }
@@ -422,15 +429,13 @@ bool GoalStack::removeGoals(const std::string& pGoalGroupId,
 }
 
 
-void GoalStack::removeFirstGoalsThatAreAlreadySatisfied(const WorldState& pWorldState,
-                                                        const SetOfEntities& pConstants,
-                                                        const SetOfEntities& pObjects,
+void GoalStack::removeFirstGoalsThatAreAlreadySatisfied(Problem& pProblem,
+                                                        const Ontology& pOntology,
                                                         const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow)
 {
-  if (_removeFirstGoalsThatAreAlreadySatisfied(pWorldState, pConstants, pObjects, pNow, nullptr))
+  if (_removeFirstGoalsThatAreAlreadySatisfied(pProblem, pOntology, pNow, nullptr))
     onGoalsChanged(_goals);
 }
-
 
 
 std::map<int, std::vector<Goal>> GoalStack::getNotSatisfiedGoals(const WorldState& pWorldState,

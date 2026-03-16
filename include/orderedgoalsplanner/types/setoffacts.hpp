@@ -128,6 +128,8 @@ struct ORDEREDGOALSPLANNER_API SetOfFacts
 
   bool empty() const { return _facts.empty(); }
 
+  void updateImmutableFacts(const Ontology& pOntology);
+
 private:
   /// Fact to bool True if the fact is timeless
   std::map<Fact, bool> _facts;

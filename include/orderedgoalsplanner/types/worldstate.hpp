@@ -208,6 +208,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
   const std::map<Fact, bool>& facts() const { return _factsMapping.facts(); }
   /// Fact names to facts in the world.
   const SetOfFacts& factsMapping() const { return _factsMapping; }
+  void updateImmutableFacts(const Ontology& pOntology);
 
 
   /**

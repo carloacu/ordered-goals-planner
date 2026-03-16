@@ -1,6 +1,7 @@
 #include <orderedgoalsplanner/types/setoffacts.hpp>
 #include <stdexcept>
 #include <orderedgoalsplanner/types/fact.hpp>
+#include <orderedgoalsplanner/types/ontology.hpp>
 #include <orderedgoalsplanner/util/alias.hpp>
 #include <orderedgoalsplanner/util/util.hpp>
 #include "expressionParsed.hpp"
@@ -212,7 +213,6 @@ bool SetOfFacts::erase(const Fact& pFact)
   }
   return false;
 }
-
 
 std::map<Fact, bool>::iterator SetOfFacts::eraseFactIt(std::map<Fact, bool>::iterator pFactIt)
 {
@@ -486,6 +486,29 @@ bool SetOfFacts::hasFact(const Fact& pFact) const
     }
   }
   return false;
+}
+
+
+void SetOfFacts::updateImmutableFacts(const Ontology& pOntology)
+{
+  // Remove existing immutable facts
+  std::list<Fact> factsToRemove;
+  for (const auto& currFact : _facts)
+    if (currFact.first.predicate.isImmutable())
+      factsToRemove.emplace_back(currFact.first);
+  for (auto& currFact : factsToRemove)
+    erase(currFact);
+
+  // Add new immutable facts
+  std::list<Fact> factsToAdd;
+  for (const auto& currFact : _facts)
+      if (pOntology.nameToPredicatePtr(Predicate::getImmutablePrefix() + currFact.first.name()) != nullptr)
+        factsToAdd.emplace_back(currFact.first);
+  for (auto& currFact : factsToAdd)
+  {
+    currFact.toImmutable();
+    add(currFact);
+  }
 }
 
 

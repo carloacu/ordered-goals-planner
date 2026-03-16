@@ -1512,10 +1512,7 @@ Domain pddlToDomain(const std::string& pStr,
     throw std::runtime_error("No '(define' found in domain file");
   }
   if (pAutoAddImmutablePredicates)
-  {
-    ontology.predicates.updateImmutablePredicates();
-    ontology.derivedPredicates.updateImmutablePredicates();
-  }
+    ontology.updateImmutablePredicates();
   auto res = Domain(actions, ontology, {}, idToSetOfEvents, timelessFacts, domainName);
   for (auto& currRequirement : requirements)
     res.addRequirement(currRequirement);

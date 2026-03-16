@@ -15,7 +15,7 @@ void notifyActionInvocationDone(Problem& pProblem,
                                 const SetOfCallbacks& pCallbacks,
                                 const ActionInvocationWithGoal& pOnStepOfPlannerResult,
                                 const std::unique_ptr<WorldStateModification>& pEffect,
-                                const Ontology& pOntology,
+                                const Domain& pDomain,
                                 const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow,
                                 const std::map<int, std::vector<Goal>>* pGoalsToAdd,
                                 const std::vector<Goal>* pGoalsToAddInCurrentPriority,
@@ -23,13 +23,13 @@ void notifyActionInvocationDone(Problem& pProblem,
 {
   pProblem.historical.notifyActionDone(pOnStepOfPlannerResult.actionInvocation.actionId);
 
+  const auto& ontology = pDomain.getOntology();
   pProblem.worldState.applyEffect(pOnStepOfPlannerResult.actionInvocation.parameters, pEffect,
                                   pGoalChanged, pProblem.goalStack, pSetOfEvents, pCallbacks,
-                                  pOntology, pProblem.objects, pNow);
+                                  ontology, pProblem.objects, pNow);
 
-  pGoalChanged = pProblem.goalStack.notifyActionDone(pOnStepOfPlannerResult, pNow, pGoalsToAdd,
-                                                     pGoalsToAddInCurrentPriority, pProblem.worldState,
-                                                     pOntology.constants, pProblem.objects,
+  pGoalChanged = pProblem.goalStack.notifyActionDone(pProblem, pOnStepOfPlannerResult, pNow, pGoalsToAdd,
+                                                     pGoalsToAddInCurrentPriority, pDomain,
                                                      pLookForAnActionOutputInfosPtr) || pGoalChanged;
 }
 
@@ -74,7 +74,7 @@ void updateProblemForNextPotentialPlannerResultWithAction(
                                callbacks, ontology, pProblem.objects, pNow);
 
   notifyActionInvocationDone(pProblem, pGoalChanged, setOfEvents, callbacks, pOneStepOfPlannerResult,
-                             pOneStepAction.effect.worldStateModification, ontology, pNow,
+                             pOneStepAction.effect.worldStateModification, pDomain, pNow,
                              &pOneStepAction.effect.goalsToAdd, &pOneStepAction.effect.goalsToAddInCurrentPriority,
                              pLookForAnActionOutputInfosPtr);
 
