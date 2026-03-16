@@ -42,4 +42,19 @@ std::unique_ptr<Condition> SetOfDerivedPredicates::optFactToConditionPtr(const F
   return {};
 }
 
+std::string SetOfDerivedPredicates::toPddl(std::size_t pIdentation) const
+{
+  std::string res;
+  bool firstIteration = true;
+  for (const auto& currNameToDerivedPredicate : _nameToDerivedPredicate)
+  {
+    if (firstIteration)
+      firstIteration = false;
+    else
+      res += "\n\n";
+    res += currNameToDerivedPredicate.second.toPddl(pIdentation);
+  }
+  return res;
+}
+
 } // !ogp

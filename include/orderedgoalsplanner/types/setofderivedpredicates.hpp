@@ -24,6 +24,9 @@ struct ORDEREDGOALSPLANNER_API SetOfDerivedPredicates
 
   std::unique_ptr<Condition> optFactToConditionPtr(const FactOptional& pFactOptional) const;
 
+  std::string toPddl(std::size_t pIdentation = 0) const;
+  bool empty() const { return _nameToDerivedPredicate.empty(); }
+
 
 private:
   std::map<std::string, DerivedPredicate> _nameToDerivedPredicate;

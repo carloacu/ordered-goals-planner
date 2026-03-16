@@ -420,6 +420,7 @@ void _test_loadPddlDomain()
         (held ?b - ball)
         (site-built ?s - site)
         (windows-fitted ?s - site)
+        (windows-fitted-2 ?s - site)
         (started)
     )
 
@@ -430,6 +431,13 @@ void _test_loadPddlDomain()
         (velocity ?b - ball)  ; a comment
         (size ?b - ball)
         (position) - site
+    )
+
+    (:derived (windows-fitted-both ?s - site)  ; comment
+        (and
+            (windows-fitted ?s) ; comment
+            (windows-fitted-2 ?s)
+        )
     )
 
     (:timeless (foundations-set mainsite))
@@ -537,6 +545,7 @@ void _test_loadPddlDomain()
         (started)
         (walls-built ?s - site)
         (windows-fitted ?s - site)
+        (windows-fitted-2 ?s - site)
     )
 
     (:functions
@@ -546,6 +555,13 @@ void _test_loadPddlDomain()
         (position) - site
         (size ?b - ball) - number
         (velocity ?b - ball) - number
+    )
+
+    (:derived (windows-fitted-both ?s - site)
+        (and
+            (windows-fitted ?s)
+            (windows-fitted-2 ?s)
+        )
     )
 
     (:timeless

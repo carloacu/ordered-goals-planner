@@ -1,6 +1,7 @@
 #include <orderedgoalsplanner/types/derivedpredicate.hpp>
 #include <orderedgoalsplanner/types/setofentities.hpp>
 #include <orderedgoalsplanner/util/serializer/deserializefrompddl.hpp>
+#include <orderedgoalsplanner/util/serializer/serializeinpddl.hpp>
 
 namespace ogp
 {
@@ -32,6 +33,16 @@ void DerivedPredicate::operator=(const DerivedPredicate& pDerivedPredicate)
 {
   predicate = pDerivedPredicate.predicate;
   condition = pDerivedPredicate.condition->clone();
+}
+
+std::string DerivedPredicate::toPddl(std::size_t pIdentation) const
+{
+  static const std::size_t indentationOffset = 4;
+  std::string res = std::string(pIdentation, ' ') + "(:derived " + predicate.toPddl() + "\n";
+  res += std::string(pIdentation + indentationOffset, ' ') +
+      conditionToPddl(*condition, pIdentation + indentationOffset) + "\n";
+  res += std::string(pIdentation, ' ') + ")";
+  return res;
 }
 
 

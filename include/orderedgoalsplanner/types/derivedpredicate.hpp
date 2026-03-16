@@ -20,6 +20,8 @@ struct ORDEREDGOALSPLANNER_API DerivedPredicate
   /// Copy operator.
   void operator=(const DerivedPredicate& pDerivedPredicate);
 
+  std::string toPddl(std::size_t pIdentation = 0) const;
+
   /// Predicate.
   Predicate predicate;
   /// Condition to put when this is used predicate.

@@ -238,6 +238,12 @@ std::string domainToPddl(const Domain& pDomain)
     res += "\n" + std::string(identation, ' ') + ")\n\n";
   }
 
+  if (!ontology.derivedPredicates.empty())
+  {
+    res += ontology.derivedPredicates.toPddl(identation);
+    res += "\n\n";
+  }
+
   const auto& timelessFacts = pDomain.getTimelessFacts().setOfFacts();
   if (!timelessFacts.empty())
   {
