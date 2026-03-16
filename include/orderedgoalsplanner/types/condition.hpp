@@ -134,7 +134,8 @@ struct ORDEREDGOALSPLANNER_API Condition
    */
   virtual std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr = nullptr,
                                            bool pInvert = false,
-                                           const SetOfDerivedPredicates* pDerivedPredicatesPtr = nullptr) const = 0;
+                                           const SetOfDerivedPredicates* pDerivedPredicatesPtr = nullptr,
+                                           bool pAutoAddImmutablePredicates = false) const = 0;
 
   virtual bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                                      bool pIsWrappingExpressionNegated = false,
@@ -235,7 +236,8 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
-                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr) const override;
+                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr,
+                                   bool pAutoAddImmutablePredicates) const override;
 
   bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                              bool pIsWrappingExpressionNegated,
@@ -303,7 +305,8 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
-                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr) const override;
+                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr,
+                                   bool pAutoAddImmutablePredicates) const override;
   bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                              bool pIsWrappingExpressionNegated,
                              std::list<Parameter>* pParametersPtr) const override;
@@ -371,7 +374,8 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
-                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr) const override;
+                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr,
+                                   bool pAutoAddImmutablePredicates) const override;
   bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                              bool pIsWrappingExpressionNegated,
                              std::list<Parameter>* pParametersPtr) const override;
@@ -438,7 +442,8 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
-                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr) const override;
+                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr,
+                                   bool pAutoAddImmutablePredicates) const override;
   bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                              bool pIsWrappingExpressionNegated,
                              std::list<Parameter>* pParametersPtr) const override;
@@ -501,7 +506,8 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
-                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr) const override;
+                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr,
+                                   bool pAutoAddImmutablePredicates) const override;
   bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                              bool pIsWrappingExpressionNegated,
                              std::list<Parameter>* pParametersPtr) const override;
@@ -561,7 +567,8 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
 
   std::unique_ptr<Condition> clone(const std::map<Parameter, Entity>* pConditionParametersToArgumentPtr,
                                    bool pInvert,
-                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr) const override;
+                                   const SetOfDerivedPredicates* pDerivedPredicatesPtr,
+                                   bool pAutoAddImmutablePredicates) const override;
   bool hasAContradictionWith(const std::set<FactOptional>&, bool, std::list<Parameter>*) const override { return false; }
 
   const ConditionNode* fcNodePtr() const override { return nullptr; }

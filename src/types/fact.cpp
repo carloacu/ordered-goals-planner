@@ -1127,6 +1127,17 @@ bool Fact::isCompleteWithAnyEntityValue() const
   return false;
 }
 
+void Fact::toImmutable()
+{
+  if (!predicate.isImmutable())
+  {
+    predicate = predicate.createImmutableCopy();
+    _name = predicate.name;
+    _resetFactSignatureCache();
+  }
+}
+
+
 const Entity& Fact::getUndefinedEntity()
 {
   static const auto undefinedValue = Entity("undefined", {});

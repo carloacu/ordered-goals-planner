@@ -22,11 +22,13 @@ struct ORDEREDGOALSPLANNER_API SetOfDerivedPredicates
 
   const Predicate* nameToPredicatePtr(const std::string& pPredicateName) const;
 
-  std::unique_ptr<Condition> optFactToConditionPtr(const FactOptional& pFactOptional) const;
+  std::unique_ptr<Condition> optFactToConditionPtr(const FactOptional& pFactOptional,
+                                                   bool pAutoAddImmutablePredicates) const;
 
   std::string toPddl(std::size_t pIdentation = 0) const;
   bool empty() const { return _nameToDerivedPredicate.empty(); }
 
+  void updateImmutablePredicates();
 
 private:
   std::map<std::string, DerivedPredicate> _nameToDerivedPredicate;

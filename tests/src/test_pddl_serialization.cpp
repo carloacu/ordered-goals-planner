@@ -871,6 +871,13 @@ void _test_immutableAddition()
         )
     )
 
+    (:derived (~immutable~windows-fitted-both ?s - site)
+        (and
+            (~immutable~windows-fitted ?s)
+            (~immutable~windows-fitted-2 ?s)
+        )
+    )
+
     (:durative-action START
         :duration (= ?duration 1)
 

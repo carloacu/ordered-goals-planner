@@ -23,6 +23,14 @@ DerivedPredicate::DerivedPredicate(const Predicate& pPredicate,
 }
 
 
+DerivedPredicate::DerivedPredicate(const Predicate& pPredicate,
+                                   std::unique_ptr<Condition> pCondition)
+  : predicate(pPredicate),
+    condition(std::move(pCondition))
+{
+}
+
+
 DerivedPredicate::DerivedPredicate(const DerivedPredicate& pDerivedPredicate)
   : predicate(pDerivedPredicate.predicate),
     condition(pDerivedPredicate.condition->clone())
@@ -45,5 +53,10 @@ std::string DerivedPredicate::toPddl(std::size_t pIdentation) const
   return res;
 }
 
+
+DerivedPredicate DerivedPredicate::createImmutableCopy() const
+{
+  return DerivedPredicate(predicate.createImmutableCopy(), condition->clone(nullptr, false, nullptr, true));
+}
 
 } // !ogp

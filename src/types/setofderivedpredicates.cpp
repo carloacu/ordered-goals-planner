@@ -31,13 +31,14 @@ const Predicate* SetOfDerivedPredicates::nameToPredicatePtr(const std::string& p
   return nullptr;
 }
 
-std::unique_ptr<Condition> SetOfDerivedPredicates::optFactToConditionPtr(const FactOptional& pFactOptional) const
+std::unique_ptr<Condition> SetOfDerivedPredicates::optFactToConditionPtr(const FactOptional& pFactOptional,
+                                                                         bool pAutoAddImmutablePredicates) const
 {
   auto it = _nameToDerivedPredicate.find(pFactOptional.fact.name());
   if (it != _nameToDerivedPredicate.end())
   {
     std::map<Parameter, Entity> conditionParametersToArgument = pFactOptional.fact.extratParameterToArguments();
-    return it->second.condition->clone(&conditionParametersToArgument, pFactOptional.isFactNegated);
+    return it->second.condition->clone(&conditionParametersToArgument, pFactOptional.isFactNegated, nullptr, pAutoAddImmutablePredicates);
   }
   return {};
 }
@@ -56,5 +57,20 @@ std::string SetOfDerivedPredicates::toPddl(std::size_t pIdentation) const
   }
   return res;
 }
+
+
+void SetOfDerivedPredicates::updateImmutablePredicates()
+{
+  std::map<std::string, DerivedPredicate> nameToImmutableDerPredicate;
+  for (auto& currNameToPredicate : _nameToDerivedPredicate) {
+    if (!currNameToPredicate.second.predicate.isImmutable()) {
+      auto newPredicate = currNameToPredicate.second.createImmutableCopy();
+      nameToImmutableDerPredicate.emplace(currNameToPredicate.first, std::move(newPredicate));
+    }
+  }
+  for (auto& currNameToImmutablePredicate : nameToImmutableDerPredicate)
+    addDerivedPredicate(currNameToImmutablePredicate.second);
+}
+
 
 } // !ogp

@@ -285,6 +285,7 @@ struct ORDEREDGOALSPLANNER_API Fact
 
   bool isCompleteWithAnyEntityValue() const;
 
+  void toImmutable();
 
   Predicate predicate;
 
