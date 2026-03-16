@@ -995,6 +995,21 @@ Axiom _pddlToAxiom(const std::string& pStr,
 }
 
 
+DerivedPredicate _pddlToDerivedPredicate(const std::string& pStr,
+                                         std::size_t& pPos,
+                                         const Ontology& pOntology)
+{
+  auto predicateExp = ExpressionParsed::fromPddl(pStr, pPos, false);
+  auto conditionExp = ExpressionParsed::fromPddl(pStr, pPos, false);
+  std::vector<Parameter> parameters = _pddlArgumentsToParameters(predicateExp.arguments, "", pOntology.types);
+  Predicate pred(predicateExp.name, parameters, nullptr);
+  auto condition = _expressionParsedToCondition(conditionExp, pOntology, {}, parameters, false, nullptr);
+  DerivedPredicate res(pred, "", pOntology);
+  res.condition = std::move(condition);
+  return res;
+}
+
+
 Event _pddlToEvent(const std::string& pStr,
                    std::size_t& pPos,
                    const Ontology& pOntology)
@@ -1450,6 +1465,11 @@ Domain pddlToDomain(const std::string& pStr,
         {
           auto numberType = ontology.types.nameToType("number");
           ontology.predicates.addAll(ogp::SetOfPredicates::fromPddl(pStr, pos, ontology.types, numberType));
+        }
+        else if (token == ":derived")
+        {
+          auto derivedPred = _pddlToDerivedPredicate(pStr, pos, ontology);
+          ontology.derivedPredicates.addDerivedPredicate(derivedPred);
         }
         else if (token == ":timeless")
         {
