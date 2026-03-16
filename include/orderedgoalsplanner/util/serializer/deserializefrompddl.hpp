@@ -31,6 +31,7 @@ struct DomainAndProblemPtrs
 };
 
 Domain pddlToDomain(const std::string& pStr,
+                    bool pAutoAddImmutablePredicates,
                     const std::map<std::string, Domain>& pPreviousDomains);
 
 DomainAndProblemPtrs pddlToProblemFromDomains(const std::string& pStr,

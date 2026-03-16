@@ -31,6 +31,7 @@ struct ORDEREDGOALSPLANNER_API SetOfPredicates
 
   void addAll(const SetOfPredicates& pOther);
   void addPredicate(const Predicate& pPredicate);
+  void updateImmutablePredicates();
 
   const Predicate* nameToPredicatePtr(const std::string& pName) const;
   Predicate nameToPredicate(const std::string& pName) const;

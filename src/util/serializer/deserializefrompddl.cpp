@@ -1369,6 +1369,7 @@ DomainAndProblemPtrs _pddlToProblem(const std::string& pStr,
 }
 
 Domain pddlToDomain(const std::string& pStr,
+                    bool pAutoAddImmutablePredicates,
                     const std::map<std::string, Domain>& pPreviousDomains)
 {
   std::string domainName = "";
@@ -1490,6 +1491,8 @@ Domain pddlToDomain(const std::string& pStr,
   } else {
     throw std::runtime_error("No '(define' found in domain file");
   }
+  if (pAutoAddImmutablePredicates)
+    ontology.predicates.updateImmutablePredicates();
   auto res = Domain(actions, ontology, {}, idToSetOfEvents, timelessFacts, domainName);
   for (auto& currRequirement : requirements)
     res.addRequirement(currRequirement);

@@ -66,7 +66,7 @@ void _test_dataDirectory(const std::string& pDataPath,
 
   auto domainContent = _getFileContent(directory + "/domain.pddl");
   std::map<std::string, ogp::Domain> loadedDomains;
-  auto domain = ogp::pddlToDomain(domainContent, loadedDomains);
+  auto domain = ogp::pddlToDomain(domainContent, false, loadedDomains);
   loadedDomains.emplace(domain.getName(), std::move(domain));
 
   auto problemContent = _getFileContent(directory + "/problem.pddl");

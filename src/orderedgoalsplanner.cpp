@@ -1044,7 +1044,7 @@ bool _goalToPlanRec(
   return false;
 }
 
-std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& pProblem,
+std::list<ActionInvocationWithGoal>   _planForMoreImportantGoalPossible(Problem& pProblem,
                                                                       const Domain& pDomain,
                                                                       const SetOfCallbacks& pCallbacks,
                                                                       bool pTryToDoMoreOptimalSolution,

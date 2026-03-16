@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 
   auto domainContent = _getFileContent(domain_file);
   std::map<std::string, ogp::Domain> loadedDomains;
-  auto domain = ogp::pddlToDomain(domainContent, loadedDomains);
+  auto domain = ogp::pddlToDomain(domainContent, false, loadedDomains);
   loadedDomains.emplace(domain.getName(), std::move(domain));
   if (verbose)
     std::cout << "Parsing domain file \"" << domain_file << "\" done successfully." << std::endl;

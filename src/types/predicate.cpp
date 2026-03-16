@@ -59,6 +59,16 @@ Predicate::Predicate(const std::string& pStr,
 }
 
 
+Predicate::Predicate(const std::string& pName,
+                     const std::vector<Parameter>& pParameters,
+                     const std::shared_ptr<Type>& pValue)
+  : name(pName),
+    parameters(pParameters),
+    value(pValue)
+{
+}
+
+
 std::string Predicate::toPddl() const
 {
   std::string res = "(" + name;
@@ -96,5 +106,22 @@ std::string Predicate::toStr() const
    return false;
  }
 
+
+const std::string& Predicate::getImmutablePrefix()
+{
+  static const std::string immutablePrefix = "~immutable~";
+  return immutablePrefix;
+}
+
+bool Predicate::isImmutable() const
+{
+  const auto& immutablePrefix = getImmutablePrefix();
+  return name.compare(0, immutablePrefix.size(), immutablePrefix) == 0;
+}
+
+Predicate Predicate::createImmutableCopy() const
+{
+  return Predicate(getImmutablePrefix() + name, parameters, value);
+}
 
 } // !ogp

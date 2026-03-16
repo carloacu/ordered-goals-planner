@@ -398,7 +398,7 @@ void _test_loadPddlDomain()
           ; :expansion ;deprecated
       )
 
-  )", loadedDomains);
+  )", false, loadedDomains);
     loadedDomains.emplace(firstDomain.getName(), std::move(firstDomain));
   }
 
@@ -508,7 +508,7 @@ void _test_loadPddlDomain()
     )
 
 )
-)", loadedDomains);
+)", false, loadedDomains);
   loadedDomains.emplace(domain.getName(), domain);
 
   const std::string expectedDomain = R"((define
@@ -750,7 +750,7 @@ void _test_loadPddlDomain()
   }
 
   // deserialize what is serialized
-  auto domain2 = ogp::pddlToDomain(outDomainPddl1, {});
+  auto domain2 = ogp::pddlToDomain(outDomainPddl1, false, {});
   auto outDomainAndProblemPtrs2 = ogp::pddlToProblem(outProblemPddl1, domain2);
 
   // re serialize
@@ -770,6 +770,102 @@ void _test_loadPddlDomain()
   }
 }
 
+
+void _test_immutableAddition()
+{
+  std::map<std::string, ogp::Domain> loadedDomains;
+
+  auto domain = ogp::pddlToDomain(R"(
+(define
+    (domain construction)
+    (:requirements :strips :typing)
+
+    (:types
+        site - object  ; a comment
+        car
+        ball
+    )
+    (:constants mainsite - site
+                maincar - car)
+
+    (:predicates
+        (windows-fitted ?s - site)
+        (started)
+    )
+
+    (:functions;a comment
+        (car-value ?r - car) - number
+        (distance-to-floor ?b - ball)
+        (velocity ?b - ball)
+    )
+
+    (:durative-action START
+        :duration (= ?duration 1)
+        :effect
+          (at end (started))
+    )
+)
+)", true, loadedDomains);
+
+  const std::string expectedDomain = R"((define
+    (domain construction)
+    (:requirements :strips :typing)
+
+    (:types
+        site - object
+        car
+        ball
+    )
+
+    (:constants
+        maincar - car
+        mainsite - site
+    )
+
+    (:predicates
+        (started)
+        (windows-fitted ?s - site)
+        (~immutable~started)
+        (~immutable~windows-fitted ?s - site)
+    )
+
+    (:functions
+        (car-value ?r - car) - number
+        (distance-to-floor ?b - ball) - number
+        (velocity ?b - ball) - number
+        (~immutable~car-value ?r - car) - number
+        (~immutable~distance-to-floor ?b - ball) - number
+        (~immutable~velocity ?b - ball) - number
+    )
+
+    (:durative-action START
+        :duration (= ?duration 1)
+
+        :effect
+            (at end (started))
+    )
+
+))";
+
+  auto outDomainPddl1 = ogp::domainToPddl(domain);
+  if (outDomainPddl1 != expectedDomain)
+  {
+    std::cout << outDomainPddl1 << std::endl;
+    ASSERT_TRUE(false);
+  }
+
+  // deserialize what is serialized
+  auto domain2 = ogp::pddlToDomain(outDomainPddl1, false, {});
+  // re serialize
+  auto outDomainPddl2 = ogp::domainToPddl(domain2);
+  if (outDomainPddl2 != expectedDomain)
+  {
+    std::cout << outDomainPddl2 << std::endl;
+    ASSERT_TRUE(false);
+  }
+}
+
+
 }
 
 
@@ -778,4 +874,5 @@ TEST(Tool, test_pddlSerialization)
   _test_pddlSerializationParts();
   _test_missing_objects();
   _test_loadPddlDomain();
+  _test_immutableAddition();
 }

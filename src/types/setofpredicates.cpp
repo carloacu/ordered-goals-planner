@@ -58,6 +58,19 @@ void SetOfPredicates::addPredicate(const Predicate& pPredicate)
   _nameToPredicate.emplace(pPredicate.name, pPredicate);
 }
 
+void SetOfPredicates::updateImmutablePredicates()
+{
+  std::map<std::string, Predicate> nameToImmutablePredicate;
+  for (auto& currNameToPredicate : _nameToPredicate) {
+    if (!currNameToPredicate.second.isImmutable()) {
+      auto newPredicate = currNameToPredicate.second.createImmutableCopy();
+      nameToImmutablePredicate.emplace(currNameToPredicate.first, std::move(newPredicate));
+    }
+  }
+  for (auto& currNameToImmutablePredicate : nameToImmutablePredicate)
+    addPredicate(currNameToImmutablePredicate.second);
+}
+
 const Predicate* SetOfPredicates::nameToPredicatePtr(const std::string& pName) const
 {
   auto it = _nameToPredicate.find(pName);
