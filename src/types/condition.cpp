@@ -470,7 +470,12 @@ ContinueOrBreak ConditionNode::forAll(const std::function<ContinueOrBreak (const
       nodeType != ConditionNodeType::OR && nodeType != ConditionNodeType::IMPLY);
   auto res = ContinueOrBreak::CONTINUE;
   if (leftOperand)
-    res = leftOperand->forAll(pFactCallback, pIsWrappingExpressionNegated, ignoreValue, pOnlyMandatoryFacts);
+  {
+    bool isWrappingExpressionNegated = pIsWrappingExpressionNegated;
+    if (nodeType == ConditionNodeType::IMPLY)
+      isWrappingExpressionNegated = !isWrappingExpressionNegated;
+    res = leftOperand->forAll(pFactCallback, isWrappingExpressionNegated, ignoreValue, pOnlyMandatoryFacts);
+  }
   if (rightOperand && res == ContinueOrBreak::CONTINUE)
     res = rightOperand->forAll(pFactCallback, pIsWrappingExpressionNegated, ignoreValue, pOnlyMandatoryFacts);
   return res;
