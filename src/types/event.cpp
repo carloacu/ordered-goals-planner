@@ -28,7 +28,7 @@ void Event::updateSuccessionCache(const Domain& pDomain,
   containerId.setOfEventsIdToExclude.emplace(pSetOfEventsIdOfThisEvent);
   containerId.eventIdToExclude.emplace(pEventIdOfThisEvent);
 
-  auto optionalFactsToIgnore = precondition ? precondition->getAllOptFacts() : std::set<FactOptional>();
+  auto optionalFactsToIgnore = precondition ? precondition->getAllOptFacts() : std::set<FactOptionalAndValueModification>();
   if (factsToModify)
     factsToModify->updateSuccesions(pDomain, containerId, optionalFactsToIgnore);
 }

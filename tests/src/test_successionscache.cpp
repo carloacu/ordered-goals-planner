@@ -11,6 +11,14 @@ using namespace ogp;
 namespace
 {
 
+std::unique_ptr<ogp::WorldStateModification> _worldStateModification_fromPddl(const std::string& pStr,
+                                                                              const ogp::Ontology& pOntology,
+                                                                              const std::vector<ogp::Parameter>& pParameters = {}) {
+  std::size_t pos = 0;
+  return ogp::pddlToWsModification(pStr, pos, pOntology, {}, pParameters);
+}
+
+
 void _test_actionSuccessions()
 {
   const std::string action1 = "action1";
@@ -269,7 +277,6 @@ void _test_implySuccessions()
             "action: action5\n"
             "\n"
             "not action: action1\n"
-            "not action: action2\n"
             "not action: action4\n"
             "\n"
             "\n"
@@ -291,7 +298,6 @@ void _test_implySuccessions()
             "----------------------------------\n"
             "\n"
             "not action: action1\n"
-            "not action: action2\n"
             "not action: action4\n"
             "\n"
             "\n"
@@ -346,6 +352,44 @@ void _test_successionsWithUndefinedValueInPrecondition()
 }
 
 
+void _test_numericIncreaseSuccessions()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+
+  ogp::Ontology ontology;
+  {
+    std::size_t pos = 0;
+    ontology.predicates = ogp::SetOfPredicates::fromPddl("(fact_a) - number\n"
+                                                         "(fact_b)", pos, ontology.types);
+  }
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(increase (fact_a) 5)", ontology));
+  actions.emplace(action1, actionObj1);
+
+  {
+    std::size_t pos = 0;
+    ogp::Action actionObj2(ogp::pddlToCondition("(>= (fact_a) 15)", pos, ontology, {}, {}),
+                           _worldStateModification_fromPddl("(fact_b)", ontology));
+    actions.emplace(action2, actionObj2);
+  }
+
+  Domain domain(actions, ontology);
+  EXPECT_EQ("action: action1\n"
+            "----------------------------------\n"
+            "\n"
+            "fact: fact_a=*\n"
+            "action: action2\n"
+            "\n"
+            "\n"
+            "action: action2\n"
+            "----------------------------------\n"
+            "\n"
+            "not action: action2\n", domain.printSuccessionCache());
+}
+
+
 }
 
 
@@ -356,4 +400,5 @@ TEST(Tool, test_successionsCache)
   _test_impossibleSuccessions();
   _test_implySuccessions();
   _test_successionsWithUndefinedValueInPrecondition();
+  _test_numericIncreaseSuccessions();
 }

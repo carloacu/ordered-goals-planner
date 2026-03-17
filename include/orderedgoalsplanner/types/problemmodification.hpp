@@ -88,6 +88,7 @@ struct ORDEREDGOALSPLANNER_API ProblemModification
                        const Entity& pNewFact);
 
   std::set<FactOptional> getAllOptFactsThatCanBeModified() const;
+  std::set<FactOptionalAndValueModification> getAllOptFactsThatCanBeModified2() const;
 
   /// Convert the worldStateModification to a string or to an empty string if it is not defined.
   std::string worldStateModification_str() const { return worldStateModification ? worldStateModification->toStr() : ""; }

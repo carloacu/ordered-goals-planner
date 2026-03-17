@@ -191,19 +191,19 @@ void _getPreferInContextStatistics(std::size_t& nbOfPreconditionsSatisfied,
                                    const Action& pAction,
                                    const std::map<Fact, bool>& pFacts)
 {
-  auto onFact = [&](const FactOptional& pFactOptional,
+  auto onFact = [&](const FactOptionalAndValueModification& pFactOptional,
                     bool) -> ContinueOrBreak
   {
-    if (pFactOptional.isFactNegated)
+    if (pFactOptional.factOpt.isFactNegated)
     {
-      if (pFacts.count(pFactOptional.fact) == 0)
+      if (pFacts.count(pFactOptional.factOpt.fact) == 0)
         ++nbOfPreconditionsSatisfied;
       else
         ++nbOfPreconditionsNotSatisfied;
     }
     else
     {
-      if (pFacts.count(pFactOptional.fact) > 0)
+      if (pFacts.count(pFactOptional.factOpt.fact) > 0)
         ++nbOfPreconditionsSatisfied;
       else
         ++nbOfPreconditionsNotSatisfied;

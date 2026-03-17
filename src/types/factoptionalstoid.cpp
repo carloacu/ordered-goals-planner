@@ -364,16 +364,16 @@ bool FactOptionalsToId::add(const Condition& pCondition,
 {
   bool hasAddedAFact = false;
   pCondition.forAll(
-        [&](const FactOptional& pFactOptional,
+        [&](const FactOptionalAndValueModification& pFactOptional,
         bool pIgnoreValue)
   {
-    if (pFactOptional.isFactNegated)
+    if (pFactOptional.factOpt.isFactNegated)
     {
-      _notFactsToValue->add(pFactOptional, pId, pIgnoreValue);
+      _notFactsToValue->add(pFactOptional.factOpt, pId, pIgnoreValue);
     }
     else
     {
-      _factsToValue->add(pFactOptional, pId, pIgnoreValue);
+      _factsToValue->add(pFactOptional.factOpt, pId, pIgnoreValue);
       hasAddedAFact = true;
     }
     return ContinueOrBreak::CONTINUE;

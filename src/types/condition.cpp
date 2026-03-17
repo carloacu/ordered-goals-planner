@@ -365,12 +365,12 @@ bool Condition::isOptFactMandatory(const FactOptional& pFactOptional,
                                    bool pIgnoreValue) const
 {
   bool res = false;
-  forAll([&](const FactOptional& pFactOptionalFromCond, bool pIgnoreValueFromCond) {
-    if (pFactOptional.isFactNegated == pFactOptionalFromCond.isFactNegated)
+  forAll([&](const FactOptionalAndValueModification& pFactOptionalFromCond, bool pIgnoreValueFromCond) {
+    if (pFactOptional.isFactNegated == pFactOptionalFromCond.factOpt.isFactNegated)
     {
       if (pIgnoreValue || pIgnoreValueFromCond)
         return ContinueOrBreak::CONTINUE;
-      if (pFactOptional.fact == pFactOptionalFromCond.fact)
+      if (pFactOptional.fact == pFactOptionalFromCond.factOpt.fact)
       {
         res = true;
         return ContinueOrBreak::BREAK;
@@ -382,10 +382,10 @@ bool Condition::isOptFactMandatory(const FactOptional& pFactOptional,
 }
 
 
-std::set<FactOptional> Condition::getAllOptFacts() const
+std::set<FactOptionalAndValueModification> Condition::getAllOptFacts() const
 {
-  std::set<FactOptional> res;
-  forAll([&](const FactOptional& pFactOptional, bool) {
+  std::set<FactOptionalAndValueModification> res;
+  forAll([&](const FactOptionalAndValueModification& pFactOptional, bool) {
       res.insert(pFactOptional);
       return ContinueOrBreak::CONTINUE;
   });
@@ -459,7 +459,7 @@ bool ConditionNode::hasEntity(const std::string& pEntityId) const
 }
 
 
-ContinueOrBreak ConditionNode::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
+ContinueOrBreak ConditionNode::forAll(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&, bool)>& pFactCallback,
                                       bool pIsWrappingExpressionNegated,
                                       bool pIgnoreValue,
                                       bool pOnlyMandatoryFacts) const
@@ -839,7 +839,7 @@ bool ConditionExists::hasEntity(const std::string& pEntityId) const
 }
 
 
-ContinueOrBreak ConditionExists::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
+ContinueOrBreak ConditionExists::forAll(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&, bool)>& pFactCallback,
                                         bool pIsWrappingExpressionNegated,
                                         bool pIgnoreValue,
                                         bool pOnlyMandatoryFacts) const
@@ -1000,7 +1000,7 @@ bool ConditionForall::hasEntity(const std::string& pEntityId) const
   return condition && condition->hasEntity(pEntityId);
 }
 
-ContinueOrBreak ConditionForall::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
+ContinueOrBreak ConditionForall::forAll(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&, bool)>& pFactCallback,
                                         bool pIsWrappingExpressionNegated,
                                         bool pIgnoreValue,
                                         bool pOnlyMandatoryFacts) const
@@ -1171,7 +1171,7 @@ bool ConditionNot::hasEntity(const std::string& pEntityId) const
   return condition && condition->hasEntity(pEntityId);
 }
 
-ContinueOrBreak ConditionNot::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
+ContinueOrBreak ConditionNot::forAll(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&, bool)>& pFactCallback,
                                      bool pIsWrappingExpressionNegated,
                                      bool pIgnoreValue,
                                      bool pOnlyMandatoryFacts) const
@@ -1260,7 +1260,7 @@ bool ConditionFact::hasEntity(const std::string& pEntityId) const
 }
 
 
-ContinueOrBreak ConditionFact::forAll(const std::function<ContinueOrBreak (const FactOptional&, bool)>& pFactCallback,
+ContinueOrBreak ConditionFact::forAll(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&, bool)>& pFactCallback,
                                       bool pIsWrappingExpressionNegated,
                                       bool pIgnoreValue,
                                       bool) const

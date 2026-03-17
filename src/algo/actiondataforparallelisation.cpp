@@ -72,8 +72,8 @@ const std::set<FactOptional>& ActionDataForParallelisation::getAllOptFactsThatCa
     {
       if (pWmPtr)
       {
-        pWmPtr->forAllThatCanBeModified([&](const FactOptional& pFactOptional) {
-            factsThatCanBeModifiedPtr->insert(pFactOptional);
+        pWmPtr->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
+            factsThatCanBeModifiedPtr->insert(pFactOptional.factOpt);
             return ContinueOrBreak::CONTINUE;
         });
       }

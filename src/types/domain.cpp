@@ -1,5 +1,6 @@
 #include <orderedgoalsplanner/types/domain.hpp>
 #include <orderedgoalsplanner/types/condition.hpp>
+#include <orderedgoalsplanner/types/factoptionalandvaluemodification.hpp>
 #include <orderedgoalsplanner/types/worldstate.hpp>
 #include <orderedgoalsplanner/util/util.hpp>
 #include "../util/uuid.hpp"
@@ -38,10 +39,10 @@ struct ActionWithConditionAndFactFacts
   bool isImpossibleSuccession(const ActionWithConditionAndFactFacts& pOther) const
   {
     for (auto& effectOptFact : factsFromEffect)
-      if (!effectOptFact.fact.hasAParameter(false))
+      if (!effectOptFact.factOpt.fact.hasAParameter(false))
         for (auto& otherCondOptFact : pOther.factsFromCondition)
-          if (effectOptFact.isFactNegated != otherCondOptFact.isFactNegated &&
-              effectOptFact.fact == otherCondOptFact.fact)
+          if (effectOptFact.factOpt.isFactNegated != otherCondOptFact.factOpt.isFactNegated &&
+              effectOptFact.factOpt.fact == otherCondOptFact.factOpt.fact)
             return true;
     return false;
   }
@@ -50,19 +51,19 @@ struct ActionWithConditionAndFactFacts
   {
     for (auto& effectOptFact : factsFromEffect)
     {
-      if (effectOptFact.fact.hasAParameter(true))
+      if (effectOptFact.factOpt.fact.hasAParameter(true))
         return true;
 
-      if (effectOptFact.fact.value() && effectOptFact.fact.value()->isAnyEntity())
+      if (effectOptFact.factOpt.fact.value() && effectOptFact.factOpt.fact.value()->isAnyEntity())
         for (auto& otherCondOptFact : pOther.factsFromCondition)
-          if (effectOptFact.isFactNegated == otherCondOptFact.isFactNegated &&
-              effectOptFact.fact.areEqualExceptAnyEntitiesAndValue(otherCondOptFact.fact))
+          if (effectOptFact.factOpt.isFactNegated == otherCondOptFact.factOpt.isFactNegated &&
+              effectOptFact.factOpt.fact.areEqualExceptAnyEntitiesAndValue(otherCondOptFact.factOpt.fact))
             return true;
 
-      if (!effectOptFact.fact.value() || !effectOptFact.fact.value()->isAParameterToFill())
+      if (!effectOptFact.factOpt.fact.value() || !effectOptFact.factOpt.fact.value()->isAParameterToFill())
         for (auto& otherCondOptFact : pOther.factsFromCondition)
-          if (effectOptFact.isFactNegated != otherCondOptFact.isFactNegated &&
-              effectOptFact.fact == otherCondOptFact.fact)
+          if (effectOptFact.factOpt.isFactNegated != otherCondOptFact.factOpt.isFactNegated &&
+              effectOptFact.factOpt.fact == otherCondOptFact.factOpt.fact)
             return false;
 
       bool hasAnInterest = false;
@@ -86,8 +87,8 @@ struct ActionWithConditionAndFactFacts
 
   ActionId actionId;
   Action& action;
-  std::set<FactOptional> factsFromCondition;
-  std::set<FactOptional> factsFromEffect;
+  std::set<FactOptionalAndValueModification> factsFromCondition;
+  std::set<FactOptionalAndValueModification> factsFromEffect;
   std::set<ActionId> invertSuccessionsFromActions;
   std::set<FullEventId> invertSuccessionsFromEvents;
 };
@@ -355,8 +356,8 @@ void Domain::_updateSuccessions()
       continue;
 
     ActionWithConditionAndFactFacts tmpData(currAction.first, action);
-    tmpData.factsFromCondition = action.precondition ? action.precondition->getAllOptFacts() : std::set<FactOptional>();
-    tmpData.factsFromEffect = action.effect.getAllOptFactsThatCanBeModified();
+    tmpData.factsFromCondition = action.precondition ? action.precondition->getAllOptFacts() : std::set<FactOptionalAndValueModification>();
+    tmpData.factsFromEffect = action.effect.getAllOptFactsThatCanBeModified2();
     action.updateSuccessionCache(*this, currAction.first, tmpData.factsFromCondition);
     actionTmpData.emplace(currAction.first, std::move(tmpData));
   }

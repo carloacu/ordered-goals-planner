@@ -84,7 +84,7 @@ struct WorldStateModificationNode : public WorldStateModification
               const SetOfEntities& pConstants,
               const SetOfEntities& pObjects) const override;
 
-  ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>& pFactCallback) const override;
+  ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&)>& pFactCallback) const override;
 
   bool canSatisfyObjective(const std::function<bool (const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>& pFactCallback,
                            ParameterValuesWithConstraints& pParameters,
@@ -101,7 +101,7 @@ struct WorldStateModificationNode : public WorldStateModification
                             const SetOfEntities& pObjects) const override;
   void updateSuccesions(const Domain& pDomain,
                         const WorldStateModificationContainerId& pContainerId,
-                        const std::set<FactOptional>& pOptionalFactsToIgnore) override;
+                        const std::set<FactOptionalAndValueModification>& pOptionalFactsToIgnore) override;
   void removePossibleSuccession(const ActionId& pActionIdToRemove) override;
   void getSuccesions(Successions& pSuccessions) const override;
   void printSuccesions(std::string& pRes) const override;
@@ -180,7 +180,7 @@ struct WorldStateModificationFact : public WorldStateModification
               const SetOfEntities&,
               const SetOfEntities&) const override { pFactCallback(factOptional); }
 
-  ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>& pFactCallback) const override { return pFactCallback(factOptional); }
+  ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&)>& pFactCallback) const override { return pFactCallback(factOptional); }
 
   bool canSatisfyObjective(const std::function<bool (const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>& pFactCallback,
                            ParameterValuesWithConstraints&,
@@ -207,7 +207,7 @@ struct WorldStateModificationFact : public WorldStateModification
 
   void updateSuccesions(const Domain& pDomain,
                         const WorldStateModificationContainerId& pContainerId,
-                        const std::set<FactOptional>& pOptionalFactsToIgnore) override
+                        const std::set<FactOptionalAndValueModification>& pOptionalFactsToIgnore) override
   {
     _successions.clear();
     _successions.addSuccesionsOptFact(factOptional, pDomain, pContainerId, pOptionalFactsToIgnore);
@@ -278,7 +278,7 @@ struct WorldStateModificationNumber : public WorldStateModification
               const SetOfFacts&,
               const SetOfEntities&,
               const SetOfEntities&) const override {}
-  ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>&) const override { return ContinueOrBreak::CONTINUE; }
+  ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&)>&) const override { return ContinueOrBreak::CONTINUE; }
   bool canSatisfyObjective(const std::function<bool (const FactOptional&, ParameterValuesWithConstraints*, const std::function<bool (const ParameterValuesWithConstraints&)>&)>&,
                            ParameterValuesWithConstraints&,
                            const WorldState&,
@@ -294,7 +294,7 @@ struct WorldStateModificationNumber : public WorldStateModification
                             const SetOfEntities&) const override { return false; }
   void updateSuccesions(const Domain&,
                         const WorldStateModificationContainerId&,
-                        const std::set<FactOptional>&) override {}
+                        const std::set<FactOptionalAndValueModification>&) override {}
   void removePossibleSuccession(const ActionId&) override {}
   void getSuccesions(Successions&) const override {}
   void printSuccesions(std::string&) const override {}

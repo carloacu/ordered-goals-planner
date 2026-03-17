@@ -94,14 +94,6 @@ std::string FactOptional::toPddl(bool pInEffectContext,
   return res;
 }
 
-bool FactOptional::doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const FactOptional& pOptFact) const
-{
-  if (isFactNegated != pOptFact.isFactNegated)
-    return true;
-  return fact.doesFactEffectOfSuccessorGiveAnInterestForSuccessor(pOptFact.fact);
-}
-
-
 bool FactOptional::hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                                          std::list<Parameter>* pParametersPtr,
                                          bool pIsWrappingExpressionNegated) const

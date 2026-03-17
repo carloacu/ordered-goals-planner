@@ -20,19 +20,41 @@ std::set<FactOptional> ProblemModification::getAllOptFactsThatCanBeModified() co
   std::set<FactOptional> res;
   if (worldStateModification)
   {
-    worldStateModification->forAllThatCanBeModified([&](const FactOptional& pFactOptional) {
+    worldStateModification->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
+        res.insert(pFactOptional.factOpt);
+        return ContinueOrBreak::CONTINUE;
+    });
+  }
+  if (potentialWorldStateModification)
+  {
+    potentialWorldStateModification->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
+        res.insert(pFactOptional.factOpt);
+        return ContinueOrBreak::CONTINUE;
+    });
+  }
+  return res;
+}
+
+
+std::set<FactOptionalAndValueModification> ProblemModification::getAllOptFactsThatCanBeModified2() const
+{
+  std::set<FactOptionalAndValueModification> res;
+  if (worldStateModification)
+  {
+    worldStateModification->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
         res.insert(pFactOptional);
         return ContinueOrBreak::CONTINUE;
     });
   }
   if (potentialWorldStateModification)
   {
-    potentialWorldStateModification->forAllThatCanBeModified([&](const FactOptional& pFactOptional) {
+    potentialWorldStateModification->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
         res.insert(pFactOptional);
         return ContinueOrBreak::CONTINUE;
     });
   }
   return res;
 }
+
 
 } // !ogp

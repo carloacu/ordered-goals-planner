@@ -46,7 +46,7 @@ void Action::replaceArgument(const Entity& pOld,
 
 void Action::updateSuccessionCache(const Domain& pDomain,
                                    const ActionId& pIdOfThisAction,
-                                   const std::set<FactOptional>& pFactsFromCondition)
+                                   const std::set<FactOptionalAndValueModification>& pFactsFromCondition)
 {
   WorldStateModificationContainerId containerId;
   containerId.actionIdToExclude.emplace(pIdOfThisAction);
@@ -101,8 +101,8 @@ void Action::throwIfNotValid(const SetOfFacts& pSetOfFact,
 void Action::_throwIfNotValidForACondition(const std::unique_ptr<Condition>& pPrecondition)
 {
   if (pPrecondition)
-    pPrecondition->forAll([&](const FactOptional& pFactOptional, bool) {
-      _throwIfNotValidForAFact(pFactOptional.fact);
+    pPrecondition->forAll([&](const FactOptionalAndValueModification& pFactOptional, bool) {
+      _throwIfNotValidForAFact(pFactOptional.factOpt.fact);
       return ContinueOrBreak::CONTINUE;
     });
 }

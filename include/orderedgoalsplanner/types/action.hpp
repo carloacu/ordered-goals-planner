@@ -109,7 +109,7 @@ struct ORDEREDGOALSPLANNER_API Action
 
   void updateSuccessionCache(const Domain& pDomain,
                              const ActionId& pIdOfThisAction,
-                             const std::set<FactOptional>& pFactsFromCondition);
+                             const std::set<FactOptionalAndValueModification>& pFactsFromCondition);
   void removePossibleSuccessionCache(const ActionId& pActionIdToRemove);
   std::string printSuccessionCache() const;
 

@@ -4,7 +4,7 @@
 #include <functional>
 #include <memory>
 #include <optional>
-#include "factoptional.hpp"
+#include "factoptionalandvaluemodification.hpp"
 #include "../util/api.hpp"
 #include <orderedgoalsplanner/util/alias.hpp>
 #include <orderedgoalsplanner/util/continueorbreak.hpp>
@@ -38,7 +38,7 @@ struct ORDEREDGOALSPLANNER_API Successions
   void addSuccesionsOptFact(const FactOptional& pFactOptional,
                             const Domain& pDomain,
                             const WorldStateModificationContainerId& pContainerId,
-                            const std::set<FactOptional>& pOptionalFactsToIgnore);
+                            const std::set<FactOptionalAndValueModification>& pOptionalFactsToIgnore);
 
   void print(std::string& pRes,
              const FactOptional& pFactOptional) const;
@@ -95,7 +95,7 @@ struct ORDEREDGOALSPLANNER_API WorldStateModification
                       const SetOfEntities& pConstants,
                       const SetOfEntities& pObjects) const = 0;
 
-  virtual ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>& pFactCallback) const = 0;
+  virtual ContinueOrBreak forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&)>& pFactCallback) const = 0;
 
   /**
    * @brief Iterate over all the optional facts until one can satisfy the objective.
@@ -121,7 +121,7 @@ struct ORDEREDGOALSPLANNER_API WorldStateModification
 
   virtual void updateSuccesions(const Domain& pDomain,
                                 const WorldStateModificationContainerId& pContainerId,
-                                const std::set<FactOptional>& pOptionalFactsToIgnore) = 0;
+                                const std::set<FactOptionalAndValueModification>& pOptionalFactsToIgnore) = 0;
   virtual void removePossibleSuccession(const ActionId& pActionIdToRemove) = 0;
   virtual void getSuccesions(Successions& pSuccessions) const = 0;
   virtual void printSuccesions(std::string& pRes) const = 0;

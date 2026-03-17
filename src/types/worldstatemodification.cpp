@@ -19,7 +19,7 @@ void Successions::add(const Successions& pSuccessions)
 void Successions::addSuccesionsOptFact(const FactOptional& pFactOptional,
                                        const Domain& pDomain,
                                        const WorldStateModificationContainerId& pContainerId,
-                                       const std::set<FactOptional>& pOptionalFactsToIgnore)
+                                       const std::set<FactOptionalAndValueModification>& pOptionalFactsToIgnore)
 {
   if ((pFactOptional.fact.value() && pFactOptional.fact.value()->isAnyEntity()) ||
       pOptionalFactsToIgnore.count(pFactOptional) == 0)

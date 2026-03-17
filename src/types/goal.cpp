@@ -179,14 +179,14 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
     const ProblemModification& currEffect = currAction.effect;
     if (currEffect.worldStateModification)
     {
-      search = currEffect.worldStateModification->forAllThatCanBeModified([&](const FactOptional& pFactOptional) {
-        return optFactIteration(pFactOptional, currPrecondition, currConditionOverAll);
+      search = currEffect.worldStateModification->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
+        return optFactIteration(pFactOptional.factOpt, currPrecondition, currConditionOverAll);
       });
     }
     if (currEffect.potentialWorldStateModification && search == ContinueOrBreak::CONTINUE)
     {
-      search = currEffect.potentialWorldStateModification->forAllThatCanBeModified([&](const FactOptional& pFactOptional) {
-        return optFactIteration(pFactOptional, currPrecondition, currConditionOverAll);
+      search = currEffect.potentialWorldStateModification->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
+        return optFactIteration(pFactOptional.factOpt, currPrecondition, currConditionOverAll);
       });
     }
     if (search == ContinueOrBreak::BREAK)
@@ -210,8 +210,8 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
       const Event& currEvent = currSetOfEvents.second;
       if (currEvent.factsToModify)
       {
-        auto search = currEvent.factsToModify->forAllThatCanBeModified([&](const FactOptional& pFactOptional) {
-          return optFactIteration(pFactOptional, currEvent.precondition, {});
+        auto search = currEvent.factsToModify->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
+          return optFactIteration(pFactOptional.factOpt, currEvent.precondition, {});
         });
         if (search == ContinueOrBreak::BREAK)
         {

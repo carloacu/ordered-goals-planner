@@ -72,8 +72,6 @@ struct ORDEREDGOALSPLANNER_API FactOptional
   std::string toPddl(bool pInEffectContext,
                      bool pPrintAnyValue = true) const;
 
-  bool doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const FactOptional& pOptFact) const;
-
   bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                              std::list<Parameter>* pParametersPtr,
                              bool pIsWrappingExpressionNegated) const;

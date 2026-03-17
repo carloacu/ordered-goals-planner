@@ -27,6 +27,7 @@ set(ORDERED_GOALS_PLANNER_HPPS
     include/orderedgoalsplanner/types/event.hpp
     include/orderedgoalsplanner/types/fact.hpp
     include/orderedgoalsplanner/types/factoptional.hpp
+    include/orderedgoalsplanner/types/factoptionalandvaluemodification.hpp
     include/orderedgoalsplanner/types/factoptionalstoid.hpp
     include/orderedgoalsplanner/types/goal.hpp
     include/orderedgoalsplanner/types/goalstack.hpp
@@ -129,6 +130,7 @@ include_directories(include)
 add_library(ordered_goals_planner_lib STATIC
   ${ORDERED_GOALS_PLANNER_HPPS}
   ${ORDERED_GOALS_PLANNER_SRCS}
+  include/orderedgoalsplanner/types/factoptionalandvaluemodification.hpp
 )
 target_compile_features(ordered_goals_planner_lib PRIVATE cxx_std_17)
 

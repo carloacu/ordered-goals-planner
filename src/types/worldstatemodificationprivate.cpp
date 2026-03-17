@@ -206,7 +206,7 @@ void WorldStateModificationNode::forAll(const std::function<void (const FactOpti
 }
 
 
-ContinueOrBreak WorldStateModificationNode::forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptional&)>& pFactCallback) const
+ContinueOrBreak WorldStateModificationNode::forAllThatCanBeModified(const std::function<ContinueOrBreak (const FactOptionalAndValueModification&)>& pFactCallback) const
 {
   ContinueOrBreak res = ContinueOrBreak::CONTINUE;
   if (nodeType == WorldStateModificationNodeType::AND)
@@ -232,7 +232,14 @@ ContinueOrBreak WorldStateModificationNode::forAllThatCanBeModified(const std::f
   {
     auto* leftFactPtr = toWmFact(*leftOperand);
     if (leftFactPtr != nullptr)
-      return pFactCallback(leftFactPtr->factOptional);
+    {
+      auto factOptAndVm = FactOptionalAndValueModification(leftFactPtr->factOptional);
+      if (nodeType == WorldStateModificationNodeType::DECREASE)
+        factOptAndVm.vm = ValueModification::DECREASE;
+      else if (nodeType == WorldStateModificationNodeType::INCREASE)
+        factOptAndVm.vm = ValueModification::INCREASE;
+      return pFactCallback(factOptAndVm);
+    }
   }
   else if (nodeType == WorldStateModificationNodeType::WHEN && rightOperand)
   {
@@ -420,7 +427,7 @@ bool WorldStateModificationNode::iterateOnSuccessions(const std::function<bool (
 
 void WorldStateModificationNode::updateSuccesions(const Domain& pDomain,
                                                   const WorldStateModificationContainerId& pContainerId,
-                                                  const std::set<FactOptional>& pOptionalFactsToIgnore)
+                                                  const std::set<FactOptionalAndValueModification>& pOptionalFactsToIgnore)
 {
   _successions.clear();
 
