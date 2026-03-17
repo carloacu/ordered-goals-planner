@@ -26,7 +26,10 @@
   (:action sleep
     :parameters (?a - agent)
     :precondition (< (health ?a) 80)
-    :effect (increase (health ?a) 20)
+    :effect (and
+      (when (<= (health ?a) 80) (increase (health ?a) 20))
+      (when (>  (health ?a) 80) (assign (health ?a) 100))
+    )
   )
 
   (:action vacation
@@ -38,18 +41,16 @@
     )
     :effect (and
       (decrease (money  ?a) 10000)
-      (increase (health ?a) 60)
-      (assign   (hours  ?a) 0)
+      (when (<= (health ?a) 40) (increase (health ?a) 60))
+      (when (>  (health ?a) 40) (assign (health ?a) 100))
+      (increase (hours  ?a) 24)
       (not (week-done ?a))
     )
   )
 
   (:action join-startup
     :parameters (?a - agent)
-    :precondition (and
-      (not (has-company ?a))
-      (has-licence ?a)
-    )
+    :precondition (has-licence ?a)
     :effect (and
       (has-company    ?a)
       (joined-startup ?a)
@@ -58,10 +59,7 @@
 
   (:action join-megacorp
     :parameters (?a - agent)
-    :precondition (and
-      (not (has-company ?a))
-      (has-master ?a)
-    )
+    :precondition (has-master ?a)
     :effect (and
       (has-company     ?a)
       (joined-megacorp ?a)
@@ -135,6 +133,7 @@
       (has-licence      ?a)
       (decrease (money  ?a) 5000)
       (decrease (health ?a) 25)
+      (increase (hours  ?a) 320)
     )
   )
 
@@ -149,6 +148,7 @@
       (has-master       ?a)
       (decrease (money  ?a) 20000)
       (decrease (health ?a) 35)
+      (increase (hours  ?a) 480)
     )
   )
 )
