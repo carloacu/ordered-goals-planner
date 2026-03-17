@@ -1033,7 +1033,7 @@ void ConditionExists::extractMinMaxValuesForFacts(std::map<std::string, MinMaxVa
 
   auto* nodeOfConditionPtr = condition->fcNodePtr();
   if (nodeOfConditionPtr != nullptr)
-    extractMinMaxValuesForFacts(pRes, pIsWrappingExpressionNegated, &contextParameters);
+    nodeOfConditionPtr->extractMinMaxValuesForFacts(pRes, pIsWrappingExpressionNegated, &contextParameters);
 }
 
 
@@ -1215,7 +1215,7 @@ void ConditionForall::extractMinMaxValuesForFacts(std::map<std::string, MinMaxVa
 
   auto* nodeOfConditionPtr = condition->fcNodePtr();
   if (nodeOfConditionPtr != nullptr)
-    extractMinMaxValuesForFacts(pRes, pIsWrappingExpressionNegated, &contextParameters);
+    nodeOfConditionPtr->extractMinMaxValuesForFacts(pRes, pIsWrappingExpressionNegated, &contextParameters);
 }
 
 

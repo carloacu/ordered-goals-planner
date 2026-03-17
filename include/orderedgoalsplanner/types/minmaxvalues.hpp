@@ -3,11 +3,12 @@
 
 #include <optional>
 #include <orderedgoalsplanner/util/util.hpp>
+#include "../util/api.hpp"
 
 namespace ogp
 {
 
-struct MinMaxValues
+struct ORDEREDGOALSPLANNER_API MinMaxValues
 {
   std::optional<Number> min;
   std::optional<Number> max;

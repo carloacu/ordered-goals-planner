@@ -4,7 +4,6 @@
 #include <orderedgoalsplanner/types/parameter.hpp>
 #include <orderedgoalsplanner/types/setofentities.hpp>
 #include <orderedgoalsplanner/types/setoftypes.hpp>
-#include <orderedgoalsplanner/util/util.hpp>
 
 
 namespace ogp
@@ -212,6 +211,12 @@ bool Entity::isValidParameterAccordingToPossiblities(const std::vector<Parameter
   return false;
 }
 
+std::optional<Number> Entity::toNumber() const
+{
+  if (type == SetOfTypes::numberType())
+    return stringToNumberOpt(value);
+  return {};
+}
 
 
 } // !ogp

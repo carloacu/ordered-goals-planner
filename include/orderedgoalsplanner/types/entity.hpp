@@ -2,10 +2,12 @@
 #define INCLUDE_ORDEREDGOALSPLANNER_ENTITY_HPP
 
 #include <map>
+#include <optional>
 #include <string>
 #include <vector>
 #include "../util/api.hpp"
 #include "type.hpp"
+#include <orderedgoalsplanner/util/number.hpp>
 
 namespace ogp
 {
@@ -53,6 +55,7 @@ struct ORDEREDGOALSPLANNER_API Entity
   Parameter toParameter() const;
   bool match(const Parameter& pParameter) const;
   bool isValidParameterAccordingToPossiblities(const std::vector<Parameter>& pParameter) const;
+  std::optional<Number> toNumber() const;
 
   std::string value;
   std::shared_ptr<Type> type;
