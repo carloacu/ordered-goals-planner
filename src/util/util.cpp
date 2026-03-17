@@ -107,6 +107,19 @@ bool operator==(const Number& lhs, const Number& rhs) {
     }, lhs, rhs);
 }
 
+// Overloaded operators for relational comparison of two Number objects
+bool operator<(const Number& lhs, const Number& rhs) {
+    return std::visit([](auto&& l, auto&& r) -> bool {
+        return static_cast<float>(l) < static_cast<float>(r);
+    }, lhs, rhs);
+}
+
+bool operator>(const Number& lhs, const Number& rhs) {
+    return std::visit([](auto&& l, auto&& r) -> bool {
+        return static_cast<float>(l) > static_cast<float>(r);
+    }, lhs, rhs);
+}
+
 // Overloaded operator for addition assignment of two Number objects
 Number& operator+=(Number& lhs, const Number& rhs) {
     lhs = std::visit([](auto&& l, auto&& r) -> Number {
@@ -114,6 +127,22 @@ Number& operator+=(Number& lhs, const Number& rhs) {
     }, lhs, rhs);
     return lhs;
 }
+
+Number min(const Number& pNb1, const Number& pNb2)
+{
+  if (pNb1 < pNb2)
+    return pNb1;
+  return pNb2;
+}
+
+
+Number max(const Number& pNb1, const Number& pNb2)
+{
+  if (pNb1 < pNb2)
+    return pNb2;
+  return pNb1;
+}
+
 
 // Function to convert a Number to a std::string
 std::string numberToString(const Number& num) {

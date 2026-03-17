@@ -30,6 +30,8 @@ struct ORDEREDGOALSPLANNER_API SetOfDerivedPredicates
 
   void updateImmutablePredicates();
 
+  const std::map<std::string, DerivedPredicate>& nameToDerivedPredicate() const { return _nameToDerivedPredicate; }
+
 private:
   std::map<std::string, DerivedPredicate> _nameToDerivedPredicate;
 };

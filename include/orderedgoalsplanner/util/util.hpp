@@ -42,8 +42,15 @@ Number operator*(const Number& lhs, const Number& rhs);
 // Overloaded operator for equality comparison of two Number objects
 bool operator==(const Number& lhs, const Number& rhs);
 
+// Overloaded operators for relational comparison of two Number objects
+bool operator<(const Number& lhs, const Number& rhs);
+bool operator>(const Number& lhs, const Number& rhs);
+
 // Overloaded operator for addition assignment of two Number objects
 Number& operator+=(Number& lhs, const Number& rhs);
+
+Number min(const Number& pNb1, const Number& pNb2);
+Number max(const Number& pNb1, const Number& pNb2);
 
 // Function to convert a Number to a std::string
 std::string numberToString(const Number& num);

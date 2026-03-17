@@ -9,6 +9,7 @@
 #include "../util/api.hpp"
 #include "factoptionalandvaluemodification.hpp"
 #include <orderedgoalsplanner/types/entitieswithparamconstraints.hpp>
+#include <orderedgoalsplanner/types/minmaxvalues.hpp>
 #include <orderedgoalsplanner/util/continueorbreak.hpp>
 #include <orderedgoalsplanner/util/util.hpp>
 
@@ -141,6 +142,10 @@ struct ORDEREDGOALSPLANNER_API Condition
                                      bool pIsWrappingExpressionNegated = false,
                                      std::list<Parameter>* pParametersPtr = nullptr) const = 0;
 
+  virtual void extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>& pRes,
+                                           bool pIsWrappingExpressionNegated = false,
+                                           std::list<Parameter>* pParametersPtr = nullptr) const = 0;
+
   std::set<FactOptionalAndValueModification> getAllOptFacts() const;
 
   /// Cast to ConditionNode* is possible.
@@ -243,6 +248,10 @@ struct ORDEREDGOALSPLANNER_API ConditionNode : public Condition
                              bool pIsWrappingExpressionNegated,
                              std::list<Parameter>* pParametersPtr) const override;
 
+  void extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>& pRes,
+                                   bool pIsWrappingExpressionNegated,
+                                   std::list<Parameter>* pParametersPtr) const override;
+
   const ConditionNode* fcNodePtr() const override { return this; }
   ConditionNode* fcNodePtr() override { return this; }
   const ConditionExists* fcExistsPtr() const override { return nullptr; }
@@ -310,6 +319,10 @@ struct ORDEREDGOALSPLANNER_API ConditionExists : public Condition
   bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                              bool pIsWrappingExpressionNegated,
                              std::list<Parameter>* pParametersPtr) const override;
+
+  void extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>& pRes,
+                                   bool pIsWrappingExpressionNegated,
+                                   std::list<Parameter>* pParametersPtr) const override;
 
   const ConditionNode* fcNodePtr() const override { return nullptr; }
   ConditionNode* fcNodePtr() override { return nullptr; }
@@ -380,6 +393,10 @@ struct ORDEREDGOALSPLANNER_API ConditionForall : public Condition
                              bool pIsWrappingExpressionNegated,
                              std::list<Parameter>* pParametersPtr) const override;
 
+  void extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>& pRes,
+                                   bool pIsWrappingExpressionNegated,
+                                   std::list<Parameter>* pParametersPtr) const override;
+
   const ConditionNode* fcNodePtr() const override { return nullptr; }
   ConditionNode* fcNodePtr() override { return nullptr; }
   const ConditionExists* fcExistsPtr() const override { return nullptr; }
@@ -448,6 +465,10 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
                              bool pIsWrappingExpressionNegated,
                              std::list<Parameter>* pParametersPtr) const override;
 
+  void extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>& pRes,
+                                   bool pIsWrappingExpressionNegated,
+                                   std::list<Parameter>* pParametersPtr) const override;
+
   const ConditionNode* fcNodePtr() const override { return nullptr; }
   ConditionNode* fcNodePtr() override { return nullptr; }
   const ConditionExists* fcExistsPtr() const override { return nullptr; }
@@ -511,6 +532,9 @@ struct ORDEREDGOALSPLANNER_API ConditionFact : public Condition
   bool hasAContradictionWith(const std::set<FactOptional>& pFactsOpt,
                              bool pIsWrappingExpressionNegated,
                              std::list<Parameter>* pParametersPtr) const override;
+  void extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>&,
+                                   bool,
+                                   std::list<Parameter>*) const override {}
 
   const ConditionNode* fcNodePtr() const override { return nullptr; }
   ConditionNode* fcNodePtr() override { return nullptr; }
@@ -570,6 +594,9 @@ struct ORDEREDGOALSPLANNER_API ConditionNumber : public Condition
                                    const SetOfDerivedPredicates* pDerivedPredicatesPtr,
                                    bool pAutoAddImmutablePredicates) const override;
   bool hasAContradictionWith(const std::set<FactOptional>&, bool, std::list<Parameter>*) const override { return false; }
+  void extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>&,
+                                   bool,
+                                   std::list<Parameter>*) const override {}
 
   const ConditionNode* fcNodePtr() const override { return nullptr; }
   ConditionNode* fcNodePtr() override { return nullptr; }

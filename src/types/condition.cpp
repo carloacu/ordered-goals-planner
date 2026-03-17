@@ -805,10 +805,64 @@ bool ConditionNode::hasAContradictionWith(const std::set<FactOptional>& pFactsOp
       }
     }
   }
-  throw std::runtime_error("Noce badly managed in hasAContradictionWith");
+  throw std::runtime_error("Node badly managed in hasAContradictionWith");
 }
 
+void ConditionNode::extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>& pRes,
+                                                bool pIsWrappingExpressionNegated,
+                                                std::list<Parameter>* pParametersPtr) const
+{
+  switch (nodeType)
+  {
+  case ConditionNodeType::AND:
+  case ConditionNodeType::OR:
+  case ConditionNodeType::IMPLY:
+  {
+    if (leftOperand)
+      leftOperand->extractMinMaxValuesForFacts(pRes, pIsWrappingExpressionNegated, pParametersPtr);
+    if (rightOperand)
+      rightOperand->extractMinMaxValuesForFacts(pRes, pIsWrappingExpressionNegated, pParametersPtr);
+    return;
+  }
+  case ConditionNodeType::EQUALITY:
+  case ConditionNodeType::SUPERIOR:
+  case ConditionNodeType::SUPERIOR_OR_EQUAL:
+  case ConditionNodeType::INFERIOR:
+  case ConditionNodeType::INFERIOR_OR_EQUAL:
+  {
+    if (leftOperand && rightOperand)
+    {
+      const auto* factPtr = leftOperand->fcFactPtr();
+      if (factPtr == nullptr)
+        return;
+      const auto& fact = *factPtr;
 
+      const auto* nbPtr = rightOperand->fcNbPtr();
+      if (nbPtr == nullptr)
+        return;
+      Number nb = nbPtr->nb;
+      auto& minOrMaxValues = pRes[fact.factOptional.fact.name()];
+      if (nodeType == ConditionNodeType::SUPERIOR || nodeType == ConditionNodeType::SUPERIOR_OR_EQUAL || nodeType == ConditionNodeType::EQUALITY)
+      {
+        if (minOrMaxValues.min)
+          nb = min(*minOrMaxValues.min, nb);
+        minOrMaxValues.min.emplace(nb);
+      }
+      if (nodeType == ConditionNodeType::INFERIOR || nodeType == ConditionNodeType::INFERIOR_OR_EQUAL || nodeType == ConditionNodeType::EQUALITY)
+      {
+        if (minOrMaxValues.max)
+          nb = max(*minOrMaxValues.max, nb);
+        minOrMaxValues.max.emplace(nb);
+      }
+    }
+    return;
+  }
+  case ConditionNodeType::MINUS:
+  case ConditionNodeType::PLUS:
+    return;
+  }
+  throw std::runtime_error("Node badly managed in extractMinMaxValuesForFacts");
+}
 
 
 ConditionExists::ConditionExists(const Parameter& pParameter,
@@ -969,8 +1023,18 @@ bool ConditionExists::hasAContradictionWith(const std::set<FactOptional>& pFacts
   return true;
 }
 
+void ConditionExists::extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>& pRes,
+                                                  bool pIsWrappingExpressionNegated,
+                                                  std::list<Parameter>* pParametersPtr) const
+{
+  if (!condition)
+    return;
+  auto contextParameters = addParameter(pParametersPtr, parameter);
 
-
+  auto* nodeOfConditionPtr = condition->fcNodePtr();
+  if (nodeOfConditionPtr != nullptr)
+    extractMinMaxValuesForFacts(pRes, pIsWrappingExpressionNegated, &contextParameters);
+}
 
 
 ConditionForall::ConditionForall(const Parameter& pParameter,
@@ -1141,7 +1205,18 @@ bool ConditionForall::hasAContradictionWith(const std::set<FactOptional>& pFacts
   return true;
 }
 
+void ConditionForall::extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>& pRes,
+                                                  bool pIsWrappingExpressionNegated,
+                                                  std::list<Parameter>* pParametersPtr) const
+{
+  if (!condition)
+    return;
+  auto contextParameters = addParameter(pParametersPtr, parameter);
 
+  auto* nodeOfConditionPtr = condition->fcNodePtr();
+  if (nodeOfConditionPtr != nullptr)
+    extractMinMaxValuesForFacts(pRes, pIsWrappingExpressionNegated, &contextParameters);
+}
 
 
 std::string ConditionNot::toStr(const std::function<std::string (const Fact&)>* pFactWriterPtr,
@@ -1240,6 +1315,13 @@ bool ConditionNot::hasAContradictionWith(const std::set<FactOptional>& pFactsOpt
                                          std::list<Parameter>* pParametersPtr) const
 {
   return condition->hasAContradictionWith(pFactsOpt, !pIsWrappingExpressionNegated, pParametersPtr);
+}
+
+void ConditionNot::extractMinMaxValuesForFacts(std::map<std::string, MinMaxValues>& pRes,
+                                                  bool pIsWrappingExpressionNegated,
+                                                  std::list<Parameter>* pParametersPtr) const
+{
+  condition->extractMinMaxValuesForFacts(pRes, !pIsWrappingExpressionNegated, pParametersPtr);
 }
 
 

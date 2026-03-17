@@ -33,6 +33,7 @@ set(ORDERED_GOALS_PLANNER_HPPS
     include/orderedgoalsplanner/types/goalstack.hpp
     include/orderedgoalsplanner/types/historical.hpp
     include/orderedgoalsplanner/types/lookforanactionoutputinfos.hpp
+    include/orderedgoalsplanner/types/minmaxvalues.hpp
     include/orderedgoalsplanner/types/ontology.hpp
     include/orderedgoalsplanner/types/parameter.hpp
     include/orderedgoalsplanner/types/parallelplan.hpp
@@ -58,6 +59,7 @@ set(ORDERED_GOALS_PLANNER_HPPS
     include/orderedgoalsplanner/util/alias.hpp
     include/orderedgoalsplanner/util/arithmeticevaluator.hpp
     include/orderedgoalsplanner/util/continueorbreak.hpp
+    include/orderedgoalsplanner/util/extactminmaxvalueforfacts.hpp
     include/orderedgoalsplanner/util/print.hpp
     include/orderedgoalsplanner/util/observableunsafe.hpp
     include/orderedgoalsplanner/util/replacevariables.hpp
@@ -115,6 +117,7 @@ set(ORDERED_GOALS_PLANNER_SRCS
     src/util/serializer/serializeinpddl.cpp
     src/util/trackers/goalsremovedtracker.cpp
     src/util/arithmeticevaluator.cpp
+    src/util/extactminmaxvalueforfacts.cpp
     src/util/print.cpp
     src/util/replacevariables.cpp
     src/util/util.cpp
