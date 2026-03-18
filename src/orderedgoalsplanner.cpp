@@ -1077,7 +1077,7 @@ bool _goalToPlanRec(
     else
     {
       itAlreadyFoundAction->second.mergeWith(factToMinMaxValuesSoFar);
-      if (itAlreadyFoundAction->second.nbOfLoops > 1)
+      if (itAlreadyFoundAction->second.nbOfLoops > 10)
         return false;
       ++itAlreadyFoundAction->second.nbOfLoops;
     }
