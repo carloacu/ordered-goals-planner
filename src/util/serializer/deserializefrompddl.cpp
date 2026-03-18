@@ -235,11 +235,13 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
                                           _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr),
                                           _expressionParsedToCondition(*(++pExpressionParsed.arguments.begin()), pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr));
   }
-  else if ((pExpressionParsed.name == _andConditonFunctionName ||
-            pExpressionParsed.name == _orConditonFunctionName ||
-            pExpressionParsed.name == _implyConditonFunctionName) &&
-           pExpressionParsed.arguments.size() >= 2)
+  else if ((pExpressionParsed.name == _andConditonFunctionName && pExpressionParsed.arguments.size() >= 1) ||
+           (pExpressionParsed.name == _orConditonFunctionName && pExpressionParsed.arguments.size() >= 1) ||
+           (pExpressionParsed.name == _implyConditonFunctionName && pExpressionParsed.arguments.size() == 2))
   {
+    if (pExpressionParsed.arguments.size() == 1)
+      return _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, false, pParameterNamesToEntityPtr);
+
     auto listNodeType = ConditionNodeType::AND;
     if (pExpressionParsed.name == _orConditonFunctionName)
       listNodeType = ConditionNodeType::OR;
@@ -425,20 +427,27 @@ std::unique_ptr<WorldStateModification> _expressionParsedToWsModification(const 
     }
   }
   else if (pExpressionParsed.name == _andWsFunctionName &&
-           pExpressionParsed.arguments.size() >= 2)
+           pExpressionParsed.arguments.size() >= 1)
   {
-    std::list<std::unique_ptr<WorldStateModification>> elts;
-    for (auto& currExp : pExpressionParsed.arguments)
-      elts.emplace_back(_expressionParsedToWsModification(currExp, pOntology, pObjects, pParameters, false));
-
-    res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::AND, std::move(*(--(--elts.end()))), std::move(elts.back()));
-    elts.pop_back();
-    elts.pop_back();
-
-    while (!elts.empty())
+    if (pExpressionParsed.arguments.size() == 1)
     {
-      res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::AND, std::move(elts.back()), std::move(res));
+      res = _expressionParsedToWsModification(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, false);
+    }
+    else
+    {
+      std::list<std::unique_ptr<WorldStateModification>> elts;
+      for (auto& currExp : pExpressionParsed.arguments)
+        elts.emplace_back(_expressionParsedToWsModification(currExp, pOntology, pObjects, pParameters, false));
+
+      res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::AND, std::move(*(--(--elts.end()))), std::move(elts.back()));
       elts.pop_back();
+      elts.pop_back();
+
+      while (!elts.empty())
+      {
+        res = std::make_unique<WorldStateModificationNode>(WorldStateModificationNodeType::AND, std::move(elts.back()), std::move(res));
+        elts.pop_back();
+      }
     }
   }
   else if ((pExpressionParsed.name == _increaseWsFunctionName || pExpressionParsed.name == _addWsFunctionName) &&

@@ -173,6 +173,30 @@ void _test_pddlSerializationParts()
 
   {
     std::size_t pos = 0;
+    std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(pred_c titi)", pos, ontology, {}, {});
+    if (!cond)
+      FAIL();
+    EXPECT_EQ("(pred_c titi)", ogp::conditionToPddl(*cond, 0));
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(and (pred_c titi))", pos, ontology, {}, {});
+    if (!cond)
+      FAIL();
+    EXPECT_EQ("(pred_c titi)", ogp::conditionToPddl(*cond, 0));
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(or (pred_c titi))", pos, ontology, {}, {});
+    if (!cond)
+      FAIL();
+    EXPECT_EQ("(pred_c titi)", ogp::conditionToPddl(*cond, 0));
+  }
+
+  {
+    std::size_t pos = 0;
     std::unique_ptr<ogp::Condition> cond = ogp::pddlToCondition("(>= (battery-amount toto) 4)", pos, ontology, {}, {});
     if (!cond)
       FAIL();
@@ -210,6 +234,22 @@ void _test_pddlSerializationParts()
     if (!cond)
       FAIL();
     EXPECT_EQ("(exists (?p - entity) (= (pred_d ?p) toto))", ogp::conditionToPddl(*cond, 0));
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(pred_c toto)", pos, ontology, {}, {});
+    if (!ws)
+      FAIL();
+    EXPECT_EQ("pred_c(toto)", ws->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(and (pred_c toto))", pos, ontology, {}, {});
+    if (!ws)
+      FAIL();
+    EXPECT_EQ("pred_c(toto)", ws->toStr());
   }
 
   {
@@ -293,6 +333,30 @@ void _test_pddlSerializationParts()
     if (!ws)
       FAIL();
     EXPECT_EQ("forall(?e - entity, !pred_d(?e)=*) & forall(?ent - entity, pred_c(?ent))", ws->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::Goal> goalPtr = ogp::pddlToGoal("(pred_c titi)", pos, ontology, {});
+    if (!goalPtr)
+      FAIL();
+    EXPECT_EQ("pred_c(titi)", goalPtr->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::Goal> goalPtr = ogp::pddlToGoal("(and (pred_c titi))", pos, ontology, {});
+    if (!goalPtr)
+      FAIL();
+    EXPECT_EQ("pred_c(titi)", goalPtr->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
+    std::unique_ptr<ogp::Goal> goalPtr = ogp::pddlToGoal("(or (pred_c titi))", pos, ontology, {});
+    if (!goalPtr)
+      FAIL();
+    EXPECT_EQ("pred_c(titi)", goalPtr->toStr());
   }
 
   {
