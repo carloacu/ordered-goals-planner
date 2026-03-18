@@ -70,6 +70,21 @@ bool _isInside(const Entity& pEntity,
   return it != pEltsPtr->end() && it->second.empty();
 }
 
+bool _isInsideOrHasEntity(const Entity& pEntity,
+                          const ParameterValuesWithConstraints* pEltsPtr,
+                          const Entity& pEntityPossibility)
+{
+  if (pEltsPtr == nullptr)
+    return false;
+  auto it = pEltsPtr->find(pEntity.toParameter());
+  if (it != pEltsPtr->end())
+  {
+    if (it->second.empty())
+      return true;
+    return it->second.count(pEntityPossibility) > 0;
+  }
+  return false;
+}
 
 }
 
@@ -283,8 +298,8 @@ bool Fact::areEqualWithoutValueConsideration(const Fact& pFact,
   while (itParam != _arguments.end())
   {
     if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity() &&
-        !(_isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr) ||
-          _isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr2)))
+        !(_isInsideOrHasEntity(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr, *itParam) ||
+          _isInsideOrHasEntity(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr2, *itParam)))
       return false;
     ++itParam;
     ++itOtherParam;

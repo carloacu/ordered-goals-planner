@@ -155,12 +155,50 @@ void _test_numeric_condition_in_action_precondition()
 }
 
 
+
+void _test_numeric_condition_and_numeric_effect_with_same_parameter()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+
+  ontology.types = ogp::SetOfTypes::fromPddl("entity");
+  ontology.constants = ogp::SetOfEntities::fromPddl("e - entity", ontology.types);
+
+  {
+    std::size_t pos = 0;
+    ontology.predicates = ogp::SetOfPredicates::fromPddl("(fact_a ?e - entity) - number\n"
+                                                         "(fact_b ?e - entity)", pos, ontology.types);
+  }
+
+  std::map<std::string, ogp::Action> actions;
+
+  {
+    std::vector<ogp::Parameter> action1Parameters{_parameter("?e - entity", ontology)};
+    ogp::Action actionObj1(_condition_fromPddl("(>= (fact_a ?e) 1)", ontology, action1Parameters),
+                           _worldStateModification_fromPddl("(fact_b ?e)", ontology, action1Parameters));
+    actionObj1.parameters = std::move(action1Parameters);
+    actions.emplace(action1, actionObj1);
+  }
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _addFact(problem.worldState, "(= (fact_a e) 2)", problem.goalStack, ontology, problem.objects, setOfEventsMap);
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_b e)", ontology, problem.objects)}, ontology.constants);
+
+  EXPECT_EQ(action1 + "(?e -> e)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+}
+
+
 }
 
 
 
-TEST(Planner, test_numeric_objectives)
+TEST(Planner, test_numeric_conditions)
 {
   _test_do_many_times_an_action_until_goal_success();
   _test_numeric_condition_in_action_precondition();
+  _test_numeric_condition_and_numeric_effect_with_same_parameter();
 }
