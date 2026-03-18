@@ -414,11 +414,14 @@ bool _fillParameter(const Parameter& pParameter,
         // find all the possible occurence in the entities
         newParamValues = typeToEntities(*parameterType, ontology.constants, pContext.problem.objects);
 
-        // remove the ones that are already in the world state for this fact
-        std::set<Entity> parameterValues;
-        pContext.problem.worldState.factsMapping().extractPotentialArgumentsOfAFactParameter(parameterValues, pFact, pParameter.name, {}, nullptr);
-        for (const auto& elem : parameterValues)
-          newParamValues.erase(elem);
+        if (!pFact.isMissingValue())
+        {
+          // remove the ones that are already in the world state for this fact
+          std::set<Entity> parameterValues;
+          pContext.problem.worldState.factsMapping().extractPotentialArgumentsOfAFactParameter(parameterValues, pFact, pParameter.name, {}, nullptr);
+          for (const auto& elem : parameterValues)
+            newParamValues.erase(elem);
+        }
       }
       return !newParamValues.empty();
     }

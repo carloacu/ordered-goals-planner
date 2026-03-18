@@ -692,7 +692,7 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
           for (const auto& currWsFact : leftFactMatchingInWs)
           {
             if (currWsFact.value() &&
-                leftFact.areEqualWithoutValueConsideration(currWsFact))
+                currWsFact.areEqualWithoutValueConsideration(leftFact, pConditionParametersToPossibleArguments))
             {
               bool res = compIntNb(currWsFact.value()->value, rightNbPtr->nb,
                                    canBeSuperior(nodeType), canBeEqual(nodeType));
@@ -701,6 +701,7 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
               return !res;
             }
           }
+          return pIsWrappingExpressionNegated;
         }
       }
     }

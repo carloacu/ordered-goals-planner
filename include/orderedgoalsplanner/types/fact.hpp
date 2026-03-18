@@ -270,6 +270,7 @@ struct ORDEREDGOALSPLANNER_API Fact
   const std::vector<Entity>& arguments() const { return _arguments; }
   const std::optional<Entity>& value() const { return _value; }
   bool isValueNegated() const { return _isValueNegated; }
+  bool isMissingValue() const { return !_value && predicate.value; }
   void setValueNegated(bool pIsValueNegated) { _isValueNegated = pIsValueNegated; }
 
   std::string factSignature() const;
