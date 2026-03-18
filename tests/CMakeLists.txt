@@ -17,7 +17,7 @@ add_executable(ordered_goals_planner_tests
   src/test_fluent_requirement.cpp
   src/test_goalscache.cpp
   src/test_negative_preconditions_requirement.cpp
-  src/test_numeric_objectives.cpp
+  src/test_numeric_conditions.cpp
   src/test_planner.cpp
   src/test_plannerWithSingleType.cpp
   src/test_ontology.cpp
