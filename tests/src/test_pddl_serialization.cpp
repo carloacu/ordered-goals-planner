@@ -949,9 +949,10 @@ void _test_immutableAddition()
 
         :condition
             (at start (imply
-    (~immutable~started)
-    (not (windows-fitted subsite))
-))
+                          (~immutable~started)
+                          (not (windows-fitted subsite))
+                      )
+            )
 
         :effect
             (at end (started))

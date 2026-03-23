@@ -40,15 +40,29 @@ struct ConditionWithPartInfo
 };
 
 
+std::string _conditionWithPartToPddl(const ConditionWithPartInfo& pConditionWithPartInfo,
+                                     std::size_t pIdentation)
+{
+  std::string prefix;
+  if (pConditionWithPartInfo.conditionPart == ConditionPart::AT_START)
+    prefix = "(at start ";
+  else
+    prefix = "(over all ";
+
+  auto conditionStr = conditionToPddl(pConditionWithPartInfo.condition, pIdentation + prefix.size());
+  if (conditionStr.find('\n') == std::string::npos)
+    return prefix + conditionStr + ")";
+  return prefix + conditionStr + "\n" + std::string(pIdentation, ' ') + ")";
+}
+
+
 std::string _conditionsToPddl(
     const std::list<ConditionWithPartInfo>& pConditionWithPartInfos,
     std::size_t pIdentation)
 {
-  std::list<std::string> results;
+  std::list<ConditionWithPartInfo> flattenedConditionsWithPartInfos;
   for (const auto& currElt : pConditionWithPartInfos)
   {
-    std::list<std::string> subResults;
-
     const ConditionNode* condNodePtr = currElt.condition.fcNodePtr();
     if (condNodePtr != nullptr)
     {
@@ -56,11 +70,8 @@ std::string _conditionsToPddl(
 
       if (condNode.nodeType == ConditionNodeType::AND)
       {
-        auto subIndentation = _identationOffset;
-        std::string leftOperandStr;
         if (condNode.leftOperand)
-          leftOperandStr = conditionToPddl(*condNode.leftOperand, subIndentation);
-        subResults.emplace_back(leftOperandStr);
+          flattenedConditionsWithPartInfos.emplace_back(*condNode.leftOperand, currElt.conditionPart);
         auto* nodePtr = condNodePtr;
 
         while (true)
@@ -68,36 +79,29 @@ std::string _conditionsToPddl(
           auto* newNodePtr = nodePtr->rightOperand->fcNodePtr();
           if (newNodePtr == nullptr || newNodePtr->nodeType != condNode.nodeType)
           {
-            subResults.emplace_back(conditionToPddl(*nodePtr->rightOperand, subIndentation));
+            flattenedConditionsWithPartInfos.emplace_back(*nodePtr->rightOperand, currElt.conditionPart);
             break;
           }
 
-          subResults.emplace_back(conditionToPddl(*newNodePtr->leftOperand, subIndentation));
+          flattenedConditionsWithPartInfos.emplace_back(*newNodePtr->leftOperand, currElt.conditionPart);
           nodePtr = newNodePtr;
         }
+        continue;
       }
     }
 
-    if (subResults.empty())
-      subResults.emplace_back(conditionToPddl(currElt.condition, 0));
-
-    for (const auto& currSubResult : subResults)
-    {
-      if (currElt.conditionPart == ConditionPart::AT_START)
-        results.emplace_back("(at start " + currSubResult + ")");
-      else
-        results.emplace_back("(over all " + currSubResult + ")");
-    }
+    flattenedConditionsWithPartInfos.emplace_back(currElt.condition, currElt.conditionPart);
   }
 
-  if (results.size() == 1)
-    return results.front();
+  if (flattenedConditionsWithPartInfos.size() == 1)
+    return _conditionWithPartToPddl(flattenedConditionsWithPartInfos.front(), pIdentation);
 
-  if (results.size() > 1)
+  if (flattenedConditionsWithPartInfos.size() > 1)
   {
     std::string res = "(and\n";
-    for (const auto& currPart : results)
-      res += std::string(pIdentation + _identationOffset, ' ') + currPart + "\n";
+    auto subIndentation = pIdentation + _identationOffset;
+    for (const auto& currPart : flattenedConditionsWithPartInfos)
+      res += std::string(subIndentation, ' ') + _conditionWithPartToPddl(currPart, subIndentation) + "\n";
     return res + std::string(pIdentation, ' ') + ")";
   }
 
