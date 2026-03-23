@@ -24,6 +24,7 @@ const char* _inferiorOrEqualConditionFunctionName = "<=";
 const char* _andConditonFunctionName = "and";
 const char* _orConditonFunctionName = "or";
 const char* _implyConditonFunctionName = "imply";
+const char* _ifConditonFunctionName = "if";
 
 const char* _assignWsFunctionName = "assign";
 const char* _setWsFunctionName = "set"; // deprecated
@@ -237,7 +238,8 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
   }
   else if ((pExpressionParsed.name == _andConditonFunctionName && pExpressionParsed.arguments.size() >= 1) ||
            (pExpressionParsed.name == _orConditonFunctionName && pExpressionParsed.arguments.size() >= 1) ||
-           (pExpressionParsed.name == _implyConditonFunctionName && pExpressionParsed.arguments.size() == 2))
+           (pExpressionParsed.name == _implyConditonFunctionName && pExpressionParsed.arguments.size() == 2) ||
+           (pExpressionParsed.name == _ifConditonFunctionName && pExpressionParsed.arguments.size() == 2))
   {
     if (pExpressionParsed.arguments.size() == 1)
       return _expressionParsedToCondition(pExpressionParsed.arguments.front(), pOntology, pObjects, pParameters, false, pParameterNamesToEntityPtr);
@@ -245,21 +247,26 @@ std::unique_ptr<Condition> _expressionParsedToCondition(const ExpressionParsed& 
     auto listNodeType = ConditionNodeType::AND;
     if (pExpressionParsed.name == _orConditonFunctionName)
       listNodeType = ConditionNodeType::OR;
-    else if (pExpressionParsed.name == _implyConditonFunctionName)
+    else if (pExpressionParsed.name == _implyConditonFunctionName ||
+             pExpressionParsed.name == _ifConditonFunctionName)
       listNodeType = ConditionNodeType::IMPLY;
     std::list<std::unique_ptr<Condition>> elts;
     for (auto& currExp : pExpressionParsed.arguments)
       elts.emplace_back(_expressionParsedToCondition(currExp, pOntology, pObjects, pParameters, false, pParameterNamesToEntityPtr));
 
-    res = std::make_unique<ConditionNode>(listNodeType, std::move(*(--(--elts.end()))), std::move(elts.back()));
+    auto condNodeRes = std::make_unique<ConditionNode>(listNodeType, std::move(*(--(--elts.end()))), std::move(elts.back()));
     elts.pop_back();
     elts.pop_back();
 
     while (!elts.empty())
     {
-      res = std::make_unique<ConditionNode>(listNodeType, std::move(elts.back()), std::move(res));
+      condNodeRes = std::make_unique<ConditionNode>(listNodeType, std::move(elts.back()), std::move(condNodeRes));
       elts.pop_back();
     }
+
+    if (pExpressionParsed.name == _ifConditonFunctionName && condNodeRes->leftOperand)
+      condNodeRes->leftOperand = condNodeRes->leftOperand->clone(nullptr, false, nullptr, true);
+    res = std::move(condNodeRes);
   }
   else
   {
@@ -910,7 +917,7 @@ ExpressionParsed _extractConditionPart(const ExpressionParsed& pInput,
     return ExpressionParsed();
   }
 
-  throw std::runtime_error("Not a condition valid for a durative action: " + pInput.toStr());
+  throw std::runtime_error("Not a condition valid for a durative action: " + pInput.toStr() + " (for extracting condition part)");
 }
 
 

@@ -865,7 +865,7 @@ void _test_immutableAddition()
         car
         ball
     )
-    (:constants mainsite - site
+    (:constants mainsite subsite - site
                 maincar - car)
 
     (:predicates
@@ -889,6 +889,8 @@ void _test_immutableAddition()
 
     (:durative-action START
         :duration (= ?duration 1)
+        :condition
+          (at start (if (started) (not (windows-fitted subsite))))
         :effect
           (at end (started))
     )
@@ -907,7 +909,7 @@ void _test_immutableAddition()
 
     (:constants
         maincar - car
-        mainsite - site
+        mainsite subsite - site
     )
 
     (:predicates
@@ -944,6 +946,12 @@ void _test_immutableAddition()
 
     (:durative-action START
         :duration (= ?duration 1)
+
+        :condition
+            (at start (imply
+    (~immutable~started)
+    (not (windows-fitted subsite))
+))
 
         :effect
             (at end (started))
