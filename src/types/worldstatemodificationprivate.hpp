@@ -124,7 +124,7 @@ struct WorldStateModificationNode : public WorldStateModification
           parameterOpt);
     res->_successions = _successions;
     if (conditionForWhen)
-      res->conditionForWhen = conditionForWhen->clone();
+      res->conditionForWhen = conditionForWhen->clone(pParametersToArgumentPtr);
     return res;
   }
 
