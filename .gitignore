@@ -11,3 +11,4 @@ CMakeLists.txt.user*
 french_sentences_from_srts.txt
 stt/models/en/
 stt/models/fr/
+.vscode/

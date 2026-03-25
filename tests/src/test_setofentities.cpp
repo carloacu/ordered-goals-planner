@@ -104,3 +104,15 @@ TEST(Planner, test_setofentities)
   _testRemoveUnusedEntitiesOfTypes();
   _testMergeTwoSetOfEntities();
 }
+
+
+TEST(Parser, test_entity_identifier_with_dash_is_supported)
+{
+  auto types = ogp::SetOfTypes::fromPddl("entity");
+  auto entities = ogp::SetOfEntities::fromPddl("value-with-dash other-value - entity", types);
+
+  ASSERT_NE(entities.valueToEntity("value-with-dash"), nullptr);
+  ASSERT_NE(entities.valueToEntity("other-value"), nullptr);
+  EXPECT_EQ("entity", entities.valueToEntity("value-with-dash")->type->name);
+  EXPECT_EQ("other-value value-with-dash - entity", entities.toStr());
+}
