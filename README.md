@@ -46,14 +46,23 @@ Before each of these 2 goals the planner will apply the effect `(not (has-graspe
 Go to the root directory of this repository and do
 
 ```bash
-cmake -B build ./ && make -C build -j4
+cmake -B build ./ && cmake --build build -j4
 ```
 
 If you want to build in debug with the tests you can do
 
 
 ```bash
-cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_ORDERED_GOALS_PLANNER_TESTS=ON ./ && make -C build -j4
+cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_ORDERED_GOALS_PLANNER_TESTS=ON ./ && cmake --build build -j4
+```
+
+
+## Tests
+
+When the tests are enabled, prefer running them with `ctest`:
+
+```bash
+ctest --test-dir build --output-on-failure
 ```
 
 

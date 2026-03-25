@@ -1,4 +1,3 @@
-enable_testing()
 find_package(GTest REQUIRED)
 
 add_executable(ordered_goals_planner_tests
@@ -46,5 +45,11 @@ target_link_libraries(ordered_goals_planner_tests
 
 add_test(
   NAME ordered_goals_planner_tests
-  COMMAND ordered_goals_planner_tests
+  COMMAND ordered_goals_planner_tests --dataPath doc/examples/
+)
+
+set_tests_properties(
+  ordered_goals_planner_tests
+  PROPERTIES
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
