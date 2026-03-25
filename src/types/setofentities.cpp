@@ -64,26 +64,19 @@ void SetOfEntities::addAllFromPddl(const std::string& pStr,
   ogp::split(lineSplitted, pStr, "\n");
   for (auto& currLine : lineSplitted)
   {
-    std::vector<std::string> entitiesWithType;
-    ogp::split(entitiesWithType, currLine, "-");
-
-    if (entitiesWithType.empty())
-      continue;
-
-    if (entitiesWithType.size() <= 1) {
+    std::string entitiesStr;
+    std::string typeStr;
+    if (!splitPddlTypedList(entitiesStr, typeStr, currLine)) {
       trim(currLine);
       if (currLine.empty())
         continue;
       throw std::runtime_error("Missing type for entities declaration: \"" + currLine + "\"");
     }
 
-    std::string typeStr = entitiesWithType[1];
-    trim(typeStr);
     auto type = pSetOfTypes.nameToType(typeStr);
     if (!type)
       throw std::runtime_error("\"" + typeStr + "\" is not a valid type name in line \"" + currLine + "\"");
 
-    auto entitiesStr = entitiesWithType[0];
     std::vector<std::string> entitiesStrs;
     ogp::split(entitiesStrs, entitiesStr, " ");
     for (auto& currEntity : entitiesStrs)

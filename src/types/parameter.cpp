@@ -43,23 +43,18 @@ bool Parameter::operator==(const Parameter& pOther) const {
 Parameter Parameter::fromStr(const std::string& pStr,
                              const SetOfTypes& pSetOfTypes)
 {
-  std::vector<std::string> nameWithType;
-  ogp::split(nameWithType, pStr, "-");
+  std::string nameStr;
+  std::string typeStr;
+  const bool hasType = splitPddlTypedList(nameStr, typeStr, pStr);
 
-  if (nameWithType.empty())
+  if (nameStr.empty())
     throw std::runtime_error("\"" + pStr + "\" is not a valid entity");
 
-  if (nameWithType.size() > 1)
-  {
-    auto nameStr = nameWithType[0];
-    trim(nameStr);
-    auto typeStr = nameWithType[1];
-    trim(typeStr);
+  if (hasType)
     return Parameter(nameStr, pSetOfTypes.nameToType(typeStr));
-  }
 
   if (pSetOfTypes.empty())
-    return Parameter(nameWithType[0], {});
+    return Parameter(nameStr, {});
   throw std::runtime_error("\"" + pStr + "\" parameter should declare a type");
 }
 

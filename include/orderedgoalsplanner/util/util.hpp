@@ -64,6 +64,11 @@ void split(std::vector<std::string>& pStrs,
            const std::string& pStr,
            const std::string& pSeparator);
 
+ORDEREDGOALSPLANNER_API
+bool splitPddlTypedList(std::string& pValuesStr,
+                        std::string& pTypeStr,
+                        const std::string& pStr);
+
 
 ORDEREDGOALSPLANNER_API
 std::list<Parameter> addParameter(const std::list<Parameter>* pParametersPtr,

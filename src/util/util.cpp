@@ -248,6 +248,57 @@ void split(std::vector<std::string>& pStrs,
   pStrs.emplace_back(pStr.substr(lastPos, pStr.size() - lastPos));
 }
 
+bool splitPddlTypedList(std::string& pValuesStr,
+                        std::string& pTypeStr,
+                        const std::string& pStr)
+{
+  std::istringstream iss(pStr);
+  std::vector<std::string> tokens;
+  for (std::string token; iss >> token; )
+    tokens.emplace_back(std::move(token));
+
+  pValuesStr.clear();
+  pTypeStr.clear();
+  if (tokens.empty())
+    return false;
+
+  auto separatorIt = std::find(tokens.begin(), tokens.end(), "-");
+  if (separatorIt == tokens.end())
+  {
+    for (std::size_t i = 0; i < tokens.size(); ++i)
+    {
+      if (i > 0)
+        pValuesStr += " ";
+      pValuesStr += tokens[i];
+    }
+    return false;
+  }
+
+  for (auto it = tokens.begin(); it != separatorIt; ++it)
+  {
+    if (!pValuesStr.empty())
+      pValuesStr += " ";
+    pValuesStr += *it;
+  }
+
+  bool afterSeparator = false;
+  for (auto it = tokens.begin(); it != tokens.end(); ++it)
+  {
+    if (!afterSeparator)
+    {
+      if (it == separatorIt)
+        afterSeparator = true;
+      continue;
+    }
+
+    if (!pTypeStr.empty())
+      pTypeStr += " ";
+    pTypeStr += *it;
+  }
+
+  return true;
+}
+
 
 std::list<Parameter> addParameter(const std::list<Parameter>* pParametersPtr,
                                   const std::optional<Parameter>& pParameterOpt)

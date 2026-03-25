@@ -45,6 +45,20 @@ void _test_setOfTypes_fromStr()
 }
 
 
+void _test_hyphenated_typed_declarations()
+{
+  auto setOfTypes = ogp::SetOfTypes::fromPddl("base-type\n"
+                                              "sub-type - base-type");
+  EXPECT_EQ("base-type", setOfTypes.nameToType("sub-type")->parent->name);
+
+  auto parameter = ogp::Parameter::fromStr("?param-name - sub-type", setOfTypes);
+  EXPECT_EQ("?param-name - sub-type", parameter.toStr());
+
+  auto entity = ogp::Entity::fromDeclaration("value-with-dash - sub-type", setOfTypes);
+  EXPECT_EQ("value-with-dash - sub-type", entity.toStr());
+}
+
+
 void _test_predicateToStr()
 {
   auto setOfTypes = ogp::SetOfTypes::fromPddl("my_type my_type2 return_type");
@@ -249,6 +263,7 @@ TEST(Tool, test_ontology)
 {
   _test_setOfTypes();
   _test_setOfTypes_fromStr();
+  _test_hyphenated_typed_declarations();
   _test_predicateToStr();
   _test_setOfPredicates_fromStr();
   _test_setOfEntities_fromStr();

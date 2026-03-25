@@ -67,21 +67,15 @@ void SetOfTypes::addTypesFromPddl(const std::string& pStr)
   for (auto& currLine : lineSplitted)
   {
     _removeAfterSemicolon(currLine);
-    std::vector<std::string> typeWithParentType;
-    ogp::split(typeWithParentType, currLine, "-");
-
-    if (typeWithParentType.empty())
-      continue;
-
+    std::string typesStrs;
     std::string parentType;
-    if (typeWithParentType.size() > 1)
+    if (!splitPddlTypedList(typesStrs, parentType, currLine))
     {
-      parentType = typeWithParentType[1];
-      ltrim(parentType);
-      rtrim(parentType);
+      trim(typesStrs);
+      if (typesStrs.empty())
+        continue;
     }
 
-    auto typesStrs = typeWithParentType[0];
     std::vector<std::string> types;
     ogp::split(types, typesStrs, " ");
     for (auto& currType : types)

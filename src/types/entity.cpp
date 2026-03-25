@@ -72,23 +72,18 @@ Entity Entity::createNumberEntity(const std::string& pNumber)
 Entity Entity::fromDeclaration(const std::string& pStr,
                                const SetOfTypes& pSetOfTypes)
 {
-  std::vector<std::string> nameWithType;
-  ogp::split(nameWithType, pStr, "-");
+  std::string valueStr;
+  std::string typeStr;
+  const bool hasType = splitPddlTypedList(valueStr, typeStr, pStr);
 
-  if (nameWithType.empty())
+  if (valueStr.empty())
     throw std::runtime_error("\"" + pStr + "\" is not a valid entity");
 
-  if (nameWithType.size() > 1)
-  {
-    auto valueStr = nameWithType[0];
-    trim(valueStr);
-    auto typeStr = nameWithType[1];
-    trim(typeStr);
+  if (hasType)
     return Entity(valueStr, pSetOfTypes.nameToType(typeStr));
-  }
 
   if (pSetOfTypes.empty())
-    return Entity(nameWithType[0], {});
+    return Entity(valueStr, {});
   throw std::runtime_error("\"" + pStr + "\" entity should declare a type");
 }
 
