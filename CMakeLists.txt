@@ -160,7 +160,7 @@ install(EXPORT ordered_goals_planner_lib
 
 add_subdirectory(app)
 
-
 if (BUILD_ORDERED_GOALS_PLANNER_TESTS)
+   enable_testing()
    add_subdirectory(tests)
 endif()
