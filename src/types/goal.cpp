@@ -7,14 +7,28 @@
 
 namespace ogp
 {
+namespace
+{
+
+std::unique_ptr<Condition> _sanitizeGoalObjective(std::unique_ptr<Condition> pObjective,
+                                                  const SetOfDerivedPredicates* pDerivedPredicatesPtr)
+{
+  if (pObjective &&
+      pDerivedPredicatesPtr != nullptr &&
+      pObjective->hasDerivedPredicates(*pDerivedPredicatesPtr))
+    return pObjective->clone(nullptr, false, pDerivedPredicatesPtr);
+  return pObjective;
+}
+
+}
 
 Goal::Goal(std::unique_ptr<Condition> pObjective,
            bool pIsPersistentIfSkipped,
            bool pOneStepTowards,
            int pMaxTimeToKeepInactive,
-           const std::string& pGoalGroupId)
-  : _objective(std::move(pObjective)),
-    _objectiveForPlanner(),
+           const std::string& pGoalGroupId,
+           const SetOfDerivedPredicates* pDerivedPredicatesPtr)
+  : _objective(_sanitizeGoalObjective(std::move(pObjective), pDerivedPredicatesPtr)),
     _maxTimeToKeepInactive(pMaxTimeToKeepInactive),
     _inactiveSince(),
     _isPersistentIfSkipped(pIsPersistentIfSkipped),
@@ -34,7 +48,6 @@ Goal::Goal(const Goal& pOther,
            const std::map<Parameter, Entity>* pParametersPtr,
            const std::string* pGoalGroupIdPtr)
   : _objective(pOther._objective->clone(pParametersPtr)),
-    _objectiveForPlanner(pOther._objectiveForPlanner ? pOther._objectiveForPlanner->clone(pParametersPtr) : std::unique_ptr<Condition>()),
     _maxTimeToKeepInactive(pOther._maxTimeToKeepInactive),
     _inactiveSince(pOther._inactiveSince ? std::make_unique<std::chrono::steady_clock::time_point>(*pOther._inactiveSince) : std::unique_ptr<std::chrono::steady_clock::time_point>()),
     _isPersistentIfSkipped(pOther._isPersistentIfSkipped),
@@ -58,8 +71,6 @@ Goal Goal::fromStr(const std::string& pStr,
   auto resPtr = strToGoal(pStr, pOntology, pObjects, pMaxTimeToKeepInactive, pGoalGroupId);
   if (!resPtr)
     throw std::runtime_error("Failed to load the goal: " + pStr);
-  if (!pOntology.derivedPredicates.empty())
-    resPtr->setObjectiveForPlanner(resPtr->objective().clone(nullptr, false, &pOntology.derivedPredicates));
   return *resPtr;
 }
 
@@ -67,7 +78,6 @@ Goal Goal::fromStr(const std::string& pStr,
 void Goal::operator=(const Goal& pOther)
 {
   _objective = pOther._objective->clone();
-  _objectiveForPlanner = pOther._objectiveForPlanner ? pOther._objectiveForPlanner->clone() : std::unique_ptr<Condition>();
   _maxTimeToKeepInactive = pOther._maxTimeToKeepInactive;
   if (pOther._inactiveSince)
     _inactiveSince = std::make_unique<std::chrono::steady_clock::time_point>(*pOther._inactiveSince);
@@ -147,8 +157,7 @@ std::string Goal::toPddl(std::size_t pIdentation) const
 
 bool Goal::isASimpleFactObjective() const
 {
-  const auto& plannerObjective = objectiveForPlanner();
-  return plannerObjective.fcFactPtr() != nullptr;
+  return _objective && _objective->fcFactPtr() != nullptr;
 }
 
 
@@ -159,7 +168,7 @@ void Goal::refreshIfNeeded(const Domain& pDomain)
   _uuidOfLastDomainUsedForCache = pDomain.getUuid();
 
   FactOptionalsToId conditionsToValue;
-  conditionsToValue.add(objectiveForPlanner(), "goal");
+  conditionsToValue.add(*_objective, "goal");
   _cacheOfActionsPredecessors.clear();
   _cacheOfEventsPredecessors.clear();
 

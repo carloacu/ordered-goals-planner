@@ -12,7 +12,7 @@ std::map<std::string, MinMaxValues> extractMinMaxValuesForFacts(const Problem& p
   std::map<std::string, MinMaxValues> res;
   for (const auto& currPrioToGoals : pProblem.goalStack.goals())
     for (const auto& currGoal : currPrioToGoals.second)
-      currGoal.objectiveForPlanner().extractMinMaxValuesForFacts(res);
+      currGoal.objective().extractMinMaxValuesForFacts(res);
 
   const auto& ontology = pDomain.getOntology();
   for (const auto& currDpPair : ontology.derivedPredicates.nameToDerivedPredicate())

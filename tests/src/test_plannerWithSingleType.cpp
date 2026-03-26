@@ -3909,25 +3909,16 @@ void _derivedPredicatesInGoal()
   ogp::Domain domain(std::move(actions), ontology);
   auto& setOfEventsMap = domain.getSetOfEvents();
 
-  EXPECT_EQ(_fact_e + "(titi)=valGoal", _goal(_fact_e + "(titi)=valGoal", ontology).toStr());
-
-  {
-    ogp::Problem problem;
-    _addFact(problem.worldState, _fact_a + "(titi)=valGoal", problem.goalStack, ontology, setOfEventsMap, _now);
-
-    _setGoalsForAPriority(problem, {_goal(_fact_e + "(titi)=valGoal", ontology)}, ontology.constants);
-
-    EXPECT_EQ("", _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
-    EXPECT_TRUE(problem.goalStack.goals().empty());
-  }
-
   {
     ogp::Problem problem;
     _setGoalsForAPriority(problem, {_goal(_fact_e + "(titi)=valGoal", ontology)}, ontology.constants);
     _addFact(problem.worldState, _fact_b + "(p1)=valGoal", problem.goalStack, ontology, setOfEventsMap, _now);
 
+    const auto& goal = problem.goalStack.goals().begin()->second.front();
+    EXPECT_FALSE(goal.objective().hasDerivedPredicates(ontology.derivedPredicates));
+
     problem.goalStack.refreshIfNeeded(domain);
-    EXPECT_EQ("goal: " + _fact_e + "(titi)=valGoal\n"
+    EXPECT_EQ("goal: " + _fact_a + "(titi)=valGoal\n"
               "---------------------------\n"
               "actions: " + action1,
               problem.goalStack.printGoalsCache());

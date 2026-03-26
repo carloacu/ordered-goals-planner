@@ -120,10 +120,10 @@ inline bool ProblemModification::hasFact(const ogp::Fact& pFact) const
     return true;
   for (const auto& currGoalWithPriority : goalsToAdd)
     for (const auto& currGoal : currGoalWithPriority.second)
-      if (currGoal.objectiveForPlanner().hasFact(pFact))
+      if (currGoal.objective().hasFact(pFact))
         return true;
   for (const auto& currGoal : goalsToAddInCurrentPriority)
-    if (currGoal.objectiveForPlanner().hasFact(pFact))
+    if (currGoal.objective().hasFact(pFact))
       return true;
   return false;
 }

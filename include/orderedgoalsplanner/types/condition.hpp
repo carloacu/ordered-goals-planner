@@ -148,6 +148,8 @@ struct ORDEREDGOALSPLANNER_API Condition
 
   std::set<FactOptionalAndValueModification> getAllOptFacts() const;
 
+  bool hasDerivedPredicates(const SetOfDerivedPredicates& pDerivedPredicates) const;
+
   /// Cast to ConditionNode* is possible.
   virtual const ConditionNode* fcNodePtr() const = 0;
   virtual ConditionNode* fcNodePtr() = 0;

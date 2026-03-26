@@ -544,7 +544,7 @@ bool WorldState::isGoalSatisfied(const Goal& pGoal,
                                  const SetOfEntities& pConstants,
                                  const SetOfEntities& pObjects) const
 {
-  return pGoal.objectiveForPlanner().isTrue(*this, pConstants, pObjects);
+  return pGoal.objective().isTrue(*this, pConstants, pObjects);
 }
 
 

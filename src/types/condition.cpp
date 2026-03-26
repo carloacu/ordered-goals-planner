@@ -393,6 +393,21 @@ std::set<FactOptionalAndValueModification> Condition::getAllOptFacts() const
 }
 
 
+bool Condition::hasDerivedPredicates(const SetOfDerivedPredicates& pDerivedPredicates) const
+{
+  auto hasDerivedPredicate = false;
+  forAll([&](const FactOptionalAndValueModification& pFactOptional, bool) {
+    if (pDerivedPredicates.nameToPredicatePtr(pFactOptional.factOpt.fact.name()) != nullptr)
+    {
+      hasDerivedPredicate = true;
+      return ContinueOrBreak::BREAK;
+    }
+    return ContinueOrBreak::CONTINUE;
+  });
+  return hasDerivedPredicate;
+}
+
+
 std::string ConditionNode::toStr(const std::function<std::string (const Fact&)>* pFactWriterPtr,
                                  bool pPrintAnyValue) const
 {
