@@ -71,7 +71,7 @@ struct ORDEREDGOALSPLANNER_API WorldState
    * @param[in] pSetOfEvents events to apply indirect modifications according to the events.
    * @param[in] pNow Current time.
    */
-  void applyEffect(const std::map<Parameter, Entity>& pParameters,
+  bool applyEffect(const std::map<Parameter, Entity>& pParameters,
                    const std::unique_ptr<WorldStateModification>& pEffect,
                    bool& pGoalChanged,
                    GoalStack& pGoalStack,

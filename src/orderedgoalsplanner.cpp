@@ -1,6 +1,7 @@
 #include <orderedgoalsplanner/orderedgoalsplanner.hpp>
 #include <algorithm>
 #include <iomanip>
+#include <iterator>
 #include <optional>
 #include <orderedgoalsplanner/types/entitieswithparamconstraints.hpp>
 #include <orderedgoalsplanner/types/parallelplan.hpp>
@@ -1121,6 +1122,7 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
                                                                       std::size_t pNbOfPotentialRetries)
 {
   const auto& ontology = pDomain.getOntology();
+  auto problemBeforePlanning = pProblem;
   std::list<ActionInvocationWithGoal> res;
   pProblem.goalStack.refreshIfNeeded(pDomain);
   pProblem.goalStack.iterateOnGoalsAndRemoveNonPersistent(
@@ -1155,6 +1157,11 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
           },
         pProblem.worldState, ontology.constants, pProblem.objects, pNow,
         pLookForAnActionOutputInfosPtr);
+  if (!res.empty() && res.front().fromGoal)
+  {
+    auto goalToKeepSatisfied = *res.front().fromGoal;
+    removeNotMandatoryActions(res, pDomain, problemBeforePlanning, goalToKeepSatisfied);
+  }
   return res;
 }
 
@@ -1164,6 +1171,41 @@ std::list<std::string> _goalsToPddls(const std::list<Goal>& pGoals)
   for (const auto& currGoal : pGoals)
     res.emplace_back(currGoal.toPddl(0));
   return res;
+}
+
+bool _applyAction(WorldState& pWorldState,
+                  const SetOfEntities& pObjects,
+                  ActionDataForParallelisation& pAction,
+                  const Domain& pDomain,
+                  const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow)
+{
+  const auto& ontology = pDomain.getOntology();
+  const auto& setOfEvents = pDomain.getSetOfEvents();
+  const SetOfCallbacks emptyCallbacks;
+
+  const auto* conditionPtr = pAction.getConditionWithoutParameterPtr();
+  if (conditionPtr != nullptr && !conditionPtr->isTrue(pWorldState, ontology.constants, pObjects))
+    return false;
+
+  bool somethingChanged = false;
+
+  GoalStack goalStack;
+  const auto* worldStateModificationAtStartWithoutParameterPtr = pAction.getWorldStateModificationAtStartWithoutParameterPtr();
+  if (worldStateModificationAtStartWithoutParameterPtr != nullptr)
+    somethingChanged = pWorldState.modify(worldStateModificationAtStartWithoutParameterPtr, goalStack,
+                                          setOfEvents, emptyCallbacks, ontology, pObjects, pNow);
+
+  const auto* worldStateModificationWithoutParameterPtr = pAction.getWorldStateModificationWithoutParameterPtr();
+  if (worldStateModificationWithoutParameterPtr != nullptr)
+    somethingChanged = pWorldState.modify(worldStateModificationWithoutParameterPtr, goalStack,
+                                          setOfEvents, emptyCallbacks, ontology, pObjects, pNow) || somethingChanged;
+
+  const auto* potentialWorldStateModificationWithoutParameterPtr = pAction.getPotentialWorldStateModificationWithoutParameterPtr();
+  if (potentialWorldStateModificationWithoutParameterPtr != nullptr)
+    somethingChanged = pWorldState.modify(potentialWorldStateModificationWithoutParameterPtr, goalStack,
+                                          setOfEvents, emptyCallbacks, ontology, pObjects, pNow) || somethingChanged;
+
+  return somethingChanged;
 }
 
 }
@@ -1295,6 +1337,69 @@ std::list<ActionInvocationWithGoal> planForEveryGoals(
   if (pGoalsDonePtr != nullptr)
     lookForAnActionOutputInfos.moveGoalsDone(*pGoalsDonePtr);
   return res;
+}
+
+
+void removeNotMandatoryActions(std::list<ActionInvocationWithGoal>& pPlan,
+                               const Domain& pDomain,
+                               const Problem& pProblem,
+                               const Goal& pGoal)
+{
+  auto planSize = pPlan.size();
+  if (planSize < 2)
+    return;
+
+  std::unique_ptr<std::chrono::steady_clock::time_point> now;
+  std::vector<WorldState> worldStateBeforeAction;
+  worldStateBeforeAction.reserve(planSize);
+  auto worldStateForPrefix = pProblem.worldState;
+
+  std::list<ActionDataForParallelisation> planWithCache;
+  const auto& actions = pDomain.actions();
+  for (const auto& currAction : pPlan)
+  {
+    auto itAction = actions.find(currAction.actionInvocation.actionId);
+    if (itAction == actions.end())
+      throw std::runtime_error("ActionId \"" + currAction.actionInvocation.actionId + "\" not found while pruning a plan");
+
+    ActionDataForParallelisation actDataPorParallelisation(itAction->second, ActionInvocationWithGoal(currAction));
+    worldStateBeforeAction.emplace_back(worldStateForPrefix);
+    _applyAction(worldStateForPrefix, pProblem.objects, actDataPorParallelisation, pDomain, now);
+    planWithCache.emplace_back(std::move(actDataPorParallelisation));
+  }
+
+  std::vector<bool> removed(planSize, false);
+  std::vector<std::list<ActionDataForParallelisation>::iterator> cacheIters;
+  cacheIters.reserve(planWithCache.size());
+  for (auto itCache = planWithCache.begin(); itCache != planWithCache.end(); ++itCache)
+    cacheIters.emplace_back(itCache);
+
+  const auto& constants = pDomain.getOntology().constants;
+  auto itPlan = --pPlan.end();
+  for (std::size_t idx = planSize; idx > 0; )
+  {
+    --idx;
+    auto& worldStateForValidation = worldStateBeforeAction[idx];
+    bool isStillValid = true;
+    for (std::size_t nextIdx = idx + 1; nextIdx < planSize; ++nextIdx)
+    {
+      if (removed[nextIdx])
+        continue;
+      if (!_applyAction(worldStateForValidation, pProblem.objects, *cacheIters[nextIdx], pDomain, now))
+      {
+        isStillValid = false;
+        break;
+      }
+    }
+
+    if (isStillValid &&
+        worldStateForValidation.isGoalSatisfied(pGoal, constants, pProblem.objects))
+    {
+      removed[idx] = true;
+      itPlan = pPlan.erase(itPlan);
+    }
+     --itPlan;
+  }
 }
 
 

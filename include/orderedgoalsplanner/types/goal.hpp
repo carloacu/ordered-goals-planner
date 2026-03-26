@@ -78,9 +78,6 @@ struct ORDEREDGOALSPLANNER_API Goal
   /// Get a const reference of the optional fact contained in this goal.
   const Condition& objective() const { return *_objective; }
 
-  /// Get a reference of the optional fact contained in this goal.
-  Condition& objective() { return *_objective; }
-
   /// Get the group identifier of this goal. It can be empty if the goal does not belong to a group.
   const std::string& getGoalGroupId() const { return _goalGroupId; }
 

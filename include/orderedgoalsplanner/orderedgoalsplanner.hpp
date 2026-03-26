@@ -108,6 +108,12 @@ std::list<ActionInvocationWithGoal> planForEveryGoals(Problem& pProblem,
                                                       std::list<Goal>* pGoalsDonePtr = nullptr);
 
 ORDEREDGOALSPLANNER_API
+void removeNotMandatoryActions(std::list<ActionInvocationWithGoal>& pPlan,
+                               const Domain& pDomain,
+                               const Problem& pProblem,
+                               const Goal& pGoal);
+
+ORDEREDGOALSPLANNER_API
 ParallelPlan parallelPlanForEveryGoals(Problem& pProblem,
                                       const Domain& pDomain,
                                       const SetOfCallbacks& pCallbacks,

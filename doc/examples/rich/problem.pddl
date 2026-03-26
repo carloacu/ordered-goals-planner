@@ -13,7 +13,7 @@
   )
 
   (:goal (and
-    (>= (money  alice) 500000)
+    (>= (money  alice) 1000000)
     (>= (health alice) 80)
   ))
 

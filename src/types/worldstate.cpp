@@ -136,7 +136,7 @@ bool WorldState::applyDelta(const SetOfFacts::Delta& pDelta,
 }
 
 
-void WorldState::applyEffect(const std::map<Parameter, Entity>& pParameters,
+bool WorldState::applyEffect(const std::map<Parameter, Entity>& pParameters,
                              const std::unique_ptr<WorldStateModification>& pEffect,
                              bool& pGoalChanged,
                              GoalStack& pGoalStack,
@@ -163,6 +163,7 @@ void WorldState::applyEffect(const std::map<Parameter, Entity>& pParameters,
 
   _notifyWhatChanged(whatChanged, pGoalChanged, pGoalStack, pSetOfEvents,
                      pCallbacks, pOntology, pObjects, pNow);
+  return whatChanged.hasFactsToModifyInTheWorldForSure();
 }
 
 

@@ -876,6 +876,40 @@ void _assignAFluentWithoutValueAndEventToResetValue()
   EXPECT_EQ("(= (fn_1) r2)\n(pred_1)", worldStateToPddl(problem.worldState));
 }
 
+void _removeNotMandatoryActions()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+  const std::string action3 = "action3";
+
+  ogp::Ontology ontology;
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_a\n"
+                                                      "fact_b\n"
+                                                      "fact_c", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  actions.emplace(action1, ogp::Action({}, _worldStateModification_fromPddl("(fact_a)", ontology)));
+  actions.emplace(action2, ogp::Action({}, _worldStateModification_fromPddl("(fact_b)", ontology)));
+  actions.emplace(action3, ogp::Action(_condition_fromPddl("(fact_a)", ontology),
+                                       _worldStateModification_fromPddl("(fact_c)", ontology)));
+  ogp::Domain domain(std::move(actions), ontology);
+
+  ogp::Problem problem;
+  auto& entities = problem.objects;
+  const auto goal = ogp::Goal::fromStr("fact_b", ontology, entities);
+  const std::map<ogp::Parameter, ogp::Entity> noParameters;
+
+  std::list<ogp::ActionInvocationWithGoal> plan;
+  plan.emplace_back(action1, noParameters, std::unique_ptr<ogp::Goal>(), 0);
+  plan.emplace_back(action3, noParameters, std::unique_ptr<ogp::Goal>(), 0);
+  plan.emplace_back(action2, noParameters, std::unique_ptr<ogp::Goal>(), 0);
+
+  ogp::removeNotMandatoryActions(plan, domain, problem, goal);
+
+  EXPECT_EQ(1, plan.size());
+  EXPECT_EQ(action2, ogp::planToStr(plan));
+}
+
 
 }
 
@@ -906,4 +940,5 @@ TEST(Planner, test_planner)
   _notEqualUndefinedGoalAndAssignation();
   _assignAFluentWithoutValue();
   _assignAFluentWithoutValueAndEventToResetValue();
+  _removeNotMandatoryActions();
 }
