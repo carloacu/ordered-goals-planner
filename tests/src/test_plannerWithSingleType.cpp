@@ -3884,6 +3884,58 @@ void _derivedPredicates()
 }
 
 
+void _derivedPredicatesInGoal()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("entity\n"
+                                             "param");
+  ontology.constants = ogp::SetOfEntities::fromPddl("valGoal - entity\n"
+                                                    "p1 p2 titi - param", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr(_fact_a + "(?p - param) - entity\n" +
+                                                      _fact_b + "(?p - param) - entity",
+                                                      ontology.types);
+  ontology.derivedPredicates.addDerivedPredicate(
+        ogp::DerivedPredicate(ogp::Predicate(_fact_e + "(?a - param) - entity", false, ontology.types),
+                              _fact_a + "(?a)=?entity", ontology));
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> action1Parameters{_parameter("?p - param", ontology)};
+  ogp::Action action1Obj({}, _worldStateModification_fromStr("assign(" + _fact_a + "(titi), " + _fact_b + "(?p))", ontology, action1Parameters));
+  action1Obj.parameters = std::move(action1Parameters);
+  actions.emplace(action1, action1Obj);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+
+  EXPECT_EQ(_fact_e + "(titi)=valGoal", _goal(_fact_e + "(titi)=valGoal", ontology).toStr());
+
+  {
+    ogp::Problem problem;
+    _addFact(problem.worldState, _fact_a + "(titi)=valGoal", problem.goalStack, ontology, setOfEventsMap, _now);
+
+    _setGoalsForAPriority(problem, {_goal(_fact_e + "(titi)=valGoal", ontology)}, ontology.constants);
+
+    EXPECT_EQ("", _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
+    EXPECT_TRUE(problem.goalStack.goals().empty());
+  }
+
+  {
+    ogp::Problem problem;
+    _setGoalsForAPriority(problem, {_goal(_fact_e + "(titi)=valGoal", ontology)}, ontology.constants);
+    _addFact(problem.worldState, _fact_b + "(p1)=valGoal", problem.goalStack, ontology, setOfEventsMap, _now);
+
+    problem.goalStack.refreshIfNeeded(domain);
+    EXPECT_EQ("goal: " + _fact_e + "(titi)=valGoal\n"
+              "---------------------------\n"
+              "actions: " + action1,
+              problem.goalStack.printGoalsCache());
+    EXPECT_EQ(action1 + "(?p -> p1)", _lookForAnActionToDo(problem, domain).actionInvocation.toStr());
+  }
+}
+
+
 void _assignAFactTwoTimesInTheSamePlan()
 {
   const std::string action1 = "action1";
@@ -4202,6 +4254,7 @@ TEST(Planner, test_planWithSingleType)
   _existWithEqualityInEvent_withEqualityInverted();
   _fixEventWithValueInParameter();
   _derivedPredicates();
+  _derivedPredicatesInGoal();
   _assignAFactTwoTimesInTheSamePlan();
   _assignAFactTwoTimesInTheSamePlan2();
   _checkTwoTimesTheEqualityOfAFact();

@@ -321,8 +321,11 @@ std::unique_ptr<Goal> _expressionParsedToGoal(ExpressionParsed& pExpressionParse
   auto objective = _expressionParsedToCondition(pExpressionParsed, pOntology, pObjects, {}, false, pParameterNamesToEntityPtr);
   if (!objective)
     throw std::runtime_error("Failed to load the goal objective");
-  return std::make_unique<Goal>(std::move(objective), isPersistentIfSkipped, oneStepTowards,
-                                pMaxTimeToKeepInactive, pGoalGroupId);
+  auto res = std::make_unique<Goal>(std::move(objective), isPersistentIfSkipped, oneStepTowards,
+                                    pMaxTimeToKeepInactive, pGoalGroupId);
+  if (!pOntology.derivedPredicates.empty())
+    res->setObjectiveForPlanner(res->objective().clone(nullptr, false, &pOntology.derivedPredicates));
+  return res;
 }
 
 

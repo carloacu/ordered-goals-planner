@@ -80,6 +80,12 @@ struct ORDEREDGOALSPLANNER_API Goal
   /// Get a reference of the optional fact contained in this goal.
   Condition& objective() { return *_objective; }
 
+  /// Get the objective used by the planner, with derived predicates expanded when available.
+  const Condition& objectiveForPlanner() const { return _objectiveForPlanner ? *_objectiveForPlanner : *_objective; }
+
+  /// Override the objective used by the planner, typically with a derived-predicate-expanded condition.
+  void setObjectiveForPlanner(std::unique_ptr<Condition> pObjectiveForPlanner) { _objectiveForPlanner = std::move(pObjectiveForPlanner); }
+
   /// Get the group identifier of this goal. It can be empty if the goal does not belong to a group.
   const std::string& getGoalGroupId() const { return _goalGroupId; }
 
@@ -112,6 +118,8 @@ struct ORDEREDGOALSPLANNER_API Goal
 private:
   /// Condition that the world should satify in the world.
   std::unique_ptr<Condition> _objective;
+  /// Planner view of the objective, with derived predicates expanded when the goal was parsed from text.
+  std::unique_ptr<Condition> _objectiveForPlanner;
   /**
    * The maximum time that we allow for this goal to be inactive in second.<br/>
    * A negative value means that the time is infinite.<br/>

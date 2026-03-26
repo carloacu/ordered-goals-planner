@@ -646,7 +646,7 @@ bool _doesConditionMatchAnOptionalFact(const ParameterValuesWithConstraints& pPa
                                        const ResearchContext& pContext)
 {
   const auto& ontology = pContext.domain.getOntology();
-  const auto& objective = pContext.goal.objective();
+  const auto& objective = pContext.goal.objectiveForPlanner();
   return objective.findConditionCandidateFromFactFromEffect(
         [&](const FactOptional& pConditionFactOptional, const Fact*, const Fact*)
   {
@@ -676,7 +676,7 @@ bool _doesStatisfyTheGoal(ParameterValuesWithConstraints& pParameters,
       if (pParameters.empty() && pParametersToModifyInPlacePtr == nullptr)
         return true;
 
-      const auto& objective = pContext.goal.objective();
+      const auto& objective = pContext.goal.objectiveForPlanner();
       if (_checkConditionAndFillParameters(objective, pFactOptional, pParameters, pParametersToModifyInPlacePtr,
                                            pContext, _emptyParameters) == PossibleEffect::SATISFIED)
       {
@@ -742,7 +742,7 @@ bool _lookForAPossibleEffect(ParameterValuesWithConstraints& pParametersWithTmpD
       if (pParametersToModifyInPlacePtr != nullptr)
         cpTmpParameters = *pParametersToModifyInPlacePtr;
 
-      const auto& objective = pContext.goal.objective();
+      const auto& objective = pContext.goal.objectiveForPlanner();
       possibleEffect = _checkConditionAndFillParameters(objective, pFactOptional, cpParentParameters, &cpTmpParameters,
                                                         pContext, _emptyParameters);
       if (possibleEffect == PossibleEffect::SATISFIED &&
@@ -952,7 +952,7 @@ ActionId _findFirstActionForAGoal(
   std::optional<ActionInvocationWithPtr> res;
   std::set<ActionId> actionIdsToSkip;
   if (pPreviousActionPtr != nullptr &&
-      pPreviousActionPtr->goal.objective() == pGoal.objective() &&
+      pPreviousActionPtr->goal.objectiveForPlanner() == pGoal.objectiveForPlanner() &&
       pPreviousActionPtr->actionPtr != nullptr)
     actionIdsToSkip = pPreviousActionPtr->actionPtr->actionsSuccessionsWithoutInterestCache;
   std::optional<PotentialNextActionComparisonCache> potentialNextActionComparisonCacheOpt;
