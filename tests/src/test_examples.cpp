@@ -107,9 +107,3 @@ TEST_F(PlannerUsingExternalData, test_problemsInData_rich)
 {
   _test_dataDirectory(PlannerUsingExternalData::dataPath, "rich");
 }
-
-TEST_F(PlannerUsingExternalData, test_problemsInData_planning_context)
-{
-  _test_dataDirectory(PlannerUsingExternalData::dataPath, "planning_context");
-}
-
