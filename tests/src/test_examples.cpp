@@ -103,7 +103,10 @@ TEST_F(PlannerUsingExternalData, test_problemsInData_minimize_durations)
   _test_dataDirectory(PlannerUsingExternalData::dataPath, "minimize_durations");
 }
 
-
+TEST_F(PlannerUsingExternalData, test_problemsInData_rich)
+{
+  _test_dataDirectory(PlannerUsingExternalData::dataPath, "rich");
+}
 
 TEST_F(PlannerUsingExternalData, test_problemsInData_planning_context)
 {
