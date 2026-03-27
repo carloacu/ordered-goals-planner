@@ -59,7 +59,7 @@
             (ordered-list
               (users_at_desired_location)
  ;               (forall (?user_param - user) (imply
- ;           (not (= (immutable__wanted_location_of ?user_param) undefined))
+ ;           (not (= (immutable---wanted_location_of ?user_param) undefined))
  ;           (= (location_of ?user_param) (wanted_location_of ?user_param))
  ;       ))
             )

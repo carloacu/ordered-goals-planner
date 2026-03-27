@@ -3,7 +3,7 @@
     (:requirements :derived-predicates :strips :typing)
 
     (:types
-        boolean number string location physical_object robot_part battery_status type_of_click position3_d pose3_d travel_status travel_failure - entity
+        boolean string location physical_object robot_part battery_status type_of_click position3_d pose3_d travel_status travel_failure - entity
         physical_agent rune - physical_object
         user robot - physical_agent
         enchanted_object enchanted_location enchanted_user enchanted_action - rune
@@ -37,12 +37,12 @@
         (resource_has_been_taken ?resource - entity)
         (resource_taken ?resource - entity)
         (told ?text - string ?from_agent - physical_agent ?to_agent - physical_agent)
-        (immutable__engages ?initiator - physical_agent ?recipient - physical_agent)
-        (immutable__holds ?r - robot ?o - physical_object)
-        (immutable__is_detected ?po - physical_object)
-        (immutable__resource_has_been_taken ?resource - entity)
-        (immutable__resource_taken ?resource - entity)
-        (immutable__told ?text - string ?from_agent - physical_agent ?to_agent - physical_agent)
+        (immutable---engages ?initiator - physical_agent ?recipient - physical_agent)
+        (immutable---holds ?r - robot ?o - physical_object)
+        (immutable---is_detected ?po - physical_object)
+        (immutable---resource_has_been_taken ?resource - entity)
+        (immutable---resource_taken ?resource - entity)
+        (immutable---told ?text - string ?from_agent - physical_agent ?to_agent - physical_agent)
     )
 
     (:functions
@@ -78,38 +78,38 @@
         (travel_velocity_of ?agent - physical_agent) - number
         (user_associated_to_rune ?user - user) - enchanted_user
         (wanted_location_of ?o - physical_object) - location
-        (immutable__battery_level) - battery_status
-        (immutable__focused ?a - physical_agent) - physical_object
-        (immutable__hand_holds ?a - arm) - physical_object
-        (immutable__human_position ?user - enchanted_user) - position3_d
-        (immutable__is_carrying_too_heavy_payload) - boolean
-        (immutable__is_clicked ?r - rune) - boolean
-        (immutable__is_double_clicked ?r - rune) - boolean
-        (immutable__is_in_front ?o - physical_object) - boolean
-        (immutable__is_long_pressed ?r - rune) - boolean
-        (immutable__is_nearby ?o - physical_object) - boolean
-        (immutable__is_touched ?p - robot_part) - boolean
-        (immutable__last_time_appeared ?o - physical_object) - number
-        (immutable__last_time_seen ?o - physical_object) - number
-        (immutable__location_of ?o - physical_object) - location
-        (immutable__logistic_rune_target_location ?rune - rune) - location
-        (immutable__logistic_rune_target_object ?rune - rune) - physical_object
-        (immutable__pose_of ?location - location) - pose3_d
-        (immutable__rune_associated_to_user ?rune - enchanted_user) - user
-        (immutable__rune_informations ?r - rune) - boolean
-        (immutable__runtime_prompt ?key - string) - string
-        (immutable__sees_someone) - boolean
-        (immutable__touches_count ?p - robot_part) - number
-        (immutable__travel_direction_of ?agent - physical_agent) - string
-        (immutable__travel_eta_of ?agent - physical_agent) - number
-        (immutable__travel_failure_reason_of ?agent - physical_agent) - travel_failure
-        (immutable__travel_goal_id_of ?agent - physical_agent) - string
-        (immutable__travel_progress_of ?agent - physical_agent) - number
-        (immutable__travel_remaining_distance_of ?agent - physical_agent) - number
-        (immutable__travel_status_of ?agent - physical_agent) - travel_status
-        (immutable__travel_velocity_of ?agent - physical_agent) - number
-        (immutable__user_associated_to_rune ?user - user) - enchanted_user
-        (immutable__wanted_location_of ?o - physical_object) - location
+        (immutable---battery_level) - battery_status
+        (immutable---focused ?a - physical_agent) - physical_object
+        (immutable---hand_holds ?a - arm) - physical_object
+        (immutable---human_position ?user - enchanted_user) - position3_d
+        (immutable---is_carrying_too_heavy_payload) - boolean
+        (immutable---is_clicked ?r - rune) - boolean
+        (immutable---is_double_clicked ?r - rune) - boolean
+        (immutable---is_in_front ?o - physical_object) - boolean
+        (immutable---is_long_pressed ?r - rune) - boolean
+        (immutable---is_nearby ?o - physical_object) - boolean
+        (immutable---is_touched ?p - robot_part) - boolean
+        (immutable---last_time_appeared ?o - physical_object) - number
+        (immutable---last_time_seen ?o - physical_object) - number
+        (immutable---location_of ?o - physical_object) - location
+        (immutable---logistic_rune_target_location ?rune - rune) - location
+        (immutable---logistic_rune_target_object ?rune - rune) - physical_object
+        (immutable---pose_of ?location - location) - pose3_d
+        (immutable---rune_associated_to_user ?rune - enchanted_user) - user
+        (immutable---rune_informations ?r - rune) - boolean
+        (immutable---runtime_prompt ?key - string) - string
+        (immutable---sees_someone) - boolean
+        (immutable---touches_count ?p - robot_part) - number
+        (immutable---travel_direction_of ?agent - physical_agent) - string
+        (immutable---travel_eta_of ?agent - physical_agent) - number
+        (immutable---travel_failure_reason_of ?agent - physical_agent) - travel_failure
+        (immutable---travel_goal_id_of ?agent - physical_agent) - string
+        (immutable---travel_progress_of ?agent - physical_agent) - number
+        (immutable---travel_remaining_distance_of ?agent - physical_agent) - number
+        (immutable---travel_status_of ?agent - physical_agent) - travel_status
+        (immutable---travel_velocity_of ?agent - physical_agent) - number
+        (immutable---user_associated_to_rune ?user - user) - enchanted_user
+        (immutable---wanted_location_of ?o - physical_object) - location
     )
 
     (:derived (any_user_is_told ?text_to_say - string)
@@ -165,66 +165,66 @@
 
     (:derived (users_at_desired_location)
         (forall (?user_param - user) (imply
-            (not (= (immutable__wanted_location_of ?user_param) undefined))
+            (not (= (immutable---wanted_location_of ?user_param) undefined))
             (= (location_of ?user_param) (wanted_location_of ?user_param))
         ))
     )
 
-    (:derived (immutable__any_user_is_told ?text_to_say - string)
-        (exists (?user_param - user) (immutable__told ?text_to_say me ?user_param))
+    (:derived (immutable---any_user_is_told ?text_to_say - string)
+        (exists (?user_param - user) (immutable---told ?text_to_say me ?user_param))
     )
 
-    (:derived (immutable__focus_any_user)
-        (exists (?user_param - user) (= (immutable__focused me) ?user_param))
+    (:derived (immutable---focus_any_user)
+        (exists (?user_param - user) (= (immutable---focused me) ?user_param))
     )
 
-    (:derived (immutable__focused_any_user)
-        (exists (?user_param - user) (= (immutable__focused me) ?user_param))
+    (:derived (immutable---focused_any_user)
+        (exists (?user_param - user) (= (immutable---focused me) ?user_param))
     )
 
-    (:derived (immutable__focused_to ?user - user)
-        (= (immutable__focused me) ?user)
+    (:derived (immutable---focused_to ?user - user)
+        (= (immutable---focused me) ?user)
     )
 
-    (:derived (immutable__focused_user_at_desired_location)
+    (:derived (immutable---focused_user_at_desired_location)
         (exists (?user_param - user) (and
-            (= (immutable__focused me) ?user_param)
-            (not (= (immutable__wanted_location_of ?user_param) undefined))
-            (= (immutable__location_of ?user_param) (immutable__wanted_location_of ?user_param))
+            (= (immutable---focused me) ?user_param)
+            (not (= (immutable---wanted_location_of ?user_param) undefined))
+            (= (immutable---location_of ?user_param) (immutable---wanted_location_of ?user_param))
         ))
     )
 
-    (:derived (immutable__focused_user_wants_to_be_at_a_location)
+    (:derived (immutable---focused_user_wants_to_be_at_a_location)
         (exists (?user_param - user) (and
-            (= (immutable__focused me) ?user_param)
-            (not (= (immutable__wanted_location_of ?user_param) undefined))
+            (= (immutable---focused me) ?user_param)
+            (not (= (immutable---wanted_location_of ?user_param) undefined))
         ))
     )
 
-    (:derived (immutable__is_at_rune ?object - physical_object ?rune - rune)
-        (= (immutable__location_of ?object) (immutable__location_of ?rune))
+    (:derived (immutable---is_at_rune ?object - physical_object ?rune - rune)
+        (= (immutable---location_of ?object) (immutable---location_of ?rune))
     )
 
-    (:derived (immutable__robot_at ?location - location)
-        (= (immutable__location_of me) ?location)
+    (:derived (immutable---robot_at ?location - location)
+        (= (immutable---location_of me) ?location)
     )
 
-    (:derived (immutable__robot_not_focused)
-        (= (immutable__focused me) undefined)
+    (:derived (immutable---robot_not_focused)
+        (= (immutable---focused me) undefined)
     )
 
-    (:derived (immutable__unfocus_from_user)
-        (forall (?user_param - user) (not (= (immutable__focused me) ?user_param)))
+    (:derived (immutable---unfocus_from_user)
+        (forall (?user_param - user) (not (= (immutable---focused me) ?user_param)))
     )
 
-    (:derived (immutable__user_is_told ?text_to_say - string ?receiver - physical_agent)
-        (immutable__told ?text_to_say me ?receiver)
+    (:derived (immutable---user_is_told ?text_to_say - string ?receiver - physical_agent)
+        (immutable---told ?text_to_say me ?receiver)
     )
 
-    (:derived (immutable__users_at_desired_location)
+    (:derived (immutable---users_at_desired_location)
         (forall (?user_param - user) (imply
-            (not (= (immutable__wanted_location_of ?user_param) undefined))
-            (= (immutable__location_of ?user_param) (immutable__wanted_location_of ?user_param))
+            (not (= (immutable---wanted_location_of ?user_param) undefined))
+            (= (immutable---location_of ?user_param) (immutable---wanted_location_of ?user_param))
         ))
     )
 

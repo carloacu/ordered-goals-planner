@@ -913,9 +913,9 @@ void _test_immutableAddition()
     )
 
     (:predicates
-        (immutable__started)
-        (immutable__windows-fitted ?s - site)
-        (immutable__windows-fitted-2 ?s - site)
+        (immutable---started)
+        (immutable---windows-fitted ?s - site)
+        (immutable---windows-fitted-2 ?s - site)
         (started)
         (windows-fitted ?s - site)
         (windows-fitted-2 ?s - site)
@@ -924,16 +924,16 @@ void _test_immutableAddition()
     (:functions
         (car-value ?r - car) - number
         (distance-to-floor ?b - ball) - number
-        (immutable__car-value ?r - car) - number
-        (immutable__distance-to-floor ?b - ball) - number
-        (immutable__velocity ?b - ball) - number
+        (immutable---car-value ?r - car) - number
+        (immutable---distance-to-floor ?b - ball) - number
+        (immutable---velocity ?b - ball) - number
         (velocity ?b - ball) - number
     )
 
-    (:derived (immutable__windows-fitted-both ?s - site)
+    (:derived (immutable---windows-fitted-both ?s - site)
         (and
-            (immutable__windows-fitted ?s)
-            (immutable__windows-fitted-2 ?s)
+            (immutable---windows-fitted ?s)
+            (immutable---windows-fitted-2 ?s)
         )
     )
 
@@ -949,7 +949,7 @@ void _test_immutableAddition()
 
         :condition
             (at start (imply
-                          (immutable__started)
+                          (immutable---started)
                           (not (windows-fitted subsite))
                       )
             )

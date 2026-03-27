@@ -109,7 +109,7 @@ std::string Predicate::toStr() const
 
 const std::string& Predicate::getImmutablePrefix()
 {
-  static const std::string immutablePrefix = "immutable__";
+  static const std::string immutablePrefix = "immutable---";
   return immutablePrefix;
 }
 
