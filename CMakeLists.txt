@@ -7,6 +7,8 @@ option(
   include
 )
 
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 include(cmake/orderedgoalsplanner-config.cmake)
@@ -137,7 +139,8 @@ add_library(ordered_goals_planner_lib STATIC
   ${ORDERED_GOALS_PLANNER_SRCS}
   include/orderedgoalsplanner/types/factoptionalandvaluemodification.hpp
 )
-target_compile_features(ordered_goals_planner_lib PRIVATE cxx_std_17)
+
+target_compile_features(ordered_goals_planner_lib PUBLIC cxx_std_17)
 
 target_include_directories(ordered_goals_planner_lib PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
