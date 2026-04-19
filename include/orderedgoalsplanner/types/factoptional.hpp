@@ -24,7 +24,7 @@ struct ORDEREDGOALSPLANNER_API FactOptional
 
   explicit  FactOptional(bool pIsFactNegated,
                          const std::string& pName,
-                         const std::vector<std::string>& pArgumentStrs,
+                         const std::vector<FactArgument>& pArguments,
                          const std::string& pValueStr,
                          bool pIsValueNegated,
                          const Ontology& pOntology,

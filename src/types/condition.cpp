@@ -129,7 +129,8 @@ bool _isTrueRecEquality(ParameterValuesWithConstraints& pLocalParamToValue,
       auto& paramToEntities = valueToParamToEntities[value];
       for (auto& currArg : pLocalParamToValue)
       {
-        auto argValue = pFact1.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
+        auto argValue = pFact1.tryToExtractArgumentFromExampleWithoutValueConsideration(
+              currArg.first, pFact, &pWorldState.factsMapping());
         if (argValue)
           paramToEntities.paramToEntities1[currArg.first][*argValue];
       }
@@ -139,7 +140,8 @@ bool _isTrueRecEquality(ParameterValuesWithConstraints& pLocalParamToValue,
       {
         for (auto& currArg : *pConditionParametersToPossibleArguments)
         {
-          auto argValue = pFact1.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
+          auto argValue = pFact1.tryToExtractArgumentFromExampleWithoutValueConsideration(
+                currArg.first, pFact, &pWorldState.factsMapping());
           if (argValue)
             newParams[currArg.first][*argValue];
         }
@@ -158,7 +160,8 @@ bool _isTrueRecEquality(ParameterValuesWithConstraints& pLocalParamToValue,
       auto& paramToEntities = valueToParamToEntities[value];
       for (auto& currArg : pLocalParamToValue)
       {
-        auto argValue = pFact1.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
+        auto argValue = pFact1.tryToExtractArgumentFromExampleWithoutValueConsideration(
+              currArg.first, pFact, &pWorldState.factsMapping());
         if (argValue)
           paramToEntities.paramToEntities2[currArg.first][*argValue];
       }
@@ -177,7 +180,8 @@ bool _isTrueRecEquality(ParameterValuesWithConstraints& pLocalParamToValue,
           {
             for (auto& currArg : *pConditionParametersToPossibleArguments)
             {
-              auto argValue = pFact2.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, pFact);
+              auto argValue = pFact2.tryToExtractArgumentFromExampleWithoutValueConsideration(
+                    currArg.first, pFact, &pWorldState.factsMapping());
               if (argValue)
                 newParameters[currArg.first][*argValue];
             }
@@ -536,7 +540,8 @@ bool ConditionNode::findConditionCandidateFromFactFromEffect(
       const auto& leftFact = *leftFactPtr;
       if (nodeType == ConditionNodeType::EQUALITY)
       {
-        if (leftFact.factOptional.fact.areEqualWithoutValueConsideration(pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr))
+        if (leftFact.factOptional.fact.areEqualWithoutValueConsideration(
+              pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr, &pWorldState.factsMapping()))
         {
           bool potRes = _forEachValueUntil(
                 [&](const Entity& pValue, const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr)
@@ -553,7 +558,8 @@ bool ConditionNode::findConditionCandidateFromFactFromEffect(
         if (rightFactPtr != nullptr)
         {
           const auto& rightFact = *rightFactPtr;
-          if (rightFact.factOptional.fact.areEqualWithoutValueConsideration(pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr))
+          if (rightFact.factOptional.fact.areEqualWithoutValueConsideration(
+                pFactFromEffect, &pFactFromEffectParameters, pFactFromEffectTmpParametersPtr, &pWorldState.factsMapping()))
           {
             return _forEachValueUntil(
                   [&](const Entity& pValue, const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr)
@@ -680,7 +686,8 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
               for (auto& currArg : *pConditionParametersToPossibleArguments)
                 if (currArg.second.empty())
                 {
-                  auto value = rightFactPtr->factOptional.fact.tryToExtractArgumentFromExampleWithoutValueConsideration(currArg.first, *pFromFactPtr);
+                  auto value = rightFactPtr->factOptional.fact.tryToExtractArgumentFromExampleWithoutValueConsideration(
+                        currArg.first, *pFromFactPtr, &factAccessorsToFacts);
                   if (value)
                     currArg.second[*value];
                 }
@@ -707,7 +714,8 @@ bool ConditionNode::isTrue(const WorldState& pWorldState,
           for (const auto& currWsFact : leftFactMatchingInWs)
           {
             if (currWsFact.value() &&
-                currWsFact.areEqualWithoutValueConsideration(leftFact, pConditionParametersToPossibleArguments))
+                currWsFact.areEqualWithoutValueConsideration(
+                      leftFact, pConditionParametersToPossibleArguments, nullptr, &factsMapping))
             {
               bool res = compIntNb(currWsFact.value()->value, rightNbPtr->nb,
                                    canBeSuperior(nodeType), canBeEqual(nodeType));

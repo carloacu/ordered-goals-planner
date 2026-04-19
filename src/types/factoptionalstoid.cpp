@@ -19,13 +19,14 @@ std::string _getExactCall(const Fact& pFact)
   bool firstArg = true;
   for (const auto& currArg : pFact.arguments())
   {
-    if (currArg.type)
+    auto currArgType = currArg.type();
+    if (currArgType && currArg.isEntity())
     {
       if (firstArg)
         firstArg = false;
       else
         res += ", ";
-      res += currArg.value;
+      res += currArg.entity().value;
     }
   }
   res += ")";
@@ -168,7 +169,7 @@ void FactsToId::add(const FactOptional& pFactOptional,
 {
   auto factWithId = FactWithId(pFactOptional, pId);
 
-  if (!pFactOptional.fact.hasAParameter())
+  if (!pFactOptional.fact.hasAParameter() && !pFactOptional.fact.hasAFluentArgument())
   {
     auto exactCallStr = _getExactCall(pFactOptional.fact);
     if (!_exactCallWithoutValueToListsOpt)
@@ -192,8 +193,8 @@ void FactsToId::add(const FactOptional& pFactOptional,
     parameterToValues.all.emplace_back(factWithId);
     for (std::size_t i = 0; i < factArguments.size(); ++i)
     {
-      if (!factArguments[i].isAParameterToFill())
-        parameterToValues.argIdToArgValueToValues[i][factArguments[i].value].emplace_back(factWithId);
+      if (factArguments[i].isEntity() && !factArguments[i].isAParameterToFill())
+        parameterToValues.argIdToArgValueToValues[i][factArguments[i].entity().value].emplace_back(factWithId);
       else
         parameterToValues.argIdToArgValueToValues[i][""].emplace_back(factWithId);
     }
@@ -219,7 +220,7 @@ typename FactsToId::ConstMapOfFactIterator FactsToId::find(const Fact& pFact,
 {
   const std::list<FactWithId>* exactMatchPtr = nullptr;
 
-  if (!pFact.hasAParameter(pIgnoreValue) && !pFact.isValueNegated())
+  if (!pFact.hasAParameter(pIgnoreValue) && !pFact.hasAFluentArgument() && !pFact.isValueNegated())
   {
     auto exactCallStr = _getExactCall(pFact);
     if (!pIgnoreValue && pFact.value())
@@ -279,10 +280,10 @@ typename FactsToId::ConstMapOfFactIterator FactsToId::find(const Fact& pFact,
     auto& factArguments = pFact.arguments();
     for (std::size_t i = 0; i < factArguments.size(); ++i)
     {
-      if (!factArguments[i].isAParameterToFill())
+      if (factArguments[i].isEntity() && !factArguments[i].isAParameterToFill())
       {
         hasOnlyParameters = false;
-        auto subRes = _matchArg(parameterToValues.argIdToArgValueToValues[i], factArguments[i].value);
+        auto subRes = _matchArg(parameterToValues.argIdToArgValueToValues[i], factArguments[i].entity().value);
         if (subRes)
           return *subRes;
       }
@@ -438,4 +439,3 @@ ContinueOrBreak FactOptionalsToId::findFact(const std::function<ContinueOrBreak 
 
 
 } // !ogp
-

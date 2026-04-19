@@ -28,6 +28,7 @@ set(ORDERED_GOALS_PLANNER_HPPS
     include/orderedgoalsplanner/types/entitieswithparamconstraints.hpp
     include/orderedgoalsplanner/types/event.hpp
     include/orderedgoalsplanner/types/fact.hpp
+    include/orderedgoalsplanner/types/factargument.hpp
     include/orderedgoalsplanner/types/factoptional.hpp
     include/orderedgoalsplanner/types/factoptionalandvaluemodification.hpp
     include/orderedgoalsplanner/types/factoptionalstoid.hpp
@@ -91,6 +92,7 @@ set(ORDERED_GOALS_PLANNER_SRCS
     src/types/expressionParsed.cpp
     src/types/event.cpp
     src/types/fact.cpp
+    src/types/factargument.cpp
     src/types/factoptional.cpp
     src/types/factoptionalstoid.cpp
     src/types/factsalreadychecked.hpp

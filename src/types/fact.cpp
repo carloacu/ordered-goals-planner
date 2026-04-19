@@ -15,8 +15,16 @@ namespace ogp
 {
 namespace {
 
+Fact _expressionParsedToFact(const ExpressionParsed& pExpressionParsed,
+                             const Ontology& pOntology,
+                             const SetOfEntities& pObjects,
+                             const std::vector<Parameter>& pParameters,
+                             bool& pIsValueNegated,
+                             bool pIsOkIfValueIsMissing,
+                             const std::map<std::string, Entity>* pParameterNamesToEntityPtr);
+
 void _entitiesToStr(std::string& pStr,
-                    const std::vector<Entity>& pParameters)
+                    const std::vector<FactArgument>& pParameters)
 {
   bool firstIteration = true;
   for (auto& param : pParameters)
@@ -30,7 +38,7 @@ void _entitiesToStr(std::string& pStr,
 }
 
 void _entitiesToValueStr(std::string& pStr,
-                         const std::vector<Entity>& pParameters,
+                         const std::vector<FactArgument>& pParameters,
                          const std::string& pSeparator)
 {
   bool firstIteration = true;
@@ -40,7 +48,7 @@ void _entitiesToValueStr(std::string& pStr,
       firstIteration = false;
     else
       pStr += pSeparator;
-    pStr += param.value;
+    pStr += param.toStr();
   }
 }
 
@@ -61,6 +69,12 @@ bool _isInside(const Entity& pEntity,
   return false;
 }
 
+bool _isInside(const FactArgument& pArgument,
+               const std::vector<Parameter>* pParametersPtr)
+{
+  return pArgument.isEntity() && _isInside(pArgument.entity(), pParametersPtr);
+}
+
 bool _isInside(const Entity& pEntity,
                const ParameterValuesWithConstraints* pEltsPtr)
 {
@@ -68,6 +82,12 @@ bool _isInside(const Entity& pEntity,
     return false;
   auto it = pEltsPtr->find(pEntity.toParameter());
   return it != pEltsPtr->end() && it->second.empty();
+}
+
+bool _isInside(const FactArgument& pArgument,
+               const ParameterValuesWithConstraints* pEltsPtr)
+{
+  return pArgument.isEntity() && _isInside(pArgument.entity(), pEltsPtr);
 }
 
 bool _isInsideOrHasEntity(const Entity& pEntity,
@@ -84,6 +104,178 @@ bool _isInsideOrHasEntity(const Entity& pEntity,
     return it->second.count(pEntityPossibility) > 0;
   }
   return false;
+}
+
+bool _isInsideOrHasEntity(const FactArgument& pArgument,
+                          const ParameterValuesWithConstraints* pEltsPtr,
+                          const FactArgument& pEntityPossibility)
+{
+  return pArgument.isEntity() && pEntityPossibility.isEntity() &&
+      _isInsideOrHasEntity(pArgument.entity(), pEltsPtr, pEntityPossibility.entity());
+}
+
+std::optional<Entity> _tryToResolveArgumentToEntity(const FactArgument& pArgument,
+                                                    const SetOfFacts* pSetOfFactsPtr)
+{
+  if (pArgument.isEntity())
+    return pArgument.entity();
+  if (pSetOfFactsPtr != nullptr)
+    return pArgument.tryToResolveToEntity(*pSetOfFactsPtr);
+  return {};
+}
+
+bool _areEqualWithoutValueConsideration(const FactArgument& pArgument,
+                                        const FactArgument& pOtherArgument,
+                                        const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr,
+                                        const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2,
+                                        const SetOfFacts* pSetOfFactsPtr)
+{
+  if (pArgument == pOtherArgument)
+    return true;
+  if (pArgument.isAnyEntity() || pOtherArgument.isAnyEntity())
+    return true;
+
+  auto resolvedArgument = _tryToResolveArgumentToEntity(pArgument, pSetOfFactsPtr);
+  auto resolvedOtherArgument = _tryToResolveArgumentToEntity(pOtherArgument, pSetOfFactsPtr);
+  if (resolvedArgument && resolvedOtherArgument)
+  {
+    return *resolvedArgument == *resolvedOtherArgument ||
+        resolvedArgument->isAnyEntity() ||
+        resolvedOtherArgument->isAnyEntity() ||
+        _isInsideOrHasEntity(*resolvedOtherArgument, pOtherFactParametersToConsiderAsAnyValuePtr, *resolvedArgument) ||
+        _isInsideOrHasEntity(*resolvedOtherArgument, pOtherFactParametersToConsiderAsAnyValuePtr2, *resolvedArgument);
+  }
+
+  return _isInsideOrHasEntity(pOtherArgument, pOtherFactParametersToConsiderAsAnyValuePtr, pArgument) ||
+      _isInsideOrHasEntity(pOtherArgument, pOtherFactParametersToConsiderAsAnyValuePtr2, pArgument);
+}
+
+bool _areEqualExceptAnyEntities(const FactArgument& pArgument,
+                                const FactArgument& pOtherArgument,
+                                const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr,
+                                const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2,
+                                const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr,
+                                const SetOfFacts* pSetOfFactsPtr)
+{
+  if (pArgument == pOtherArgument)
+    return true;
+  if (pArgument.isAnyEntity() || pOtherArgument.isAnyEntity())
+    return true;
+
+  auto resolvedArgument = _tryToResolveArgumentToEntity(pArgument, pSetOfFactsPtr);
+  auto resolvedOtherArgument = _tryToResolveArgumentToEntity(pOtherArgument, pSetOfFactsPtr);
+  if (resolvedArgument && resolvedOtherArgument)
+  {
+    return *resolvedArgument == *resolvedOtherArgument ||
+        resolvedArgument->isAnyEntity() ||
+        resolvedOtherArgument->isAnyEntity() ||
+        _isInside(*resolvedArgument, pThisFactParametersToConsiderAsAnyValuePtr) ||
+        _isInside(*resolvedOtherArgument, pOtherFactParametersToConsiderAsAnyValuePtr) ||
+        _isInside(*resolvedOtherArgument, pOtherFactParametersToConsiderAsAnyValuePtr2);
+  }
+
+  return _isInside(pArgument, pThisFactParametersToConsiderAsAnyValuePtr) ||
+      _isInside(pOtherArgument, pOtherFactParametersToConsiderAsAnyValuePtr) ||
+      _isInside(pOtherArgument, pOtherFactParametersToConsiderAsAnyValuePtr2);
+}
+
+std::optional<Entity> _tryToExtractArgumentFromExampleRec(const Parameter& pParameter,
+                                                          const FactArgument& pArgument,
+                                                          const FactArgument& pExampleArgument,
+                                                          bool pIgnoreValue,
+                                                          const SetOfFacts* pSetOfFactsPtr)
+{
+  if (pArgument.match(pParameter))
+    return _tryToResolveArgumentToEntity(pExampleArgument, pSetOfFactsPtr);
+
+  if (pArgument.fluent() != nullptr && pExampleArgument.fluent() != nullptr)
+  {
+    if (pIgnoreValue)
+      return pArgument.fluent()->tryToExtractArgumentFromExampleWithoutValueConsideration(
+            pParameter, *pExampleArgument.fluent(), pSetOfFactsPtr);
+    return pArgument.fluent()->tryToExtractArgumentFromExample(
+          pParameter, *pExampleArgument.fluent(), pSetOfFactsPtr);
+  }
+
+  return {};
+}
+
+bool _areTypesCompatible(const std::shared_ptr<Type>& pType1,
+                         const std::shared_ptr<Type>& pType2)
+{
+  return !pType1 || !pType2 || pType1->isA(*pType2) || pType2->isA(*pType1);
+}
+
+bool _areEqualExceptAnyParameters(const FactArgument& pArgument,
+                                  const FactArgument& pOtherArgument)
+{
+  if (pArgument == pOtherArgument)
+    return true;
+  if (pArgument.isAParameterToFill() || pOtherArgument.isAParameterToFill())
+    return _areTypesCompatible(pArgument.type(), pOtherArgument.type());
+  return false;
+}
+
+
+FactArgument _expressionParsedToFactArgument(const ExpressionParsed& pExpressionParsed,
+                                             const Ontology& pOntology,
+                                             const SetOfEntities& pObjects,
+                                             const std::vector<Parameter>& pParameters,
+                                             const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
+{
+  if (pExpressionParsed.isAFunction)
+  {
+    bool isValueNegated = pExpressionParsed.isValueNegated;
+    return FactArgument(_expressionParsedToFact(pExpressionParsed, pOntology, pObjects, pParameters,
+                                                isValueNegated, true, pParameterNamesToEntityPtr));
+  }
+  return FactArgument(Entity::fromUsage(pExpressionParsed.name, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
+}
+
+
+Fact _expressionParsedToFact(const ExpressionParsed& pExpressionParsed,
+                             const Ontology& pOntology,
+                             const SetOfEntities& pObjects,
+                             const std::vector<Parameter>& pParameters,
+                             bool& pIsValueNegated,
+                             bool pIsOkIfValueIsMissing,
+                             const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
+{
+  std::string factName;
+  std::vector<FactArgument> arguments;
+  std::optional<Entity> value;
+  const ExpressionParsed* expressionParsedForArgumentsPtr = &pExpressionParsed;
+
+  if (pExpressionParsed.name.empty())
+    throw std::runtime_error("Fact cannot have an empty name");
+
+  if (pExpressionParsed.name == "=" && pExpressionParsed.arguments.size() == 2)
+  {
+    auto itArg = pExpressionParsed.arguments.begin();
+    expressionParsedForArgumentsPtr = &*itArg;
+    ++itArg;
+    if (itArg->name == Fact::getUndefinedEntity().value)
+    {
+      value.emplace(Entity::createAnyEntity());
+      pIsValueNegated = true;
+    }
+    else
+    {
+      value.emplace(Entity::fromUsage(itArg->name, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
+    }
+    factName = expressionParsedForArgumentsPtr->name;
+  }
+  else
+  {
+    factName = pExpressionParsed.name;
+    if (!pExpressionParsed.value.empty())
+      value.emplace(Entity::fromUsage(pExpressionParsed.value, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
+  }
+
+  for (const auto& currArgument : expressionParsedForArgumentsPtr->arguments)
+    arguments.emplace_back(_expressionParsedToFactArgument(currArgument, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
+
+  return Fact(std::move(factName), std::move(arguments), std::move(value), pIsValueNegated, pOntology, pIsOkIfValueIsMissing);
 }
 
 }
@@ -110,60 +302,21 @@ Fact::Fact(const std::string& pStr,
     auto expressionParsed = pStrPddlFormated ?
         ExpressionParsed::fromPddl(pStr, pos, false) :
         ExpressionParsed::fromStr(pStr, pos);
-    if (!pStrPddlFormated)
+    bool isFactNegated = expressionParsed.isValueNegated;
+    if (!pStrPddlFormated && !expressionParsed.name.empty() && expressionParsed.name[0] == '!')
     {
-      if (!expressionParsed.name.empty() && expressionParsed.name[0] == '!')
-      {
-        if (pIsFactNegatedPtr != nullptr)
-           *pIsFactNegatedPtr = true;
-        _name = expressionParsed.name.substr(1, expressionParsed.name.size() - 1);
-      }
-      else
-      {
-        _name = expressionParsed.name;
-      }
+      isFactNegated = true;
+      expressionParsed.name = expressionParsed.name.substr(1, expressionParsed.name.size() - 1);
     }
-    else
+    else if (pStrPddlFormated && expressionParsed.name == "not" && expressionParsed.arguments.size() == 1)
     {
-      if (expressionParsed.name == "not" && expressionParsed.arguments.size() == 1)
-      {
-        if (pIsFactNegatedPtr != nullptr)
-           *pIsFactNegatedPtr = true;
-        expressionParsed = expressionParsed.arguments.back().clone();
-      }
-      _name = expressionParsed.name;
+      isFactNegated = true;
+      expressionParsed = expressionParsed.arguments.back().clone();
     }
 
-    _isValueNegated = expressionParsed.isValueNegated;
-    auto* expressionParsedForArgumentsPtr = &expressionParsed;
-    if (_name == "=" && expressionParsed.arguments.size() == 2)
-    {
-      auto valueStr = expressionParsed.arguments.back().name;
-      if (valueStr == getUndefinedEntity().value)
-      {
-        if (pIsFactNegatedPtr != nullptr)
-           *pIsFactNegatedPtr = true;
-        _value.emplace(Entity::createAnyEntity());
-      }
-      else
-      {
-        _value.emplace(Entity::fromUsage(valueStr, pOntology, pObjects, pParameters));
-      }
-      expressionParsedForArgumentsPtr = &expressionParsed.arguments.front();
-      _name = expressionParsedForArgumentsPtr->name;
-    }
-    else if (expressionParsed.value != "")
-    {
-      _value.emplace(Entity::fromUsage(expressionParsed.value, pOntology, pObjects, pParameters));
-    }
-
-    for (auto& currArgument : expressionParsedForArgumentsPtr->arguments)
-      _arguments.push_back(Entity::fromUsage(currArgument.name, pOntology, pObjects, pParameters));
-
-
-    predicate = pOntology.predicates.nameToPredicate(_name);
-    _finalizeInisilizationAndValidityChecks(pIsOkIfValueIsMissing);
-    _resetFactSignatureCache();
+    *this = _expressionParsedToFact(expressionParsed, pOntology, pObjects, pParameters, isFactNegated, pIsOkIfValueIsMissing, nullptr);
+    if (pIsFactNegatedPtr != nullptr)
+        *pIsFactNegatedPtr = isFactNegated;
     if (pResPos != nullptr)
     {
       if (pos <= pBeginPos)
@@ -177,9 +330,8 @@ Fact::Fact(const std::string& pStr,
   }
 }
 
-
 Fact::Fact(const std::string& pName,
-           const std::vector<std::string>& pArgumentStrs,
+           const std::vector<FactArgument>& pArguments,
            const std::string& pValueStr,
            bool pIsValueNegated,
            const Ontology& pOntology,
@@ -189,7 +341,7 @@ Fact::Fact(const std::string& pName,
            const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
   : predicate("_not_set", true, pOntology.types),
     _name(pName),
-    _arguments(),
+    _arguments(pArguments),
     _value(),
     _isValueNegated(pIsValueNegated),
     _factSignature()
@@ -199,13 +351,32 @@ Fact::Fact(const std::string& pName,
     throw std::runtime_error("\"" + pName + "\" is not a predicate name or a derived predicate name");
 
   predicate = *predicatePtr;
-  for (auto& currParam : pArgumentStrs)
-    if (!currParam.empty())
-      _arguments.push_back(Entity::fromUsage(currParam, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
   if (!pValueStr.empty())
     _value = Entity::fromUsage(pValueStr, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr);
   else if (pIsOkIfValueIsMissing && predicate.value)
     _value = Entity(Entity::anyEntityValue(), predicate.value);
+  _finalizeInisilizationAndValidityChecks(pIsOkIfValueIsMissing);
+  _resetFactSignatureCache();
+}
+
+Fact::Fact(std::string pName,
+           std::vector<FactArgument>&& pArguments,
+           std::optional<Entity>&& pValue,
+           bool pIsValueNegated,
+           const Ontology& pOntology,
+           bool pIsOkIfValueIsMissing)
+  : predicate("_not_set", true, pOntology.types),
+    _name(std::move(pName)),
+    _arguments(std::move(pArguments)),
+    _value(std::move(pValue)),
+    _isValueNegated(pIsValueNegated),
+    _factSignature()
+{
+  auto* predicatePtr = pOntology.nameToPredicatePtr(_name);
+  if (predicatePtr == nullptr)
+    throw std::runtime_error("\"" + _name + "\" is not a predicate name");
+
+  predicate = *predicatePtr;
   _finalizeInisilizationAndValidityChecks(pIsOkIfValueIsMissing);
   _resetFactSignatureCache();
 }
@@ -287,7 +458,8 @@ std::ostream& operator<<(std::ostream& os, const Fact& pFact) {
 
 bool Fact::areEqualWithoutValueConsideration(const Fact& pFact,
                                               const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr,
-                                              const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2) const
+                                              const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2,
+                                              const SetOfFacts* pSetOfFactsPtr) const
 {
   if (pFact._name != _name ||
       pFact._arguments.size() != _arguments.size())
@@ -297,9 +469,10 @@ bool Fact::areEqualWithoutValueConsideration(const Fact& pFact,
   auto itOtherParam = pFact._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity() &&
-        !(_isInsideOrHasEntity(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr, *itParam) ||
-          _isInsideOrHasEntity(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr2, *itParam)))
+    if (!_areEqualWithoutValueConsideration(*itParam, *itOtherParam,
+                                            pOtherFactParametersToConsiderAsAnyValuePtr,
+                                            pOtherFactParametersToConsiderAsAnyValuePtr2,
+                                            pSetOfFactsPtr))
       return false;
     ++itParam;
     ++itOtherParam;
@@ -321,7 +494,7 @@ bool Fact::areEqualWithoutAnArgConsideration(const Fact& pFact,
   while (itParam != _arguments.end())
   {
     if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity() &&
-        itParam->value != pArgToIgnore)
+        itParam->valueStr() != pArgToIgnore)
       return false;
     ++itParam;
     ++itOtherParam;
@@ -349,7 +522,7 @@ bool Fact::areEqualWithoutArgsAndValueConsideration(const Fact& pFact,
         bool found = false;
         for (auto& currParam : *pParametersToIgnorePtr)
         {
-          if (currParam.name == itParam->value)
+          if (currParam.name == itParam->valueStr())
           {
             found = true;
             break;
@@ -381,7 +554,7 @@ bool Fact::areEqualExceptAnyParameters(const Fact& pOther,
   auto itOtherParam = pOther._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (*itParam != *itOtherParam && !itParam->isAParameterToFill() && !itOtherParam->isAParameterToFill())
+    if (!_areEqualExceptAnyParameters(*itParam, *itOtherParam))
       return false;
     ++itParam;
     ++itOtherParam;
@@ -406,7 +579,8 @@ bool Fact::areEqualExceptAnyParameters(const Fact& pOther,
 bool Fact::areEqualExceptAnyEntities(const Fact& pOther,
                                      const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr,
                                      const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2,
-                                     const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr) const
+                                     const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr,
+                                     const SetOfFacts* pSetOfFactsPtr) const
 {
   if (_name != pOther._name || _arguments.size() != pOther._arguments.size())
     return false;
@@ -415,10 +589,11 @@ bool Fact::areEqualExceptAnyEntities(const Fact& pOther,
   auto itOtherParam = pOther._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity() &&
-        !(_isInside(*itParam, pThisFactParametersToConsiderAsAnyValuePtr)) &&
-        !(_isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr) ||
-          _isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr2)))
+    if (!_areEqualExceptAnyEntities(*itParam, *itOtherParam,
+                                    pOtherFactParametersToConsiderAsAnyValuePtr,
+                                    pOtherFactParametersToConsiderAsAnyValuePtr2,
+                                    pThisFactParametersToConsiderAsAnyValuePtr,
+                                    pSetOfFactsPtr))
       return false;
     ++itParam;
     ++itOtherParam;
@@ -445,7 +620,8 @@ bool Fact::areEqualExceptAnyEntities(const Fact& pOther,
 
 bool Fact::areEqualExceptAnyEntitiesAndValue(const Fact& pOther,
                                              const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr,
-                                             const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2) const
+                                             const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2,
+                                             const SetOfFacts* pSetOfFactsPtr) const
 {
   if (_name != pOther._name || _arguments.size() != pOther._arguments.size())
     return false;
@@ -454,9 +630,11 @@ bool Fact::areEqualExceptAnyEntitiesAndValue(const Fact& pOther,
   auto itOtherParam = pOther._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (*itParam != *itOtherParam && !itParam->isAnyEntity() && !itOtherParam->isAnyEntity() &&
-        !(_isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr) ||
-          _isInside(*itOtherParam, pOtherFactParametersToConsiderAsAnyValuePtr2)))
+    if (!_areEqualExceptAnyEntities(*itParam, *itOtherParam,
+                                    pOtherFactParametersToConsiderAsAnyValuePtr,
+                                    pOtherFactParametersToConsiderAsAnyValuePtr2,
+                                    nullptr,
+                                    pSetOfFactsPtr))
       return false;
     ++itParam;
     ++itOtherParam;
@@ -523,7 +701,7 @@ bool Fact::hasParameterOrValue(const Parameter& pParameter) const
   auto itParam = _arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (itParam->match(pParameter))
+    if (itParam->match(pParameter) || (itParam->fluent() && itParam->fluent()->hasParameterOrValue(pParameter)))
       return true;
     ++itParam;
   }
@@ -534,23 +712,54 @@ bool Fact::hasParameterOrValue(const Parameter& pParameter) const
 bool Fact::hasAParameter(bool pIgnoreValue) const
 {
   for (const auto& currArg : _arguments)
-    if (currArg.isAParameterToFill())
+    if (currArg.hasParameter())
       return true;
   return !pIgnoreValue && _value && _value->isAParameterToFill();
+}
+
+
+bool Fact::hasAFluentArgument() const
+{
+  for (const auto& currArg : _arguments)
+    if (currArg.isFluent())
+      return true;
+  return false;
 }
 
 
 bool Fact::hasEntity(const std::string& pEntityId) const
 {
   for (const auto& currArg : _arguments)
-    if (currArg.value == pEntityId && !currArg.isAParameterToFill())
+    if (currArg.hasEntity(pEntityId))
       return true;
   return _value && _value->value == pEntityId && !_value->isAParameterToFill();
 }
 
 
+std::optional<Fact> Fact::tryToResolveFluentArguments(const SetOfFacts& pSetOfFacts) const
+{
+  if (!hasAFluentArgument())
+    return *this;
+
+  std::vector<FactArgument> resolvedArguments;
+  resolvedArguments.reserve(_arguments.size());
+  for (const auto& currArg : _arguments)
+  {
+    auto resolvedEntity = currArg.tryToResolveToEntity(pSetOfFacts);
+    if (!resolvedEntity)
+      return {};
+    resolvedArguments.emplace_back(std::move(*resolvedEntity));
+  }
+  auto res = *this;
+  res._arguments = std::move(resolvedArguments);
+  res._resetFactSignatureCache();
+  return res;
+}
+
+
 std::optional<Entity> Fact::tryToExtractArgumentFromExample(const Parameter& pParameter,
-                                                            const Fact& pExampleFact) const
+                                                            const Fact& pExampleFact,
+                                                            const SetOfFacts* pSetOfFactsPtr) const
 {
   if (_name != pExampleFact._name ||
       _isValueNegated != pExampleFact._isValueNegated ||
@@ -565,8 +774,10 @@ std::optional<Entity> Fact::tryToExtractArgumentFromExample(const Parameter& pPa
   auto itOtherParam = pExampleFact._arguments.begin();
   while (itParam != _arguments.end())
   {
-    if (itParam->match(pParameter))
-      res = *itOtherParam;
+    auto argValue = _tryToExtractArgumentFromExampleRec(
+          pParameter, *itParam, *itOtherParam, false, pSetOfFactsPtr);
+    if (argValue)
+      res = std::move(argValue);
     ++itParam;
     ++itOtherParam;
   }
@@ -575,7 +786,8 @@ std::optional<Entity> Fact::tryToExtractArgumentFromExample(const Parameter& pPa
 
 std::optional<Entity> Fact::tryToExtractArgumentFromExampleWithoutValueConsideration(
     const Parameter& pParameter,
-    const Fact& pExampleFact) const
+    const Fact& pExampleFact,
+    const SetOfFacts* pSetOfFactsPtr) const
 {
   if (_name != pExampleFact._name ||
       _isValueNegated != pExampleFact._isValueNegated ||
@@ -587,8 +799,10 @@ std::optional<Entity> Fact::tryToExtractArgumentFromExampleWithoutValueConsidera
   auto itOtherArg = pExampleFact._arguments.begin();
   while (itArg != _arguments.end())
   {
-    if (itArg->match(pParameter))
-      res = *itOtherArg;
+    auto argValue = _tryToExtractArgumentFromExampleRec(
+          pParameter, *itArg, *itOtherArg, true, pSetOfFactsPtr);
+    if (argValue)
+      res = std::move(argValue);
     ++itArg;
     ++itOtherArg;
   }
@@ -606,11 +820,7 @@ void Fact::replaceArguments(const std::map<Parameter, Entity>& pCurrentArguments
   }
 
   for (auto& currParam : _arguments)
-  {
-    auto itValueParam = pCurrentArgumentsToNewArgument.find(currParam.toParameter());
-    if (itValueParam != pCurrentArgumentsToNewArgument.end())
-      currParam = itValueParam->second;
-  }
+    currParam.replaceArguments(pCurrentArgumentsToNewArgument);
   _resetFactSignatureCache();
 }
 
@@ -624,11 +834,7 @@ void Fact::replaceArguments(const ParameterValuesWithConstraints& pCurrentArgume
   }
 
   for (auto& currParam : _arguments)
-  {
-    auto itValueParam = pCurrentArgumentsToNewArgument.find(currParam.toParameter());
-    if (itValueParam != pCurrentArgumentsToNewArgument.end() && !itValueParam->second.empty())
-      currParam = itValueParam->second.begin()->first;
-  }
+    currParam.replaceArguments(pCurrentArgumentsToNewArgument);
   _resetFactSignatureCache();
 }
 
@@ -639,7 +845,18 @@ std::string Fact::toPddl(bool pInEffectContext,
   if (!_arguments.empty())
   {
     res += " ";
-    _entitiesToValueStr(res, _arguments, " ");
+    bool firstIteration = true;
+    for (const auto& currArg : _arguments)
+    {
+      if (firstIteration)
+        firstIteration = false;
+      else
+        res += " ";
+      if (currArg.isEntity())
+        res += currArg.entity().value;
+      else
+        res += currArg.toPddl(pPrintAnyValue);
+    }
   }
   res += ")";
   if (_value)
@@ -663,7 +880,18 @@ std::string Fact::toStr(bool pPrintAnyValue) const
   if (!_arguments.empty())
   {
     res += "(";
-    _entitiesToValueStr(res, _arguments, ", ");
+    bool firstIteration = true;
+    for (const auto& currArg : _arguments)
+    {
+      if (firstIteration)
+        firstIteration = false;
+      else
+        res += ", ";
+      if (currArg.isEntity())
+        res += currArg.entity().value;
+      else
+        res += currArg.toStr(pPrintAnyValue);
+    }
     res += ")";
   }
   if (_value)
@@ -736,7 +964,7 @@ bool Fact::isInOtherFactsMap(const SetOfFacts& pOtherFacts,
     newPotentialParametersInPlace = *pParametersToModifyInPlacePtr;
   for (const auto& currOtherFact : otherFactsThatMatched)
     if (isInOtherFact(currOtherFact, newPotentialParameters, pParametersPtr,
-                      newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
+                      newPotentialParametersInPlace, pParametersToModifyInPlacePtr, &pOtherFacts))
       res = true;
 
   if (!res)
@@ -753,7 +981,7 @@ bool Fact::canModifySetOfFacts(const SetOfFacts& pOtherFacts,
   auto otherFactsThatMatched = pOtherFacts.find(*this);
   ParameterValuesWithConstraints parametersAlreadyInSetOfFacts;
   for (const auto& currOtherFact : otherFactsThatMatched)
-    if (filterPossibilities(currOtherFact, parametersAlreadyInSetOfFacts, pArgumentsToFilter))
+    if (filterPossibilities(currOtherFact, parametersAlreadyInSetOfFacts, pArgumentsToFilter, &pOtherFacts))
       res = false;
   return res || parametersAlreadyInSetOfFacts != pArgumentsToFilter;
 }
@@ -807,7 +1035,8 @@ bool Fact::_updateParameters(ParameterValuesWithConstraints* pNewParametersPtr,
 
 bool Fact::filterPossibilities(const Fact& pOtherFact,
                                ParameterValuesWithConstraints& pNewParameters,
-                               const ParameterValuesWithConstraints& pParameters) const
+                               const ParameterValuesWithConstraints& pParameters,
+                               const SetOfFacts* pSetOfFactsPtr) const
 {
   if (pOtherFact._name != _name ||
       pOtherFact._arguments.size() != _arguments.size())
@@ -840,7 +1069,12 @@ bool Fact::filterPossibilities(const Fact& pOtherFact,
     while (itFactArguments != pOtherFact._arguments.end())
     {
       if (*itFactArguments != *itLookForArguments &&
-          !doesItMatch(*itLookForArguments, *itFactArguments))
+          ([&]() {
+            auto lookForArgument = _tryToResolveArgumentToEntity(*itLookForArguments, pSetOfFactsPtr);
+            auto factArgument = _tryToResolveArgumentToEntity(*itFactArguments, pSetOfFactsPtr);
+            return !lookForArgument || !factArgument ||
+                !doesItMatch(*lookForArgument, *factArgument);
+          })())
         doesParametersMatches = false;
       ++itFactArguments;
       ++itLookForArguments;
@@ -888,7 +1122,8 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
                          ParameterValuesWithConstraints& pNewParameters,
                          const ParameterValuesWithConstraints* pParametersPtr,
                          ParameterValuesWithConstraints& pNewParametersInPlace,
-                         const ParameterValuesWithConstraints* pParametersToModifyInPlacePtr) const
+                         const ParameterValuesWithConstraints* pParametersToModifyInPlacePtr,
+                         const SetOfFacts* pSetOfFactsPtr) const
 {
   if (pOtherFact._name != _name ||
       pOtherFact._arguments.size() != _arguments.size())
@@ -938,7 +1173,12 @@ bool Fact::isInOtherFact(const Fact& pOtherFact,
     while (itFactArguments != pOtherFact._arguments.end())
     {
       if (*itFactArguments != *itLookForArguments &&
-          !doesItMatch(*itLookForArguments, *itFactArguments))
+          ([&]() {
+            auto lookForArgument = _tryToResolveArgumentToEntity(*itLookForArguments, pSetOfFactsPtr);
+            auto factArgument = _tryToResolveArgumentToEntity(*itFactArguments, pSetOfFactsPtr);
+            return !lookForArgument || !factArgument ||
+                !doesItMatch(*lookForArgument, *factArgument);
+          })())
         doesParametersMatches = false;
       ++itFactArguments;
       ++itLookForArguments;
@@ -999,8 +1239,8 @@ void Fact::replaceArgument(const Entity& pCurrent,
                            const Entity& pNew)
 {
   for (auto& currParameter : _arguments)
-    if (currParameter == pCurrent)
-      currParameter = pNew;
+    if (currParameter.isEntity() && currParameter.entity() == pCurrent)
+      currParameter = FactArgument(pNew);
 }
 
 
@@ -1010,7 +1250,11 @@ std::map<Parameter, Entity> Fact::extratParameterToArguments() const
   {
     std::map<Parameter, Entity> res;
     for (auto i = 0; i < _arguments.size(); ++i)
-      res.emplace(predicate.parameters[i], _arguments[i]);
+    {
+      if (!_arguments[i].isEntity())
+        throw std::runtime_error("Cannot extract fluent argument \"" + _arguments[i].toStr() + "\" as an entity from fact: " + toStr());
+      res.emplace(predicate.parameters[i], _arguments[i].entity());
+    }
 
     if (_value && predicate.value)
     {
@@ -1042,13 +1286,14 @@ std::string Fact::_generateFactSignature() const
   bool firstArg = true;
   for (const auto& currArg : _arguments)
   {
-    if (currArg.type)
+    auto currArgType = currArg.type();
+    if (currArgType)
     {
       if (firstArg)
         firstArg = false;
       else
         res += ", ";
-      res += currArg.type->name;
+      res += currArgType->name;
     }
   }
   res += ")";
@@ -1067,11 +1312,12 @@ void Fact::generateSignaturesWithRelatedTypes(
   {
     const auto& currArg = _arguments[i];
     std::set<std::shared_ptr<Type>> relatedTypes;
-    relatedTypes.insert(currArg.type);
-    if (pIncludeSubTypes)
-      currArg.type->getSubTypesRecursively(relatedTypes);
-    if (pIncludeParentTypes)
-       currArg.type->getParentTypesRecursively(relatedTypes);
+    auto currArgType = currArg.type();
+    relatedTypes.insert(currArgType);
+    if (currArgType && pIncludeSubTypes)
+      currArgType->getSubTypesRecursively(relatedTypes);
+    if (currArgType && pIncludeParentTypes)
+       currArgType->getParentTypesRecursively(relatedTypes);
     allRelatedTypes.push_back(std::move(relatedTypes));
   }
 
@@ -1101,7 +1347,8 @@ void Fact::generateSignaturesWithRelatedTypes(
 
 void Fact::setArgumentType(std::size_t pIndex, const std::shared_ptr<Type>& pType)
 {
-  _arguments[pIndex].type = pType;
+  if (_arguments[pIndex].isEntity())
+    _arguments[pIndex].entity().type = pType;
   _resetFactSignatureCache();
 }
 
@@ -1181,15 +1428,18 @@ void Fact::_finalizeInisilizationAndValidityChecks(bool pIsOkIfValueIsMissing)
   {
     if (!predicate.parameters[i].type)
       throw std::runtime_error("\"" + predicate.parameters[i].name + "\" does not have a type, in fact predicate \"" + predicate.toPddl() + "\"");
-    if (!_arguments[i].type && !_arguments[i].isAnyEntity())
-      throw std::runtime_error("\"" + _arguments[i].value + "\" does not have a type");
+    auto currArgType = _arguments[i].type();
+    if (!currArgType && !_arguments[i].isAnyEntity())
+      throw std::runtime_error("\"" + _arguments[i].toStr() + "\" does not have a type");
     if (_arguments[i].isAParameterToFill())
     {
-      predicate.parameters[i].type = Type::getSmallerType(_arguments[i].type, predicate.parameters[i].type);
-      _arguments[i].type = predicate.parameters[i].type;
+      predicate.parameters[i].type = Type::getSmallerType(currArgType, predicate.parameters[i].type);
+      _arguments[i].entity().type = predicate.parameters[i].type;
       continue;
     }
-    if (!_arguments[i].type->isA(*predicate.parameters[i].type))
+    if (_arguments[i].isFluent() && !_arguments[i].fluent()->predicate.value)
+      throw std::runtime_error("The fluent \"" + _arguments[i].toPddl() + "\" used as parameter of \"" + predicate.toPddl() + "\" does not return a value");
+    if (!currArgType || !currArgType->isA(*predicate.parameters[i].type))
       throw std::runtime_error("\"" + _arguments[i].toStr() + "\" is not a \"" + predicate.parameters[i].type->name + "\" for predicate: \"" + predicate.toPddl() + "\"");
   }
 

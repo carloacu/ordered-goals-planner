@@ -125,7 +125,7 @@ void Action::_throwIfNotValidForAFact(const Fact& pFact)
 {
   for (auto& currArgument : pFact.arguments())
     if (currArgument.isAParameterToFill() && !currArgument.isValidParameterAccordingToPossiblities(parameters))
-      throw std::runtime_error("\"" + currArgument.value + "\" is missing in action parameters");
+      throw std::runtime_error("\"" + currArgument.valueStr() + "\" is missing in action parameters");
 
   if (pFact.value() && pFact.value()->isAParameterToFill() && !pFact.value()->isValidParameterAccordingToPossiblities(parameters))
     throw std::runtime_error("\"" + pFact.value()->value + "\" value is missing in action parameters");

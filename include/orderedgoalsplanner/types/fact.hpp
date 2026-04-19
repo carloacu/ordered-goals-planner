@@ -10,6 +10,7 @@
 #include "../util/api.hpp"
 #include <orderedgoalsplanner/types/entity.hpp>
 #include <orderedgoalsplanner/types/entitieswithparamconstraints.hpp>
+#include <orderedgoalsplanner/types/factargument.hpp>
 #include <orderedgoalsplanner/types/predicate.hpp>
 
 namespace ogp
@@ -41,7 +42,7 @@ struct ORDEREDGOALSPLANNER_API Fact
        bool pIsOkIfValueIsMissing = false);
 
   Fact(const std::string& pName,
-       const std::vector<std::string>& pArgumentStrs,
+       const std::vector<FactArgument>& pArguments,
        const std::string& pValueStr,
        bool pIsValueNegated,
        const Ontology& pOntology,
@@ -49,6 +50,13 @@ struct ORDEREDGOALSPLANNER_API Fact
        const std::vector<Parameter>& pParameters,
        bool pIsOkIfValueIsMissing = false,
        const std::map<std::string, Entity>* pParameterNamesToEntityPtr = nullptr);
+
+  Fact(std::string pName,
+       std::vector<FactArgument>&& pArguments,
+       std::optional<Entity>&& pValue,
+       bool pIsValueNegated,
+       const Ontology& pOntology,
+       bool pIsOkIfValueIsMissing = false);
 
   /// Destruct the fact.
   ~Fact();
@@ -77,7 +85,8 @@ struct ORDEREDGOALSPLANNER_API Fact
    */
   bool areEqualWithoutValueConsideration(const Fact& pFact,
                                          const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
-                                         const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
+                                         const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr,
+                                         const SetOfFacts* pSetOfFactsPtr = nullptr) const;
 
   /// Check equality with another fact without considering an argument.
   bool areEqualWithoutAnArgConsideration(const Fact& pFact,
@@ -99,7 +108,8 @@ struct ORDEREDGOALSPLANNER_API Fact
   bool areEqualExceptAnyEntities(const Fact& pOther,
                                  const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
                                  const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr,
-                                 const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr = nullptr) const;
+                                 const std::vector<Parameter>* pThisFactParametersToConsiderAsAnyValuePtr = nullptr,
+                                 const SetOfFacts* pSetOfFactsPtr = nullptr) const;
 
   /**
    * @brief Is equal to another Fact or if any of the 2 Facts have an "any entity" that can match and without looking at the value.
@@ -110,7 +120,8 @@ struct ORDEREDGOALSPLANNER_API Fact
    */
   bool areEqualExceptAnyEntitiesAndValue(const Fact& pOther,
                                          const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr = nullptr,
-                                         const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr) const;
+                                         const ParameterValuesWithConstraints* pOtherFactParametersToConsiderAsAnyValuePtr2 = nullptr,
+                                         const SetOfFacts* pSetOfFactsPtr = nullptr) const;
 
   bool areEqualExceptParametersAndValue(const Fact& pOther) const;
 
@@ -131,8 +142,11 @@ struct ORDEREDGOALSPLANNER_API Fact
   bool hasParameterOrValue(const Parameter& pParameter) const;
 
   bool hasAParameter(bool pIgnoreValue = false) const;
+  bool hasAFluentArgument() const;
 
   bool hasEntity(const std::string& pEntityId) const;
+
+  std::optional<Fact> tryToResolveFluentArguments(const SetOfFacts& pSetOfFacts) const;
 
   /**
    * @brief Extract an argument from another instance of this fact.<br/>
@@ -142,7 +156,8 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return Argument of the other fact corresponding to the pParameter of this fact.
    */
   std::optional<Entity> tryToExtractArgumentFromExample(const Parameter& pParameter,
-                                                        const Fact& pExampleFact) const;
+                                                        const Fact& pExampleFact,
+                                                        const SetOfFacts* pSetOfFactsPtr = nullptr) const;
 
   /**
    * @brief Extract an argument from another instance of this fact.<br/>
@@ -153,7 +168,8 @@ struct ORDEREDGOALSPLANNER_API Fact
    * @return Argument of the other fact corresponding to the Parameter of this fact.
    */
   std::optional<Entity> tryToExtractArgumentFromExampleWithoutValueConsideration(const Parameter& pParameter,
-                                                                                 const Fact& pExampleFact) const;
+                                                                                 const Fact& pExampleFact,
+                                                                                 const SetOfFacts* pSetOfFactsPtr = nullptr) const;
 
 
   /**
@@ -240,7 +256,8 @@ struct ORDEREDGOALSPLANNER_API Fact
 
   bool filterPossibilities(const Fact& pOtherFact,
                            ParameterValuesWithConstraints& pNewParameters,
-                           const ParameterValuesWithConstraints& pParameters) const;
+                           const ParameterValuesWithConstraints& pParameters,
+                           const SetOfFacts* pSetOfFactsPtr = nullptr) const;
 
   /**
    * @brief Does the fact matches the other fact.
@@ -254,7 +271,8 @@ struct ORDEREDGOALSPLANNER_API Fact
                      ParameterValuesWithConstraints& pNewParameters,
                      const ParameterValuesWithConstraints* pParametersPtr,
                      ParameterValuesWithConstraints& pNewParametersInPlace,
-                     const ParameterValuesWithConstraints* pParametersToModifyInPlacePtr) const;
+                     const ParameterValuesWithConstraints* pParametersToModifyInPlacePtr,
+                     const SetOfFacts* pSetOfFactsPtr = nullptr) const;
 
   /**
    * @brief Replace, in the arguments of this fact, a fact by another fact.
@@ -267,7 +285,7 @@ struct ORDEREDGOALSPLANNER_API Fact
   std::map<Parameter, Entity> extratParameterToArguments() const;
 
   const std::string& name() const { return _name; }
-  const std::vector<Entity>& arguments() const { return _arguments; }
+  const std::vector<FactArgument>& arguments() const { return _arguments; }
   const std::optional<Entity>& value() const { return _value; }
   bool isValueNegated() const { return _isValueNegated; }
   bool isMissingValue() const { return !_value && predicate.value; }
@@ -299,7 +317,7 @@ private:
   /// Name of the fact.
   std::string _name;
   /// Arguments of the fact.
-  std::vector<Entity> _arguments;
+  std::vector<FactArgument> _arguments;
   /// Value of the fact.
   std::optional<Entity> _value;
   /// Is the value of the fact negated.

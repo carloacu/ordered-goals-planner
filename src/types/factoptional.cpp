@@ -13,7 +13,7 @@ FactOptional::FactOptional(const Fact& pFact,
 
 FactOptional::FactOptional(bool pIsFactNegated,
                            const std::string& pName,
-                           const std::vector<std::string>& pArgumentStrs,
+                           const std::vector<FactArgument>& pArguments,
                            const std::string& pValueStr,
                            bool pIsValueNegated,
                            const Ontology& pOntology,
@@ -22,7 +22,7 @@ FactOptional::FactOptional(bool pIsFactNegated,
                            bool pIsOkIfValueIsMissing,
                            const std::map<std::string, Entity>* pParameterNamesToEntityPtr)
   : isFactNegated(pIsFactNegated),
-    fact(pName, pArgumentStrs, pValueStr, pIsValueNegated, pOntology, pObjects, pParameters, pIsOkIfValueIsMissing, pParameterNamesToEntityPtr)
+    fact(pName, pArguments, pValueStr, pIsValueNegated, pOntology, pObjects, pParameters, pIsOkIfValueIsMissing, pParameterNamesToEntityPtr)
 {
   _simplify();
 }

@@ -25,6 +25,7 @@ add_executable(ordered_goals_planner_tests
   src/test_pddl_serialization.cpp
   src/test_event_with_forall_goal.cpp
   src/test_examples.cpp
+  src/test_fluentinparameter.cpp
   src/test_setofentities.cpp
   src/test_setoffacts.cpp
   src/test_successionscache.cpp

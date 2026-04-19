@@ -519,7 +519,7 @@ bool WorldState::isOptionalFactSatisfiedInASpecificContext(const FactOptional& p
         res = true;
         for (const auto& currFact : factMatchingInWs)
           if (pFactOptional.fact.isInOtherFact(currFact, newPotentialParameters, pParametersToPossibleArgumentsPtr,
-                                               newPotentialParametersInPlace, pParametersToModifyInPlacePtr))
+                                               newPotentialParametersInPlace, pParametersToModifyInPlacePtr, &_factsMapping))
             res = false;
 
         if (res)
@@ -555,9 +555,12 @@ void WorldState::iterateOnMatchingFactsWithoutValueConsideration
  const ParameterValuesWithConstraints& pParametersToConsiderAsAnyValue,
  const ParameterValuesWithConstraints* pParametersToConsiderAsAnyValuePtr) const
 {
-  auto factMatchInWs = _factsMapping.find(pFact, true);
+  auto factToCompare = pFact.tryToResolveFluentArguments(_factsMapping);
+  const auto& resolvedFact = factToCompare ? *factToCompare : pFact;
+  auto factMatchInWs = _factsMapping.find(resolvedFact, true);
   for (const auto& currFact : factMatchInWs)
-    if (currFact.areEqualExceptAnyEntitiesAndValue(pFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr))
+    if (currFact.areEqualExceptAnyEntitiesAndValue(
+          resolvedFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr, &_factsMapping))
       if (pValueCallback(currFact))
         break;
 }
@@ -566,9 +569,11 @@ void WorldState::iterateOnMatchingFactsWithoutParametersAndValueConsideration
 (const std::function<bool (const Fact&)>& pValueCallback,
  const Fact& pFact) const
 {
-  auto factMatchInWs = _factsMapping.find(pFact, true);
+  auto factToCompare = pFact.tryToResolveFluentArguments(_factsMapping);
+  const auto& resolvedFact = factToCompare ? *factToCompare : pFact;
+  auto factMatchInWs = _factsMapping.find(resolvedFact, true);
   for (const auto& currFact : factMatchInWs)
-    if (currFact.areEqualExceptParametersAndValue(pFact))
+    if (currFact.areEqualExceptParametersAndValue(resolvedFact))
       if (pValueCallback(currFact))
         break;
 }
@@ -579,9 +584,12 @@ void WorldState::iterateOnMatchingFacts
  const ParameterValuesWithConstraints& pParametersToConsiderAsAnyValue,
  const ParameterValuesWithConstraints* pParametersToConsiderAsAnyValuePtr) const
 {
-  auto factMatchInWs = _factsMapping.find(pFact);
+  auto factToCompare = pFact.tryToResolveFluentArguments(_factsMapping);
+  const auto& resolvedFact = factToCompare ? *factToCompare : pFact;
+  auto factMatchInWs = _factsMapping.find(resolvedFact);
   for (const auto& currFact : factMatchInWs)
-    if (currFact.areEqualExceptAnyEntities(pFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr))
+    if (currFact.areEqualExceptAnyEntities(
+          resolvedFact, &pParametersToConsiderAsAnyValue, pParametersToConsiderAsAnyValuePtr, nullptr, &_factsMapping))
       if (pValueCallback(currFact))
         break;
 }

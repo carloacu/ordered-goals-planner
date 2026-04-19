@@ -372,6 +372,7 @@ bool _fillParameter(const Parameter& pParameter,
       pFact.hasParameterOrValue(pParameter))
   {
     const auto& ontology = pContext.domain.getOntology();
+    const auto& factsMapping = pContext.problem.worldState.factsMapping();
     auto& newParamValues = pNewParentParameters[pParameter];
 
     std::shared_ptr<Type> parameterType = pParameter.type;
@@ -381,14 +382,16 @@ bool _fillParameter(const Parameter& pParameter,
               const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr)
     {
       ParamToEntityValues constraints;
-      auto parentParamValue = pFact.tryToExtractArgumentFromExample(pParameter, pConditionFactOptional.fact);
+      auto parentParamValue = pFact.tryToExtractArgumentFromExample(
+            pParameter, pConditionFactOptional.fact, &factsMapping);
       if (!parentParamValue)
         return false;
       foundSomethingThatMatched = true;
       if (pOtherPatternPtr != nullptr && pOtherInstancePtr != nullptr && parentParamValue->isAParameterToFill())
       {
         auto& otherInstance = *pOtherInstancePtr;
-        auto newPotentialParentParamValue = pOtherPatternPtr->tryToExtractArgumentFromExample(parentParamValue->toParameter(), otherInstance);
+        auto newPotentialParentParamValue = pOtherPatternPtr->tryToExtractArgumentFromExample(
+              parentParamValue->toParameter(), otherInstance, &factsMapping);
         if (newPotentialParentParamValue)
         {
           parentParamValue = newPotentialParentParamValue;
@@ -648,13 +651,15 @@ bool _doesConditionMatchAnOptionalFact(const ParameterValuesWithConstraints& pPa
 {
   const auto& ontology = pContext.domain.getOntology();
   const auto& objective = pContext.goal.objective();
+  const auto& factsMapping = pContext.problem.worldState.factsMapping();
   return objective.findConditionCandidateFromFactFromEffect(
         [&](const FactOptional& pConditionFactOptional, const Fact*, const Fact*)
   {
     if (!pConditionFactOptional.fact.hasAParameter() && pContext.problem.worldState.isOptionalFactSatisfied(pConditionFactOptional))
       return false;
 
-    bool res = pConditionFactOptional.fact.areEqualExceptAnyEntities(pFactOptional.fact, &pParameters, pParametersToModifyInPlacePtr);
+    bool res = pConditionFactOptional.fact.areEqualExceptAnyEntities(
+          pFactOptional.fact, &pParameters, pParametersToModifyInPlacePtr, nullptr, &factsMapping);
     if (pConditionFactOptional.isFactNegated != pFactOptional.isFactNegated)
       res = !res;
     return res;

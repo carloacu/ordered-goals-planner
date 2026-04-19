@@ -1,5 +1,6 @@
 #include "expressionParsed.hpp"
 #include <stdexcept>
+#include <orderedgoalsplanner/types/factargument.hpp>
 #include <orderedgoalsplanner/types/factoptional.hpp>
 #include <orderedgoalsplanner/types/ontology.hpp>
 #include <orderedgoalsplanner/util/util.hpp>
@@ -61,10 +62,6 @@ FactOptional ExpressionParsed::toFact(const Ontology& pOntology,
                                       bool pIsOkIfValueIsMissing,
                                       const std::map<std::string, Entity>* pParameterNamesToEntityPtr) const
 {
-  std::vector<std::string> argumentStrs;
-  for (auto& currArg : arguments)
-    argumentStrs.emplace_back(currArg.name);
-
   std::string factName;
   bool isFactNegated = false;
   if (name.empty())
@@ -103,7 +100,16 @@ FactOptional ExpressionParsed::toFact(const Ontology& pOntology,
     factName = name;
   }
 
-  return FactOptional(isFactNegated, factName, argumentStrs, value, isValueNegated, pOntology, pObjects, pParameters, pIsOkIfValueIsMissing, pParameterNamesToEntityPtr);
+  std::vector<FactArgument> argumentsRes;
+  for (const auto& currArg : arguments)
+  {
+    if (currArg.isAFunction)
+      argumentsRes.emplace_back(currArg.toFact(pOntology, pObjects, pParameters, true, pParameterNamesToEntityPtr).fact);
+    else
+      argumentsRes.emplace_back(Entity::fromUsage(currArg.name, pOntology, pObjects, pParameters, pParameterNamesToEntityPtr));
+  }
+
+  return FactOptional(isFactNegated, factName, argumentsRes, value, isValueNegated, pOntology, pObjects, pParameters, pIsOkIfValueIsMissing, pParameterNamesToEntityPtr);
 }
 
 
@@ -122,7 +128,9 @@ void ExpressionParsed::extractMissingObjects(std::list<Entity>& pRes,
   {
     if (itParam == predicate.parameters.end())
       throw std::runtime_error("Predicate usage of \"" + name + "\" has too maany arguments");
-    if (!Entity::isParamOrDeclaredEntity(currArg.name, pOntology, pObjects))
+    if (currArg.isAFunction)
+      currArg.extractMissingObjects(pRes, pOntology, pObjects);
+    else if (!Entity::isParamOrDeclaredEntity(currArg.name, pOntology, pObjects))
       pRes.emplace_back(Entity(currArg.name, itParam->type));
     ++itParam;
   }
@@ -150,7 +158,9 @@ void ExpressionParsed::extractParameters(std::list<Parameter>& pRes,
   {
     if (itParam == predicate.parameters.end())
       throw std::runtime_error("Predicate usage of \"" + name + "\" has too maany arguments");
-    if (Entity::isParam(currArg.name))
+    if (currArg.isAFunction)
+      currArg.extractParameters(pRes, pOntology);
+    else if (Entity::isParam(currArg.name))
       pRes.emplace_back(Parameter(currArg.name, itParam->type));
     ++itParam;
   }

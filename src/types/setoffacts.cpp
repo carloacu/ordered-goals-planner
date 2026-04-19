@@ -17,13 +17,14 @@ std::string _getExactCall(const Fact& pFact)
   bool firstArg = true;
   for (const auto& currArg : pFact.arguments())
   {
-    if (currArg.type)
+    auto currArgType = currArg.type();
+    if (currArgType && currArg.isEntity())
     {
       if (firstArg)
         firstArg = false;
       else
         res += ", ";
-      res += currArg.value;
+      res += currArg.entity().value;
     }
   }
   res += ")";
@@ -159,7 +160,7 @@ bool SetOfFacts::add(const Fact& pFact,
   if (!_facts.try_emplace(pFact, pCanBeRemoved).second)
     return false;
 
-  if (!pFact.hasAParameter())
+  if (!pFact.hasAParameter() && !pFact.hasAFluentArgument())
   {
     auto exactCallStr = _getExactCall(pFact);
     if (!_exactCallWithoutValueToListsOpt)
@@ -184,8 +185,8 @@ bool SetOfFacts::add(const Fact& pFact,
     parameterToValues.all.emplace_back(pFact);
     for (std::size_t i = 0; i < factArguments.size(); ++i)
     {
-      if (!factArguments[i].isAParameterToFill())
-        parameterToValues.argIdToArgValueToValues[i][factArguments[i].value].emplace_back(pFact);
+      if (factArguments[i].isEntity() && !factArguments[i].isAParameterToFill())
+        parameterToValues.argIdToArgValueToValues[i][factArguments[i].entity().value].emplace_back(pFact);
       else
         parameterToValues.argIdToArgValueToValues[i][""].emplace_back(pFact);
     }
@@ -221,7 +222,7 @@ std::map<Fact, bool>::iterator SetOfFacts::eraseFactIt(std::map<Fact, bool>::ite
     throw std::runtime_error("Cannot erase this fact iterator because it is constant");
   const Fact& fact = pFactIt->first;
 
-  if (!fact.hasAParameter())
+  if (!fact.hasAParameter() && !fact.hasAFluentArgument())
   {
     auto exactCallStr = _getExactCall(fact);
     if (_exactCallWithoutValueToListsOpt)
@@ -258,7 +259,7 @@ std::map<Fact, bool>::iterator SetOfFacts::eraseFactIt(std::map<Fact, bool>::ite
       {
         for (std::size_t i = 0; i < factArguments.size(); ++i)
         {
-          const std::string argKey = !factArguments[i].isAParameterToFill() ? factArguments[i].value : "";
+          const std::string argKey = factArguments[i].isEntity() && !factArguments[i].isAParameterToFill() ? factArguments[i].entity().value : "";
           std::list<Fact>& listOfValues = parameterToValues.argIdToArgValueToValues[i][argKey];
           _removeAValueForList(listOfValues, fact);
           if (listOfValues.empty())
@@ -330,7 +331,15 @@ void SetOfFacts::clear()
 typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
                                                         bool pIgnoreValue) const
 {
-  if (!pFact.hasAParameter(pIgnoreValue) && !pFact.isValueNegated())
+  if (pFact.hasAFluentArgument())
+  {
+    auto resolvedFact = pFact.tryToResolveFluentArguments(*this);
+    if (!resolvedFact)
+      return SetOfFactIterator(nullptr);
+    return find(*resolvedFact, pIgnoreValue);
+  }
+
+  if (!pFact.hasAParameter(pIgnoreValue) && !pFact.hasAFluentArgument() && !pFact.isValueNegated())
   {
     auto exactCallStr = _getExactCall(pFact);
     if (!pIgnoreValue && pFact.value())
@@ -363,10 +372,10 @@ typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
     auto& factArguments = pFact.arguments();
     for (std::size_t i = 0; i < factArguments.size(); ++i)
     {
-      if (!factArguments[i].isAParameterToFill())
+      if (factArguments[i].isEntity() && !factArguments[i].isAParameterToFill())
       {
         hasOnlyParameters = false;
-        auto subRes = _matchArg(parameterToValues.argIdToArgValueToValues[i], factArguments[i].value);
+        auto subRes = _matchArg(parameterToValues.argIdToArgValueToValues[i], factArguments[i].entity().value);
         if (subRes)
           return *subRes;
       }
@@ -395,9 +404,12 @@ typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
 
 std::optional<Entity> SetOfFacts::getFluentValue(const ogp::Fact& pFact) const
 {
-  auto factMatchingInWs = find(pFact, true);
+  auto factToLookForOpt = pFact.tryToResolveFluentArguments(*this);
+  if (!factToLookForOpt)
+    return {};
+  auto factMatchingInWs = find(*factToLookForOpt, true);
   for (const auto& currFact : factMatchingInWs)
-    if (currFact.arguments() == pFact.arguments())
+    if (currFact.arguments() == factToLookForOpt->arguments())
       return currFact.value();
   return {};
 }
@@ -444,7 +456,8 @@ void SetOfFacts::extractPotentialArgumentsOfAFactParameter(
       bool doesItMatch = true;
       for (auto i = 0; i < pFact.arguments().size(); ++i)
       {
-        if (!onEntity(pFact.arguments()[i], currFact.arguments()[i]))
+        if (!pFact.arguments()[i].isEntity() || !currFact.arguments()[i].isEntity() ||
+            !onEntity(pFact.arguments()[i].entity(), currFact.arguments()[i].entity()))
         {
           doesItMatch = false;
           break;
@@ -542,4 +555,3 @@ const std::list<Fact>* SetOfFacts::_findAnExactCall(
 
 
 } // !ogp
-
