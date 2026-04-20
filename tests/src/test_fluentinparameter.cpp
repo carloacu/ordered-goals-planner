@@ -143,6 +143,32 @@ void _impossibleFactWithAFluentInParameter()
 }
 
 
+void _callActionToUpdateFluentInFactParameters()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("t");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1(?p - t)\n"
+                                                      "fact_2() - t", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("a b c - t", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{_parameter("?p - t", ontology)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (fact_2) ?p)", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  _addFact(problem.worldState, "(fact_1 b)", problem.goalStack, ontology, problem.objects, setOfEventsMap);
+
+  auto goalsStr = "(fact_1 (fact_2))";
+  _setGoalsForAPriority(problem, {_pddlGoal(goalsStr, ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ(action1 + "(?p -> a)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+}
 
 }
 
@@ -152,4 +178,5 @@ TEST(Planner, test_fluentInParameter)
 {
   _callActionToUpdateFactWithAFluentInParameter();
   _impossibleFactWithAFluentInParameter();
+  _callActionToUpdateFluentInFactParameters();
 }

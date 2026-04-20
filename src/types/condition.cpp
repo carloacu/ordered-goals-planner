@@ -38,6 +38,8 @@ bool _forEachValueUntil(const std::function<bool (const Entity&, const Fact*, co
 
   bool res = !pUntilValue;
   auto* factCondPtr = pCondition.fcFactPtr();
+  if (factCondPtr == nullptr)
+    return res;
   const auto& factCond = factCondPtr->factOptional.fact;
   pWorldState.iterateOnMatchingFactsWithoutValueConsideration(
         [&](const Fact& pFact) {
@@ -47,7 +49,6 @@ bool _forEachValueUntil(const std::function<bool (const Entity&, const Fact*, co
   },
   factCond,
   pParameters); // Parameters to consider as any value of set is empty, otherwise it is a filter
-
   return res;
 }
 
@@ -1398,6 +1399,19 @@ bool ConditionFact::findConditionCandidateFromFactFromEffect(
     const ParameterValuesWithConstraints&,
     bool pIsWrappingExpressionNegated) const
 {
+  for (const auto& currArg : factOptional.fact.arguments())
+  {
+    const auto* fluentPtr = currArg.fluent();
+    if (fluentPtr != nullptr)
+    {
+      bool res = pDoesConditionFactMatchFactFromEffect(FactOptional(*fluentPtr), nullptr, nullptr);
+      if (pIsWrappingExpressionNegated)
+        res = !res;
+      if (res)
+        return res;
+    }
+  }
+
   bool res = pDoesConditionFactMatchFactFromEffect(factOptional, nullptr, nullptr);
   if (pIsWrappingExpressionNegated)
     return !res;
