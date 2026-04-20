@@ -15,28 +15,7 @@ bool ProblemModification::operator==(const ProblemModification& pOther) const
 }
 
 
-std::set<FactOptional> ProblemModification::getAllOptFactsThatCanBeModified() const
-{
-  std::set<FactOptional> res;
-  if (worldStateModification)
-  {
-    worldStateModification->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
-        res.insert(pFactOptional.factOpt);
-        return ContinueOrBreak::CONTINUE;
-    });
-  }
-  if (potentialWorldStateModification)
-  {
-    potentialWorldStateModification->forAllThatCanBeModified([&](const FactOptionalAndValueModification& pFactOptional) {
-        res.insert(pFactOptional.factOpt);
-        return ContinueOrBreak::CONTINUE;
-    });
-  }
-  return res;
-}
-
-
-std::set<FactOptionalAndValueModification> ProblemModification::getAllOptFactsThatCanBeModified2() const
+std::set<FactOptionalAndValueModification> ProblemModification::getAllOptFactsThatCanBeModified() const
 {
   std::set<FactOptionalAndValueModification> res;
   if (worldStateModification)

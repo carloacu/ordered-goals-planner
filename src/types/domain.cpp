@@ -357,7 +357,7 @@ void Domain::_updateSuccessions()
 
     ActionWithConditionAndFactFacts tmpData(currAction.first, action);
     tmpData.factsFromCondition = action.precondition ? action.precondition->getAllOptFacts() : std::set<FactOptionalAndValueModification>();
-    tmpData.factsFromEffect = action.effect.getAllOptFactsThatCanBeModified2();
+    tmpData.factsFromEffect = action.effect.getAllOptFactsThatCanBeModified();
     action.updateSuccessionCache(*this, currAction.first, tmpData.factsFromCondition);
     actionTmpData.emplace(currAction.first, std::move(tmpData));
   }

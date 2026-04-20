@@ -1050,7 +1050,7 @@ bool _goalToPlanRec(
   if (potActionPtr != nullptr)
   {
     std::map<std::string, MinMaxValues> factToMinMaxValuesSoFar;
-    auto foAVm = potActionPtr->effect.getAllOptFactsThatCanBeModified2();
+    auto foAVm = potActionPtr->effect.getAllOptFactsThatCanBeModified();
     for (const auto& currFoAVm : foAVm)
     {
       const auto& factOpt = currFoAVm.factOpt;
