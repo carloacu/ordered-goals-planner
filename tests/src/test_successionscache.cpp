@@ -390,6 +390,47 @@ void _test_numericIncreaseSuccessions()
 }
 
 
+void _test_successionWithFluentInParameter()
+{
+  const std::string action1 = "action1";
+  const std::string action2 = "action2";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("t");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1(?p - t)\n"
+                                                      "fact_2() - t\n"
+                                                      "fact_3()", ontology.types);
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> actionParameters{
+    ogp::Parameter::fromStr("?p - t", ontology.types)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (fact_2) ?p)", ontology, actionParameters));
+  actionObj1.parameters = std::move(actionParameters);
+  actions.emplace(action1, actionObj1);
+
+  {
+    std::size_t pos = 0;
+    ogp::Action actionObj2(ogp::pddlToCondition("(fact_1 (fact_2))", pos, ontology, {}, {}),
+                           _worldStateModification_fromPddl("(fact_3)", ontology, {}));
+    actions.emplace(action2, actionObj2);
+  }
+
+  ogp::Domain domain(std::move(actions), ontology);
+  EXPECT_EQ("action: action1\n"
+            "----------------------------------\n"
+            "\n"
+            "fact: fact_2=?p\n"
+            "action: action2\n"
+            "\n"
+            "not action: action1\n"
+            "\n"
+            "\n"
+            "action: action2\n"
+            "----------------------------------\n"
+            "\n"
+            "not action: action2\n", domain.printSuccessionCache());
+}
+
+
 }
 
 
@@ -401,4 +442,5 @@ TEST(Tool, test_successionsCache)
   _test_implySuccessions();
   _test_successionsWithUndefinedValueInPrecondition();
   _test_numericIncreaseSuccessions();
+  _test_successionWithFluentInParameter();
 }

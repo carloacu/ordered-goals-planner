@@ -1371,6 +1371,13 @@ ContinueOrBreak ConditionFact::forAll(const std::function<ContinueOrBreak (const
                                       bool pIgnoreValue,
                                       bool) const
 {
+  for (const auto& currArg : factOptional.fact.arguments())
+  {
+    const auto* argFluentPtr = currArg.fluent();
+    if (argFluentPtr != nullptr)
+      pFactCallback(FactOptional(*argFluentPtr), pIgnoreValue);
+  }
+
   if (!pIsWrappingExpressionNegated)
     return pFactCallback(factOptional, pIgnoreValue);
 
