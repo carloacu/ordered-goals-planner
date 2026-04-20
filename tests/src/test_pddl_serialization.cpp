@@ -318,6 +318,14 @@ void _test_pddlSerializationParts()
 
   {
     std::size_t pos = 0;
+    std::unique_ptr<ogp::WorldStateModification> ws = ogp::pddlToWsModification("(assign (pred_d toto2) undefined)", pos, ontology, {}, {});
+    if (!ws)
+      FAIL();
+    EXPECT_EQ("!pred_d(toto2)=*", ws->toStr());
+  }
+
+  {
+    std::size_t pos = 0;
     auto ws = ogp::pddlToWsModification("(forall (?ent - entity) (pred_c ?ent))", pos, ontology, {}, {});
     if (!ws)
       FAIL();

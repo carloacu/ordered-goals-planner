@@ -911,6 +911,59 @@ void _removeNotMandatoryActions()
 }
 
 
+
+void _removeAFact()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("param_type return_type");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1(p - param_type) - return_type", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("v - param_type\n"
+                                                    "r1 r2 - return_type", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> action1Parameters{ ogp::Parameter::fromStr("?p - param_type", ontology.types)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(assign (fact_1 ?p) undefined)", ontology, action1Parameters));
+  actionObj1.parameters = std::move(action1Parameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.worldState.addFact(ogp::Fact("fact_1(v)=r1", false, ontology, problem.objects, {}), problem.goalStack, setOfEventsMap,
+                             _emptyCallbacks, ontology, problem.objects, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(= (fact_1 v) undefined)", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("action1(?p -> v)", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+}
+
+
+void _parameterNotInConditionOrEffect()
+{
+  const std::string action1 = "action1";
+
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("param_type");
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fact_1()", ontology.types);
+  ontology.constants = ogp::SetOfEntities::fromPddl("v - param_type", ontology.types);
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> action1Parameters{ ogp::Parameter::fromStr("?p - param_type", ontology.types)};
+  ogp::Action actionObj1({}, _worldStateModification_fromPddl("(fact_1)", ontology, action1Parameters));
+  actionObj1.parameters = std::move(action1Parameters);
+  actions.emplace(action1, actionObj1);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  ogp::Problem problem;
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(fact_1)", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("action1(?p -> v)", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
+}
+
+
 }
 
 
@@ -941,4 +994,6 @@ TEST(Planner, test_planner)
   _assignAFluentWithoutValue();
   _assignAFluentWithoutValueAndEventToResetValue();
   _removeNotMandatoryActions();
+  _removeAFact();
+  _parameterNotInConditionOrEffect();
 }

@@ -459,6 +459,8 @@ bool WorldState::canBeModifiedBy(const FactOptional& pFactOptional,
 {
   if (pFactOptional.isFactNegated && pFactOptional.fact.value() && pFactOptional.fact.value()->isAParameterToFill())
   {
+    if (pFactOptional.fact.value()->isAnyEntity())
+      return true;
     auto factMatchingInWs = _factsMapping.find(pFactOptional.fact, true);
     if (!factMatchingInWs.empty())
     {
