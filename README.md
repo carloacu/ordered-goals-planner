@@ -57,6 +57,12 @@ cmake -B build -DCMAKE_BUILD_TYPE=Debug -DBUILD_ORDERED_GOALS_PLANNER_TESTS=ON .
 ```
 
 
+## Run
+
+### On QtCreator
+
+On "Projects" -> "Run" -> "Command line arguments", put `--dataPath ../../doc/examples/`
+
 ## Tests
 
 When the tests are enabled, prefer running them with `ctest`:
