@@ -666,8 +666,8 @@ bool Fact::areEqualExceptParametersAndValue(const Fact& pOther) const
 bool Fact::doesFactEffectOfSuccessorGiveAnInterestForSuccessor(const Fact& pFact) const
 {
   if (pFact._name != _name ||
-      pFact._arguments.size() != _arguments.size() &&
-      pFact._value.has_value() == _value.has_value())
+      (pFact._arguments.size() != _arguments.size() &&
+       pFact._value.has_value() == _value.has_value()))
     return true;
 
   auto itParam = _arguments.begin();
