@@ -41,6 +41,15 @@ Even if the plan for satisfying the first goal is chosen in consideration of hel
 Before each of these 2 goals the planner will apply the effect `(not (has-grasped-an-object-for-current-goal))`.
 
 
+## Needed installations
+
+```bash
+sudo apt update
+sudo apt install cmake
+sudo apt install libgtest-dev
+```
+
+
 ## Build
 
 Go to the root directory of this repository and do
