@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <orderedgoalsplanner/types/factargument.hpp>
 #include <stdexcept>
 #include <orderedgoalsplanner/types/fact.hpp>
