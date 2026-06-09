@@ -779,6 +779,8 @@ std::unique_ptr<Condition> ConditionNode::clone(const std::map<Parameter, Entity
   case ConditionNodeType::OR:
     invertedNodeOpt.emplace(ConditionNodeType::AND);
     break;
+  default:
+    break;
   }
   if (invertedNodeOpt)
     return std::make_unique<ConditionNode>(
