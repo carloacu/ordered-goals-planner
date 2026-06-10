@@ -693,15 +693,18 @@ void _expressionParsedToParameters(std::list<Parameter>& pRes,
                                    const Ontology& pOntology)
 {
   if ((pExpressionParsed.name == _assignWsFunctionName ||
-       pExpressionParsed.name == _equalsCharConditonFunctionName) &&
+       pExpressionParsed.name == _equalsCharConditonFunctionName ||
+       pExpressionParsed.name == _superiorConditionFunctionName ||
+       pExpressionParsed.name == _superiorOrEqualConditionFunctionName ||
+       pExpressionParsed.name == _inferiorConditionFunctionName ||
+       pExpressionParsed.name == _inferiorOrEqualConditionFunctionName) &&
       pExpressionParsed.arguments.size() == 2)
   {
     const auto& leftExp = pExpressionParsed.arguments.front();
     const auto& rightOperandExp = *(++pExpressionParsed.arguments.begin());
     if (rightOperandExp.arguments.empty() &&
         !rightOperandExp.followingExpression && rightOperandExp.value == "" &&
-        (pExpressionParsed.name == _assignWsFunctionName ||
-         pExpressionParsed.name == _equalsCharConditonFunctionName) && !rightOperandExp.isAFunction &&
+        !rightOperandExp.isAFunction &&
         rightOperandExp.name != "")
     {
       auto leftExpCopied = leftExp.clone();

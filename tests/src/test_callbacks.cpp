@@ -226,6 +226,53 @@ void _test_callbacks()
 }
 
 
+void _test_greater_lesser_callbacks()
+{
+  ogp::Ontology ontology;
+  ontology.predicates = ogp::SetOfPredicates::fromStr(_fact_a + " - number", ontology.types);
+
+  ogp::MutableSetOfCallbacks mutableSetOfCallbacks;
+  std::size_t nbOfCallbackInf20 = 0;
+  mutableSetOfCallbacks.add(ogp::ConditionToCallback(_condition_fromPddl("(< (" + _fact_a + ") 20)", ontology), [&]() { ++nbOfCallbackInf20; }));
+  std::size_t nbOfCallbackSup30 = 0;
+  mutableSetOfCallbacks.add(ogp::ConditionToCallback(_condition_fromPddl("(> (" + _fact_a + ") 30)", ontology), [&]() { ++nbOfCallbackSup30; }));
+  auto callbacks = ogp::SetOfCallbacks(mutableSetOfCallbacks.callbacks());
+
+  std::map<std::string, ogp::Action> actions;
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+
+  {
+    std::size_t pos = 0;
+    problem.worldState.modifyFactsFromPddl("(= (fact_a) 10)", pos, problem.goalStack, setOfEventsMap, callbacks, ontology, ogp::SetOfEntities(), _now);
+  }
+  EXPECT_EQ(1, nbOfCallbackInf20);
+  EXPECT_EQ(0, nbOfCallbackSup30);
+
+  {
+    std::size_t pos = 0;
+    problem.worldState.modifyFactsFromPddl("(= (fact_a) 20)", pos, problem.goalStack, setOfEventsMap, callbacks, ontology, ogp::SetOfEntities(), _now);
+  }
+  EXPECT_EQ(1, nbOfCallbackInf20);
+  EXPECT_EQ(0, nbOfCallbackSup30);
+
+  {
+    std::size_t pos = 0;
+    problem.worldState.modifyFactsFromPddl("(= (fact_a) 25)", pos, problem.goalStack, setOfEventsMap, callbacks, ontology, ogp::SetOfEntities(), _now);
+  }
+  EXPECT_EQ(1, nbOfCallbackInf20);
+  EXPECT_EQ(0, nbOfCallbackSup30);
+
+  {
+    std::size_t pos = 0;
+    problem.worldState.modifyFactsFromPddl("(= (fact_a) 35)", pos, problem.goalStack, setOfEventsMap, callbacks, ontology, ogp::SetOfEntities(), _now);
+  }
+  EXPECT_EQ(1, nbOfCallbackInf20);
+  EXPECT_EQ(1, nbOfCallbackSup30);
+}
+
+
 void _test_callbacks_with_fact()
 {
   ogp::Ontology ontology;
@@ -285,6 +332,7 @@ void _test_callbacks_with_parameters()
 TEST(Planner, test_callbacks)
 {
   _test_callbacks();
+  _test_greater_lesser_callbacks();
   _test_callbacks_with_fact();
   _test_callbacks_with_parameters();
 }
