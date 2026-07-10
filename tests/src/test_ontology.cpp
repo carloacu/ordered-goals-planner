@@ -41,7 +41,9 @@ void _test_setOfTypes_fromStr()
                          "location";
   auto setOfTypes = ogp::SetOfTypes::fromPddl(typesStr + " ");
   EXPECT_EQ(typesStr, setOfTypes.toStr());
-  EXPECT_EQ("voiture", setOfTypes.nameToType("citroen")->parent->name);
+  auto parentType = setOfTypes.nameToType("citroen")->parent.lock();
+  ASSERT_TRUE(parentType);
+  EXPECT_EQ("voiture", parentType->name);
 }
 
 
@@ -49,13 +51,32 @@ void _test_hyphenated_typed_declarations()
 {
   auto setOfTypes = ogp::SetOfTypes::fromPddl("base-type\n"
                                               "sub-type - base-type");
-  EXPECT_EQ("base-type", setOfTypes.nameToType("sub-type")->parent->name);
+  auto parentType = setOfTypes.nameToType("sub-type")->parent.lock();
+  ASSERT_TRUE(parentType);
+  EXPECT_EQ("base-type", parentType->name);
 
   auto parameter = ogp::Parameter::fromStr("?param-name - sub-type", setOfTypes);
   EXPECT_EQ("?param-name - sub-type", parameter.toStr());
 
   auto entity = ogp::Entity::fromDeclaration("value-with-dash - sub-type", setOfTypes);
   EXPECT_EQ("value-with-dash - sub-type", entity.toStr());
+}
+
+
+void _test_setOfTypes_doesNotLeakThroughParentChildCycles()
+{
+  std::weak_ptr<ogp::Type> rootType;
+  std::weak_ptr<ogp::Type> childType;
+
+  {
+    auto setOfTypes = ogp::SetOfTypes::fromPddl("base-type\n"
+                                                "sub-type - base-type");
+    rootType = setOfTypes.nameToType("base-type");
+    childType = setOfTypes.nameToType("sub-type");
+  }
+
+  EXPECT_TRUE(rootType.expired());
+  EXPECT_TRUE(childType.expired());
 }
 
 

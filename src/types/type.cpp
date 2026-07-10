@@ -18,7 +18,7 @@ void Type::toStrs(std::list<std::string>& pStrs) const
   // Declare type
   if (subTypes.empty())
   {
-    if (parent == nullptr)
+    if (parent.expired())
       pStrs.emplace_back(name);
   }
   else
@@ -42,8 +42,8 @@ bool Type::isA(const Type& pOtherType) const
 {
   if (name == pOtherType.name)
     return true;
-  if (parent)
-    return parent->isA(pOtherType);
+  if (const auto parentType = parent.lock())
+    return parentType->isA(pOtherType);
   return false;
 }
 
@@ -71,11 +71,11 @@ void Type::getSubTypesRecursively(std::set<std::shared_ptr<Type>>& pResult) cons
 
 void Type::getParentTypesRecursively(std::set<std::shared_ptr<Type>>& pResult) const
 {
-  auto parentType = parent;
+  auto parentType = parent.lock();
   while (parentType)
   {
     pResult.insert(parentType);
-    parentType = parentType->parent;
+    parentType = parentType->parent.lock();
   }
 }
 
