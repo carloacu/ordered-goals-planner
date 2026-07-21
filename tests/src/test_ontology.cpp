@@ -285,6 +285,7 @@ TEST(Tool, test_ontology)
   _test_setOfTypes();
   _test_setOfTypes_fromStr();
   _test_hyphenated_typed_declarations();
+  _test_setOfTypes_doesNotLeakThroughParentChildCycles();
   _test_predicateToStr();
   _test_setOfPredicates_fromStr();
   _test_setOfEntities_fromStr();
