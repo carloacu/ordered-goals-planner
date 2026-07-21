@@ -33,7 +33,7 @@ struct ORDEREDGOALSPLANNER_API Type
                                               const std::shared_ptr<Type>& pType2);
 
   const std::string name;
-  const std::shared_ptr<Type> parent;
+  const std::weak_ptr<Type> parent;
   std::list<std::shared_ptr<Type>> subTypes;
 };
 
