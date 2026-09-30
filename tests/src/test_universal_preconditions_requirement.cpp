@@ -412,6 +412,30 @@ void _forallGoalWithANegatedCondition(const std::string& pGoalStr)
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr()) << pGoalStr;
 }
 
+
+void _forallNegatedGoalReachedByRemovingAFact()
+{
+  // An effect removing a fact only changes the world for the arguments the fact holds for, whereas
+  // the planner used to pick those it did not hold for, as it does for an effect adding a fact.
+  auto ontology = _visitorsOntology();
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> stopParameters{_parameter("?u - user", ontology)};
+  ogp::Action stopAction({}, _worldStateModification_fromPddl("(not (assists ?u))", ontology, stopParameters));
+  stopAction.parameters = std::move(stopParameters);
+  actions.emplace("stop", stopAction);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("u0 u1 - user", ontology.types);
+  _addFact(problem.worldState, "assists(u0)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(forall (?u - user) (not (assists ?u)))", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("stop(?u -> u0)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+}
+
 }
 
 
@@ -429,4 +453,5 @@ TEST(Planner, test_universalPreconditionsRequirement)
   _forallGoalWithANegatedCondition("(forall (?u - user) (imply (not (engaged ?u)) (told ?u)))");
   _forallGoalWithANegatedCondition("(forall (?u - user) (imply (not (immutable---engaged ?u)) (told ?u)))");
   _forallGoalWithANegatedCondition("(forall (?u - user) (imply (and (nearby ?u) (not (immutable---engaged ?u))) (told ?u)))");
+  _forallNegatedGoalReachedByRemovingAFact();
 }

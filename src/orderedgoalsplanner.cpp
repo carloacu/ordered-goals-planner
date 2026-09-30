@@ -363,13 +363,14 @@ bool _fillParameter(const Parameter& pParameter,
                     ParameterValuesWithConstraints& pNewParentParameters,
                     const ParameterValuesWithConstraints& pHoldingActionParameters,
                     const Condition& pCondition,
-                    const Fact& pFact,
+                    const FactOptional& pFactOptional,
                     ParameterValuesWithConstraints& pParentParameters,
                     ParameterValuesWithConstraints* pTmpParentParametersPtr,
                     const ResearchContext& pContext)
 {
+  const auto& factFromEffect = pFactOptional.fact;
   if (pParameterValues.empty() &&
-      pFact.hasParameterOrValue(pParameter))
+      factFromEffect.hasParameterOrValue(pParameter))
   {
     const auto& ontology = pContext.domain.getOntology();
     const auto& factsMapping = pContext.problem.worldState.factsMapping();
@@ -382,7 +383,7 @@ bool _fillParameter(const Parameter& pParameter,
               const Fact* pOtherPatternPtr, const Fact* pOtherInstancePtr)
     {
       ParamToEntityValues constraints;
-      auto parentParamValue = pFact.tryToExtractArgumentFromExample(
+      auto parentParamValue = factFromEffect.tryToExtractArgumentFromExample(
             pParameter, pConditionFactOptional.fact, &factsMapping);
       if (!parentParamValue)
         return false;
@@ -395,8 +396,8 @@ bool _fillParameter(const Parameter& pParameter,
         if (newPotentialParentParamValue)
         {
           parentParamValue = newPotentialParentParamValue;
-          if (pFact.value() && pFact.value()->isAParameterToFill() && otherInstance.value() && !otherInstance.value()->isAParameterToFill())
-            constraints[pFact.value()->toParameter()].insert(*otherInstance.value());
+          if (factFromEffect.value() && factFromEffect.value()->isAParameterToFill() && otherInstance.value() && !otherInstance.value()->isAParameterToFill())
+            constraints[factFromEffect.value()->toParameter()].insert(*otherInstance.value());
         }
       }
 
@@ -409,7 +410,7 @@ bool _fillParameter(const Parameter& pParameter,
       else if (parentParamValue->type && parameterType && parentParamValue->type->isA(*parameterType))
         parameterType = parentParamValue->type;
       return !newParamValues.empty();
-    }, pContext.problem.worldState, ontology.constants, pContext.problem.objects, pFact, pParentParameters, pTmpParentParametersPtr, pHoldingActionParameters);
+    }, pContext.problem.worldState, ontology.constants, pContext.problem.objects, factFromEffect, pParentParameters, pTmpParentParametersPtr, pHoldingActionParameters);
 
     if (foundSomethingThatMatched && newParamValues.empty())
     {
@@ -418,13 +419,22 @@ bool _fillParameter(const Parameter& pParameter,
         // find all the possible occurence in the entities
         newParamValues = typeToEntities(*parameterType, ontology.constants, pContext.problem.objects);
 
-        if (!pFact.isMissingValue())
+        if (!factFromEffect.isMissingValue())
         {
-          // remove the ones that are already in the world state for this fact
+          // Keep the ones for which the effect changes the world: adding a fact changes it for the
+          // arguments the fact does not hold for yet, removing it for those it holds for.
           std::set<Entity> parameterValues;
-          pContext.problem.worldState.factsMapping().extractPotentialArgumentsOfAFactParameter(parameterValues, pFact, pParameter.name, {}, nullptr);
-          for (const auto& elem : parameterValues)
-            newParamValues.erase(elem);
+          pContext.problem.worldState.factsMapping().extractPotentialArgumentsOfAFactParameter(parameterValues, factFromEffect, pParameter.name, {}, nullptr);
+          if (pFactOptional.isFactNegated)
+          {
+            for (auto itValue = newParamValues.begin(); itValue != newParamValues.end(); )
+              itValue = parameterValues.count(itValue->first) == 0 ? newParamValues.erase(itValue) : std::next(itValue);
+          }
+          else
+          {
+            for (const auto& elem : parameterValues)
+              newParamValues.erase(elem);
+          }
         }
       }
       return !newParamValues.empty();
@@ -446,7 +456,7 @@ PossibleEffect _checkConditionAndFillParameters(const Condition& pCondition,
   ParameterValuesWithConstraints newParentParameters;
   for (auto& currParentParam : pParentParameters)
     if (!_fillParameter(currParentParam.first, currParentParam.second, newParentParameters,
-                        pHoldingActionParameters, pCondition, pFactOptional.fact,
+                        pHoldingActionParameters, pCondition, pFactOptional,
                         pParentParameters, pTmpParentParametersPtr, pContext))
       return PossibleEffect::NOT_SATISFIED;
 
@@ -455,7 +465,7 @@ PossibleEffect _checkConditionAndFillParameters(const Condition& pCondition,
     ParameterValuesWithConstraints newTmpParentParameters;
     for (auto& currParentParam : *pTmpParentParametersPtr)
       if (!_fillParameter(currParentParam.first, currParentParam.second, newTmpParentParameters,
-                          pHoldingActionParameters, pCondition, pFactOptional.fact,
+                          pHoldingActionParameters, pCondition, pFactOptional,
                           pParentParameters, pTmpParentParametersPtr, pContext))
         return PossibleEffect::NOT_SATISFIED;
     applyNewParams(*pTmpParentParametersPtr, newTmpParentParameters);
