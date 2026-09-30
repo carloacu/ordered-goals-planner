@@ -387,6 +387,31 @@ void _forallGoalOnAnImmutableConditionNeedingTwoActions()
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
 
+
+void _forallGoalWithANegatedCondition(const std::string& pGoalStr)
+{
+  // A negated condition holds for the arguments that make its fact false, and used to hold for none.
+  auto ontology = _visitorsOntology();
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> tellParameters{_parameter("?u - user", ontology)};
+  ogp::Action tellAction({}, _worldStateModification_fromPddl("(told ?u)", ontology, tellParameters));
+  tellAction.parameters = std::move(tellParameters);
+  actions.emplace("tell", tellAction);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("u0 u1 - user", ontology.types);
+  _addFact(problem.worldState, "engaged(u0)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  _addFact(problem.worldState, "nearby(u0)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  _addFact(problem.worldState, "nearby(u1)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal(pGoalStr, ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("tell(?u -> u1)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr()) << pGoalStr;
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr()) << pGoalStr;
+}
+
 }
 
 
@@ -401,4 +426,7 @@ TEST(Planner, test_universalPreconditionsRequirement)
   _forallWithImplyAndFluentValuesEquality();
   _forallWithImplyWithThenThzatDoesNotDependOfTheVariable();
   _forallGoalOnAnImmutableConditionNeedingTwoActions();
+  _forallGoalWithANegatedCondition("(forall (?u - user) (imply (not (engaged ?u)) (told ?u)))");
+  _forallGoalWithANegatedCondition("(forall (?u - user) (imply (not (immutable---engaged ?u)) (told ?u)))");
+  _forallGoalWithANegatedCondition("(forall (?u - user) (imply (and (nearby ?u) (not (immutable---engaged ?u))) (told ?u)))");
 }
