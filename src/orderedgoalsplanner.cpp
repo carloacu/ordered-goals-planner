@@ -1165,6 +1165,9 @@ std::list<ActionInvocationWithGoal> _planForMoreImportantGoalPossible(Problem& p
   if (!res.empty() && res.front().fromGoal)
   {
     auto goalToKeepSatisfied = *res.front().fromGoal;
+    // The plan was searched with the immutable facts of the state it starts from: without them, a
+    // condition on an immutable fact would hold for nobody and every action would look useless.
+    problemBeforePlanning.worldState.updateImmutableFacts(ontology);
     removeNotMandatoryActions(res, pDomain, problemBeforePlanning, goalToKeepSatisfied);
   }
   return res;
