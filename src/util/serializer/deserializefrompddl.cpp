@@ -62,7 +62,7 @@ std::vector<Parameter> _pddlArgumentsToParameters(
     }
     else
     {
-      res.emplace_back(parameterName, pSetOfTypes.nameToType(token));
+      res.emplace_back(parameterName, pSetOfTypes.nameToType(currArg.toTypeName()));
       parameterName = "";
       nextIsAParameterName = true;
     }
@@ -82,7 +82,7 @@ std::vector<Parameter> _expressionParsedToParameters(
   std::vector<Parameter> res;
   if (pExpressionParsed.followingExpression)
   {
-    auto paramType = pSetOfTypes.nameToType(pExpressionParsed.followingExpression->name);
+    auto paramType = pSetOfTypes.nameToType(pExpressionParsed.followingExpression->toTypeName());
     res.emplace_back(pExpressionParsed.name, paramType);
   }
   else if (pExpressionParsed.arguments.size() >= 2)
@@ -822,6 +822,20 @@ std::vector<Parameter> _pddlToParameters(const std::string& pStr,
 
   while (pPos < strSize)
   {
+    if (!nextIsAParameterName && pPos == beginOfTokenPos && pStr[pPos] == '(')
+    {
+      // A type written `(either a b)`.
+      auto endOfTypePos = pStr.find(')', pPos);
+      if (endOfTypePos == std::string::npos)
+        throw std::runtime_error("Type does not end with ')' in: " + pStr.substr(pPos, strSize - pPos));
+      res.emplace_back(parameterName, pSetOfTypes.nameToType(pStr.substr(pPos, endOfTypePos + 1 - pPos)));
+      parameterName = "";
+      nextIsAParameterName = true;
+      pPos = endOfTypePos + 1;
+      ExpressionParsed::skipSpaces(pStr, pPos);
+      beginOfTokenPos = pPos;
+      continue;
+    }
     if (pStr[pPos] == ')')
     {
       break;

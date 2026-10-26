@@ -35,6 +35,9 @@ struct ExpressionParsed
 
   std::string toStr() const;
 
+  /// The name of the type this expression gives after a `-`: a declared type, or `(either a b)`.
+  std::string toTypeName() const;
+
   FactOptional toFact(const Ontology& pOntology,
                       const SetOfEntities& pObjects,
                       const std::vector<Parameter>& pParameters,

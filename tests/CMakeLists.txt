@@ -10,6 +10,7 @@ add_executable(ordered_goals_planner_tests
   src/test_evaluate.cpp
   src/test_existential_preconditions_requirement.cpp
   src/test_duration.cpp
+  src/test_either_types.cpp
   src/test_extractminmaxvalueforfacts.cpp
   src/test_fact.cpp
   src/test_factoptionalstoid.cpp

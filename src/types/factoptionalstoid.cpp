@@ -218,6 +218,17 @@ bool FactsToId::empty() const
 typename FactsToId::ConstMapOfFactIterator FactsToId::find(const Fact& pFact,
                                                                  bool pIgnoreValue) const
 {
+  auto factsTypedWithEitherMembers = pFact.factsTypedWithEitherMembers();
+  if (!factsTypedWithEitherMembers.empty())
+  {
+    std::list<FactWithId> res;
+    for (const auto& currFactTypedWithMembers : factsTypedWithEitherMembers)
+      for (const auto& currFoundFact : find(currFactTypedWithMembers, pIgnoreValue))
+        if (std::find(res.begin(), res.end(), currFoundFact) == res.end())
+          res.push_back(currFoundFact);
+    return ConstMapOfFactIterator(std::move(res));
+  }
+
   const std::list<FactWithId>* exactMatchPtr = nullptr;
 
   if (!pFact.hasAParameter(pIgnoreValue) && !pFact.hasAFluentArgument() && !pFact.isValueNegated())
