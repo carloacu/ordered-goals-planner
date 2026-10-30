@@ -292,6 +292,16 @@ struct ORDEREDGOALSPLANNER_API Fact
   void setValueNegated(bool pIsValueNegated) { _isValueNegated = pIsValueNegated; }
 
   std::string factSignature() const;
+
+  /**
+   * @brief The facts that type the `(either a b)` arguments and value of this fact with each member.
+   * @return Nothing if no argument or value is typed with a union.
+   *
+   * Facts are filed by the types of their arguments and of the parents of those types, which never
+   * include a union, so a fact holding one is looked for through these facts instead.
+   */
+  std::list<Fact> factsTypedWithEitherMembers() const;
+
   void generateSignaturesWithRelatedTypes(const std::function<void(const std::string&)>& pSignatureCallback,
                                           bool pIncludeSubTypes,
                                           bool pIncludeParentTypes) const;

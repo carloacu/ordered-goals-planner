@@ -43,11 +43,11 @@ Predicate::Predicate(const std::string& pStr,
   for (auto& currArg : expressionParsed.arguments)
     if (currArg.followingExpression)
     {
-      auto type = pSetOfTypes.nameToType(currArg.followingExpression->name);
+      auto type = pSetOfTypes.nameToType(currArg.followingExpression->toTypeName());
       parameters.emplace_back(Parameter(currArg.name, type));
     }
   if (expressionParsed.followingExpression) {
-    value = pSetOfTypes.nameToType(expressionParsed.followingExpression->name);
+    value = pSetOfTypes.nameToType(expressionParsed.followingExpression->toTypeName());
   }
 
   if (pResPos != nullptr)

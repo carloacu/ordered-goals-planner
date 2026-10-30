@@ -42,6 +42,20 @@ bool Type::isA(const Type& pOtherType) const
 {
   if (name == pOtherType.name)
     return true;
+  if (isEither)
+  {
+    for (const auto& currMember : subTypes)
+      if (!currMember->isA(pOtherType))
+        return false;
+    return !subTypes.empty();
+  }
+  if (pOtherType.isEither)
+  {
+    for (const auto& currMember : pOtherType.subTypes)
+      if (isA(*currMember))
+        return true;
+    return false;
+  }
   if (const auto parentType = parent.lock())
     return parentType->isA(pOtherType);
   return false;
@@ -95,6 +109,16 @@ std::shared_ptr<Type> Type::getSmallerType(const std::shared_ptr<Type>& pType1,
     return pType2;
 
   throw std::runtime_error("\"" + pType1->name + "\" and \"" + pType2->name + "\" types does not have a common parent");
+}
+
+
+std::shared_ptr<Type> Type::createEither(const std::string& pName,
+                                         const std::list<std::shared_ptr<Type>>& pMembers)
+{
+  auto res = std::make_shared<Type>(pName);
+  res->subTypes = pMembers;
+  res->isEither = true;
+  return res;
 }
 
 

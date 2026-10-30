@@ -1301,6 +1301,42 @@ std::string Fact::_generateFactSignature() const
 }
 
 
+std::list<Fact> Fact::factsTypedWithEitherMembers() const
+{
+  std::list<Fact> res;
+  for (std::size_t i = 0; i < _arguments.size(); ++i)
+  {
+    if (!_arguments[i].isEntity())
+      continue;
+    const auto argType = _arguments[i].type();
+    if (!argType || !argType->isEither)
+      continue;
+    for (const auto& currMember : argType->subTypes)
+    {
+      auto factOfMemberType = *this;
+      factOfMemberType.setArgumentType(i, currMember);
+      auto factsOfMemberTypes = factOfMemberType.factsTypedWithEitherMembers();
+      if (factsOfMemberTypes.empty())
+        res.push_back(std::move(factOfMemberType));
+      else
+        res.splice(res.end(), factsOfMemberTypes);
+    }
+    return res;
+  }
+
+  if (_value && _value->type && _value->type->isEither)
+  {
+    for (const auto& currMember : _value->type->subTypes)
+    {
+      auto factOfMemberType = *this;
+      factOfMemberType.setValueType(currMember);
+      res.push_back(std::move(factOfMemberType));
+    }
+  }
+  return res;
+}
+
+
 void Fact::generateSignaturesWithRelatedTypes(
     const std::function<void(const std::string&)>& pSignatureCallback,
     bool pIncludeSubTypes,

@@ -116,7 +116,7 @@ Supported [PDDL 3.1](https://helios.hud.ac.uk/scommv/IPC-14/repository/kovacs-pd
 requirements:
 
 - [x] `:strips`
-- [x] `:typing`
+- [x] `:typing`, including `(either a b)` types for parameters and fluent values
 - [x] `:negative-preconditions`
 - [x] `:disjunctive-preconditions`
 - [x] `:equality`
@@ -140,6 +140,9 @@ requirements:
 And the problem requirement specific for this lib
 
 - [x] `:ordered-goals`
+
+The library is not thread safe: calls that share a domain, a problem or their types must not run
+concurrently, even when they only read them.
 
 ### Definition of words
 

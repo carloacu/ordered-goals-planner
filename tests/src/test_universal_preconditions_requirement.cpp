@@ -339,6 +339,103 @@ void _forallWithImplyWithThenThzatDoesNotDependOfTheVariable()
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
 
+
+ogp::Ontology _visitorsOntology()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("user location");
+  std::size_t pos = 0;
+  ontology.predicates = ogp::SetOfPredicates::fromPddl("(assists ?u - user)\n"
+                                                       "(immutable---assists ?u - user)\n"
+                                                       "(engaged ?u - user)\n"
+                                                       "(immutable---engaged ?u - user)\n"
+                                                       "(nearby ?u - user)\n"
+                                                       "(visible ?u - user)\n"
+                                                       "(told ?u - user)\n"
+                                                       "(location_of ?u - user) - location", pos, ontology.types);
+  return ontology;
+}
+
+
+void _forallGoalOnAnImmutableConditionNeedingTwoActions()
+{
+  // An `if` goal is an `imply` on the immutable copy of its condition. Checking which actions of a
+  // plan are mandatory used to ignore the immutable facts, so every action of a longer plan was dropped.
+  auto ontology = _visitorsOntology();
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> searchParameters{_parameter("?u - user", ontology)};
+  ogp::Action searchAction({}, _worldStateModification_fromPddl("(visible ?u)", ontology, searchParameters));
+  searchAction.parameters = std::move(searchParameters);
+  actions.emplace("search", searchAction);
+  std::vector<ogp::Parameter> guideParameters{_parameter("?u - user", ontology), _parameter("?l - location", ontology)};
+  ogp::Action guideAction(_condition_fromPddl("(visible ?u)", ontology, guideParameters),
+                          _worldStateModification_fromPddl("(assign (location_of ?u) ?l)", ontology, guideParameters));
+  guideAction.parameters = std::move(guideParameters);
+  actions.emplace("guide", guideAction);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("u0 u1 - user\ndest - location", ontology.types);
+  _addFact(problem.worldState, "assists(u0)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+
+  auto goalsStr = "(forall (?u - user) (imply (immutable---assists ?u) (= (location_of ?u) dest)))";
+  _setGoalsForAPriority(problem, {_pddlGoal(goalsStr, ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("search(?u -> u0)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("guide(?l -> dest, ?u -> u0)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+}
+
+
+void _forallGoalWithANegatedCondition(const std::string& pGoalStr)
+{
+  // A negated condition holds for the arguments that make its fact false, and used to hold for none.
+  auto ontology = _visitorsOntology();
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> tellParameters{_parameter("?u - user", ontology)};
+  ogp::Action tellAction({}, _worldStateModification_fromPddl("(told ?u)", ontology, tellParameters));
+  tellAction.parameters = std::move(tellParameters);
+  actions.emplace("tell", tellAction);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("u0 u1 - user", ontology.types);
+  _addFact(problem.worldState, "engaged(u0)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  _addFact(problem.worldState, "nearby(u0)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+  _addFact(problem.worldState, "nearby(u1)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal(pGoalStr, ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("tell(?u -> u1)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr()) << pGoalStr;
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr()) << pGoalStr;
+}
+
+
+void _forallNegatedGoalReachedByRemovingAFact()
+{
+  // An effect removing a fact only changes the world for the arguments the fact holds for, whereas
+  // the planner used to pick those it did not hold for, as it does for an effect adding a fact.
+  auto ontology = _visitorsOntology();
+
+  std::map<std::string, ogp::Action> actions;
+  std::vector<ogp::Parameter> stopParameters{_parameter("?u - user", ontology)};
+  ogp::Action stopAction({}, _worldStateModification_fromPddl("(not (assists ?u))", ontology, stopParameters));
+  stopAction.parameters = std::move(stopParameters);
+  actions.emplace("stop", stopAction);
+
+  ogp::Domain domain(std::move(actions), ontology);
+  auto& setOfEventsMap = domain.getSetOfEvents();
+  ogp::Problem problem;
+  problem.objects = ogp::SetOfEntities::fromPddl("u0 u1 - user", ontology.types);
+  _addFact(problem.worldState, "assists(u0)", problem.goalStack, ontology, problem.objects, setOfEventsMap, _now);
+
+  _setGoalsForAPriority(problem, {_pddlGoal("(forall (?u - user) (not (assists ?u)))", ontology, problem.objects)}, ontology.constants);
+  EXPECT_EQ("stop(?u -> u0)", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+  EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
+}
+
 }
 
 
@@ -352,4 +449,9 @@ TEST(Planner, test_universalPreconditionsRequirement)
   _actionToSatisfyANotForall();
   _forallWithImplyAndFluentValuesEquality();
   _forallWithImplyWithThenThzatDoesNotDependOfTheVariable();
+  _forallGoalOnAnImmutableConditionNeedingTwoActions();
+  _forallGoalWithANegatedCondition("(forall (?u - user) (imply (not (engaged ?u)) (told ?u)))");
+  _forallGoalWithANegatedCondition("(forall (?u - user) (imply (not (immutable---engaged ?u)) (told ?u)))");
+  _forallGoalWithANegatedCondition("(forall (?u - user) (imply (and (nearby ?u) (not (immutable---engaged ?u))) (told ?u)))");
+  _forallNegatedGoalReachedByRemovingAFact();
 }

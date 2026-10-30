@@ -1,4 +1,5 @@
 #include <orderedgoalsplanner/types/setoftypes.hpp>
+#include <cctype>
 #include <stdexcept>
 #include <sstream>
 #include <vector>
@@ -9,6 +10,7 @@ namespace ogp
 {
 namespace
 {
+const std::string _eitherPrefix = "(either";
 const std::string _numberTypeName = "number";
 const std::shared_ptr<Type> _numberType = std::make_shared<Type>(_numberTypeName);
 
@@ -23,7 +25,8 @@ void _removeAfterSemicolon(std::string& str) {
 
 SetOfTypes::SetOfTypes()
     : _types(),
-      _nameToType()
+      _nameToType(),
+      _nameToEitherType()
 {
   _nameToType[_numberTypeName] = _numberType;
 }
@@ -89,7 +92,46 @@ std::shared_ptr<Type> SetOfTypes::nameToType(const std::string& pName) const
   auto it = _nameToType.find(pName);
   if (it != _nameToType.end())
     return it->second;
+  if (pName.compare(0, _eitherPrefix.size(), _eitherPrefix) == 0)
+    return _eitherType(pName);
   throw std::runtime_error("\"" + pName + "\" is not a valid type name");
+}
+
+
+std::shared_ptr<Type> SetOfTypes::_eitherType(const std::string& pName) const
+{
+  if (pName.size() <= _eitherPrefix.size() || pName.back() != ')' ||
+      !std::isspace(static_cast<unsigned char>(pName[_eitherPrefix.size()])))
+    throw std::runtime_error("\"" + pName + "\" is not a valid type name");
+
+  std::istringstream memberNames(pName.substr(_eitherPrefix.size(), pName.size() - _eitherPrefix.size() - 1));
+  std::map<std::string, std::shared_ptr<Type>> nameToMember;
+  std::string currMemberName;
+  while (memberNames >> currMemberName)
+  {
+    auto itMember = _nameToType.find(currMemberName);
+    if (itMember == _nameToType.end())
+      throw std::runtime_error("\"" + currMemberName + "\" is not a valid type name in \"" + pName + "\"");
+    nameToMember.emplace(currMemberName, itMember->second);
+  }
+  if (nameToMember.empty())
+    throw std::runtime_error("\"" + pName + "\" has no type to choose from");
+  if (nameToMember.size() == 1)
+    return nameToMember.begin()->second;
+
+  std::string canonicalName = _eitherPrefix;
+  std::list<std::shared_ptr<Type>> members;
+  for (const auto& currNameToMember : nameToMember)
+  {
+    canonicalName += " " + currNameToMember.first;
+    members.push_back(currNameToMember.second);
+  }
+  canonicalName += ")";
+
+  auto itEither = _nameToEitherType.find(canonicalName);
+  if (itEither != _nameToEitherType.end())
+    return itEither->second;
+  return _nameToEitherType.emplace(canonicalName, Type::createEither(canonicalName, members)).first->second;
 }
 
 std::shared_ptr<Type> SetOfTypes::numberType()

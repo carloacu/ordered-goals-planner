@@ -291,6 +291,17 @@ ExpressionParsed ExpressionParsed::fromStr(const std::string& pStr,
 }
 
 
+std::string ExpressionParsed::toTypeName() const
+{
+  if (!isAFunction || name != "either")
+    return name;
+  std::string res = "(either";
+  for (const auto& currArgument : arguments)
+    res += " " + currArgument.name;
+  return res + ")";
+}
+
+
 ExpressionParsed ExpressionParsed::fromPddl(const std::string& pStr,
                                             std::size_t& pPos,
                                             bool pCanHaveFollowingExpression)

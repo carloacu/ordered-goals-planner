@@ -32,9 +32,21 @@ struct ORDEREDGOALSPLANNER_API Type
   static std::shared_ptr<Type> getSmallerType(const std::shared_ptr<Type>& pType1,
                                               const std::shared_ptr<Type>& pType2);
 
+  /**
+   * @brief Construct the type of the values of any of the members, written `(either a b)` in PDDL.
+   * @param[in] pName Name of the type, `(either a b)` with the member names sorted.
+   * @param[in] pMembers Declared types the values can be of.
+   *
+   * The members are its `subTypes`, so whatever looks for the values of a type also finds theirs.
+   */
+  static std::shared_ptr<Type> createEither(const std::string& pName,
+                                            const std::list<std::shared_ptr<Type>>& pMembers);
+
   const std::string name;
   const std::weak_ptr<Type> parent;
   std::list<std::shared_ptr<Type>> subTypes;
+  /// Whether this type is the union of its `subTypes` rather than a declared type.
+  bool isEither = false;
 };
 
 } // namespace ogp

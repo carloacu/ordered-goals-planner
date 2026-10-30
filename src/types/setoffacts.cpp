@@ -339,6 +339,17 @@ typename SetOfFacts::SetOfFactIterator SetOfFacts::find(const Fact& pFact,
     return find(*resolvedFact, pIgnoreValue);
   }
 
+  auto factsTypedWithEitherMembers = pFact.factsTypedWithEitherMembers();
+  if (!factsTypedWithEitherMembers.empty())
+  {
+    std::list<Fact> res;
+    for (const auto& currFactTypedWithMembers : factsTypedWithEitherMembers)
+      for (const auto& currFoundFact : find(currFactTypedWithMembers, pIgnoreValue))
+        if (std::find(res.begin(), res.end(), currFoundFact) == res.end())
+          res.push_back(currFoundFact);
+    return SetOfFactIterator(std::move(res));
+  }
+
   if (!pFact.hasAParameter(pIgnoreValue) && !pFact.hasAFluentArgument() && !pFact.isValueNegated())
   {
     auto exactCallStr = _getExactCall(pFact);

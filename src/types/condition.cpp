@@ -242,6 +242,33 @@ bool _isTrueRec(ParameterValuesWithConstraints& pLocalParamToValue,
   if (factOfConditionPtr != nullptr)
   {
     const auto& condFactOptional = factOfConditionPtr->factOptional;
+    if (!pMustBeTrueForAllParameters && condFactOptional.isFactNegated)
+    {
+      // The negated fact holds for the arguments that make the fact false: keep those, so that what
+      // depends on this condition applies to them.
+      for (auto& currLocalParamToValue : pLocalParamToValue)
+      {
+        if (!condFactOptional.fact.hasParameterOrValue(currLocalParamToValue.first))
+          continue;
+        const auto candidates = currLocalParamToValue.second.empty() ? pAllEntitiesForParam : currLocalParamToValue.second;
+        EntitiesWithParamConstaints argumentsMakingTheFactFalse;
+        for (const auto& currCandidate : candidates)
+        {
+          FactOptional factForCandidate(condFactOptional);
+          factForCandidate.fact.replaceArguments(std::map<Parameter, Entity>{{currLocalParamToValue.first, currCandidate.first}});
+          auto conditionParametersToPossibleArguments = pConditionParametersToPossibleArguments != nullptr ?
+                *pConditionParametersToPossibleArguments : ParameterValuesWithConstraints();
+          if (pWorldState.isOptionalFactSatisfiedInASpecificContext(factForCandidate, pPunctualFacts, pAddedFacts, pRemovedFacts,
+                                                                    &conditionParametersToPossibleArguments, nullptr))
+            argumentsMakingTheFactFalse.emplace(currCandidate);
+        }
+        if (argumentsMakingTheFactFalse.empty())
+          return false;
+        currLocalParamToValue.second = std::move(argumentsMakingTheFactFalse);
+        return true;
+      }
+    }
+
     bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(condFactOptional, pPunctualFacts, pAddedFacts, pRemovedFacts,
                                                                      pConditionParametersToPossibleArguments, &pLocalParamToValue);
     if (pMustBeTrueForAllParameters && !condFactOptional.isFactNegated)
@@ -251,14 +278,6 @@ bool _isTrueRec(ParameterValuesWithConstraints& pLocalParamToValue,
           if (condFactOptional.fact.hasParameterOrValue(currLocalParamToValue.first) &&
               currLocalParamToValue.second != pAllEntitiesForParam)
             return false;
-    }
-    if (!pMustBeTrueForAllParameters && condFactOptional.isFactNegated)
-    {
-      if (!res)
-        for (const auto& currLocalParamToValue : pLocalParamToValue)
-          if (condFactOptional.fact.hasParameterOrValue(currLocalParamToValue.first) &&
-              currLocalParamToValue.second != pAllEntitiesForParam)
-            return true;
     }
     return res;
   }
@@ -1416,6 +1435,44 @@ bool ConditionFact::isTrue(const WorldState& pWorldState,
                            ParameterValuesWithConstraints* pConditionParametersToPossibleArguments,
                            bool pIsWrappingExpressionNegated) const
 {
+  const bool isNegated = pIsWrappingExpressionNegated != factOptional.isFactNegated;
+  if (isNegated && pConditionParametersToPossibleArguments != nullptr)
+  {
+    // A negated fact holds for the arguments that make the fact false. Negating whether the fact
+    // holds for some argument would make it hold for none as soon as one argument makes it true.
+    const Parameter* freeParameterPtr = nullptr;
+    std::size_t nbOfFreeParameters = 0;
+    for (const auto& currParameter : *pConditionParametersToPossibleArguments)
+    {
+      if (factOptional.fact.hasParameterOrValue(currParameter.first))
+      {
+        freeParameterPtr = &currParameter.first;
+        ++nbOfFreeParameters;
+      }
+    }
+
+    if (nbOfFreeParameters == 1 && freeParameterPtr->type)
+    {
+      auto& possibleArguments = (*pConditionParametersToPossibleArguments)[*freeParameterPtr];
+      const auto candidates = possibleArguments.empty() ?
+            typeToEntities(*freeParameterPtr->type, pConstants, pObjects) : possibleArguments;
+      EntitiesWithParamConstaints argumentsMakingTheFactFalse;
+      for (const auto& currCandidate : candidates)
+      {
+        FactOptional negatedFactForCandidate(factOptional);
+        negatedFactForCandidate.isFactNegated = true;
+        negatedFactForCandidate.fact.replaceArguments(std::map<Parameter, Entity>{{*freeParameterPtr, currCandidate.first}});
+        if (pWorldState.isOptionalFactSatisfiedInASpecificContext(negatedFactForCandidate, pPunctualFacts, pAddedFacts,
+                                                                   pRemovedFacts, nullptr, nullptr))
+          argumentsMakingTheFactFalse.emplace(currCandidate);
+      }
+      if (argumentsMakingTheFactFalse.empty())
+        return false;
+      possibleArguments = std::move(argumentsMakingTheFactFalse);
+      return true;
+    }
+  }
+
   bool res = pWorldState.isOptionalFactSatisfiedInASpecificContext(factOptional, pPunctualFacts, pAddedFacts, pRemovedFacts, pConditionParametersToPossibleArguments, nullptr);
   if (!pIsWrappingExpressionNegated)
     return res;
