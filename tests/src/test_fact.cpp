@@ -67,6 +67,44 @@ void _test_generateSignatureForUpperTypes()
             _printSignatures(ogp::Fact::fromStr("fun3(e1, e1)", ontology, objects, {}), false, true));
 }
 
+
+std::string _argumentsStr(const ogp::Fact& pFact)
+{
+  std::string res;
+  for (const auto& currArgument : pFact.arguments())
+  {
+    if (!res.empty())
+      res += ", ";
+    res += currArgument.toStr();
+  }
+  return res;
+}
+
+
+void _test_factsAreOrderedByTheTextOfTheirArguments()
+{
+  ogp::Ontology ontology;
+  ontology.types = ogp::SetOfTypes::fromPddl("my_type my_type2 - entity");
+  ontology.constants = ogp::SetOfEntities::fromPddl("e e1 e10 - entity\n"
+                                                    "toto - my_type\n"
+                                                    "titi - my_type2\n", ontology.types);
+  ontology.predicates = ogp::SetOfPredicates::fromStr("fun3(?e1 - entity, ?e2 - entity)\n", ontology.types);
+
+  std::vector<ogp::Fact> facts;
+  for (const auto* first : {"e", "e1", "e10", "toto", "titi"})
+    for (const auto* second : {"e", "e1", "e10", "toto", "titi"})
+      facts.emplace_back(ogp::Fact::fromStr(std::string("fun3(") + first + ", " + second + ")", ontology, {}, {}));
+
+  for (const auto& currFact : facts)
+  {
+    for (const auto& currOtherFact : facts)
+    {
+      EXPECT_EQ(_argumentsStr(currFact) < _argumentsStr(currOtherFact), currFact < currOtherFact)
+          << currFact.toStr() << " < " << currOtherFact.toStr();
+    }
+  }
+}
+
 }
 
 
@@ -74,4 +112,5 @@ void _test_generateSignatureForUpperTypes()
 TEST(Tool, test_fact)
 {
   _test_generateSignatureForUpperTypes();
+  _test_factsAreOrderedByTheTextOfTheirArguments();
 }

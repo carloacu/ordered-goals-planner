@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <optional>
 #include <stdexcept>
+#include <string_view>
 #include <orderedgoalsplanner/types/factoptional.hpp>
 #include <orderedgoalsplanner/types/ontology.hpp>
 #include <orderedgoalsplanner/types/parameter.hpp>
@@ -35,6 +36,95 @@ void _entitiesToStr(std::string& pStr,
       pStr += ", ";
     pStr += param.toStr();
   }
+}
+
+// Walks the text that _entitiesToStr would build, piece by piece, without building it.
+class _EntitiesStrCursor
+{
+public:
+  _EntitiesStrCursor(const std::vector<FactArgument>& pArguments)
+   : _arguments(pArguments)
+  {
+    _skipEmptyPieces();
+  }
+
+  bool atEnd() const { return _pieceIdx == _nbOfPieces && _argIdx == _arguments.size(); }
+  std::string_view piece() const { return _pieces[_pieceIdx].substr(_pos); }
+
+  void advance(std::size_t pNbOfChars)
+  {
+    _pos += pNbOfChars;
+    _skipEmptyPieces();
+  }
+
+private:
+  const std::vector<FactArgument>& _arguments;
+  std::size_t _argIdx = 0;
+  std::string_view _pieces[4];
+  std::size_t _nbOfPieces = 0;
+  std::size_t _pieceIdx = 0;
+  std::size_t _pos = 0;
+  std::string _fluentStr;
+
+  void _skipEmptyPieces()
+  {
+    while (true)
+    {
+      while (_pieceIdx < _nbOfPieces && _pos == _pieces[_pieceIdx].size())
+      {
+        ++_pieceIdx;
+        _pos = 0;
+      }
+      if (_pieceIdx < _nbOfPieces || _argIdx == _arguments.size())
+        return;
+      _loadNextArgument();
+    }
+  }
+
+  void _loadNextArgument()
+  {
+    _nbOfPieces = 0;
+    _pieceIdx = 0;
+    _pos = 0;
+    if (_argIdx > 0)
+      _pieces[_nbOfPieces++] = ", ";
+    const auto& argument = _arguments[_argIdx++];
+    if (argument.isEntity())
+    {
+      const auto& entity = argument.entity();
+      _pieces[_nbOfPieces++] = entity.value;
+      if (entity.type)
+      {
+        _pieces[_nbOfPieces++] = " - ";
+        _pieces[_nbOfPieces++] = entity.type->name;
+      }
+    }
+    else
+    {
+      _fluentStr = argument.toStr();
+      _pieces[_nbOfPieces++] = _fluentStr;
+    }
+  }
+};
+
+// Same result as comparing the texts built by _entitiesToStr, without allocating them.
+bool _isEntitiesStrLess(const std::vector<FactArgument>& pArguments,
+                        const std::vector<FactArgument>& pOtherArguments)
+{
+  _EntitiesStrCursor cursor(pArguments);
+  _EntitiesStrCursor otherCursor(pOtherArguments);
+  while (!cursor.atEnd() && !otherCursor.atEnd())
+  {
+    auto piece = cursor.piece();
+    auto otherPiece = otherCursor.piece();
+    auto nbOfChars = std::min(piece.size(), otherPiece.size());
+    auto comparison = piece.substr(0, nbOfChars).compare(otherPiece.substr(0, nbOfChars));
+    if (comparison != 0)
+      return comparison < 0;
+    cursor.advance(nbOfChars);
+    otherCursor.advance(nbOfChars);
+  }
+  return cursor.atEnd() && !otherCursor.atEnd();
 }
 
 void _entitiesToValueStr(std::string& pStr,
@@ -435,11 +525,7 @@ bool Fact::operator<(const Fact& pOther) const
     return _value < pOther._value;
   if (_isValueNegated != pOther._isValueNegated)
     return _isValueNegated < pOther._isValueNegated;
-  std::string paramStr;
-  _entitiesToStr(paramStr, _arguments);
-  std::string otherParamStr;
-  _entitiesToStr(otherParamStr, pOther._arguments);
-  return paramStr < otherParamStr;
+  return _isEntitiesStrLess(_arguments, pOther._arguments);
 }
 
 bool Fact::operator==(const Fact& pOther) const
