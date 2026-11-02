@@ -23,11 +23,11 @@ std::mt19937 createEngine() {
   return std::mt19937{ seed_seq };
 }
 
-static std::mt19937                    gen(createEngine());
-static std::uniform_int_distribution<> dis(0, 15);
-static std::uniform_int_distribution<> dis2(8, 11);
-
 std::string generateUuid() {
+  // One engine per thread: domains can be built by several threads at once.
+  thread_local std::mt19937                    gen(createEngine());
+  thread_local std::uniform_int_distribution<> dis(0, 15);
+  thread_local std::uniform_int_distribution<> dis2(8, 11);
   std::stringstream ss;
   int i;
   ss << std::hex;
