@@ -1087,6 +1087,7 @@ bool _goalToPlanRec(
     const auto& actionToDoStr = potentialRes->actionInvocation.toStr();
     pFirstActionInvocationsAlreadyDone.insert(actionToDoStr);
     auto itAlreadyFoundAction = pActionAlreadyInPlan.find(actionToDoStr);
+    const bool alreadyInThisPlan = itAlreadyFoundAction != pActionAlreadyInPlan.end();
     if (itAlreadyFoundAction == pActionAlreadyInPlan.end())
     {
       auto& existingFactPlanCache = pActionAlreadyInPlan[actionToDoStr];
@@ -1108,6 +1109,14 @@ bool _goalToPlanRec(
     updateProblemForNextPotentialPlannerResultWithAction(problemForPlanCost, goalChanged,
                                                          *potentialRes, *potActionPtr,
                                                          pDomain, pNow, nullptr, nullptr);
+    // The invocation is already in this attempt and has no net effect from the current state.
+    // The search would choose it again and again until the loop limit, then fail the attempt.
+    // Stop now. It can drop a plan found by choosing another action after this useless one,
+    // but such a plan would contain a useless action.
+    if (alreadyInThisPlan && !goalChanged &&
+        problemForPlanCost.worldState.facts() == pProblem.worldState.facts() &&
+        !problemForPlanCost.worldState.isGoalSatisfied(pGoal, ontology.constants, problemForPlanCost.objects))
+      return false;
     ActionPtrWithGoal previousAction(potActionPtr, pGoal);
     auto* previousActionPtr = nextInPlanCanBeAnEvent ? nullptr : &previousAction;
     std::set<std::string> firstActionInvocationsAlreadyDone;
