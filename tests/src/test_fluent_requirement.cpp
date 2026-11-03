@@ -13,15 +13,6 @@ const ogp::SetOfCallbacks _emptyCallbacks;
 
 static const std::vector<ogp::Parameter> _emptyParameters;
 
-bool _isTrue(const std::string& pConditionPddlStr,
-             const ogp::Ontology& pOntology,
-             const ogp::WorldState& pWorldState,
-             const ogp::SetOfEntities& pObjects)
-{
-  std::size_t pos = 0;
-  return ogp::pddlToCondition(pConditionPddlStr, pos, pOntology, {}, {})->isTrue(pWorldState, pOntology.constants, pObjects, {}, {});
-}
-
 ogp::Fact _fact(const std::string& pStr,
                 const ogp::Ontology& pOntology,
                 const ogp::SetOfEntities& pObjects,

@@ -39,11 +39,6 @@ void _removeFact(ogp::WorldState& pWorldState,
 }
 
 
-ogp::Parameter _parameter(const std::string& pStr,
-                         const ogp::Ontology& pOntology) {
-  return ogp::Parameter::fromStr(pStr, pOntology.types);
-}
-
 ogp::Goal _goal(const std::string& pStr,
                const ogp::Ontology& pOntology,
                int pMaxTimeToKeepInactive = -1,

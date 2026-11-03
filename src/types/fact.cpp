@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <optional>
 #include <stdexcept>
+#include <string_view>
 #include <orderedgoalsplanner/types/factoptional.hpp>
 #include <orderedgoalsplanner/types/ontology.hpp>
 #include <orderedgoalsplanner/types/parameter.hpp>
@@ -23,33 +24,93 @@ Fact _expressionParsedToFact(const ExpressionParsed& pExpressionParsed,
                              bool pIsOkIfValueIsMissing,
                              const std::map<std::string, Entity>* pParameterNamesToEntityPtr);
 
-void _entitiesToStr(std::string& pStr,
-                    const std::vector<FactArgument>& pParameters)
+// Walks the text of the arguments joined with ", ", piece by piece, without building it.
+class _EntitiesStrCursor
 {
-  bool firstIteration = true;
-  for (auto& param : pParameters)
+public:
+  _EntitiesStrCursor(const std::vector<FactArgument>& pArguments)
+   : _arguments(pArguments)
   {
-    if (firstIteration)
-      firstIteration = false;
-    else
-      pStr += ", ";
-    pStr += param.toStr();
+    _skipEmptyPieces();
   }
-}
 
-void _entitiesToValueStr(std::string& pStr,
-                         const std::vector<FactArgument>& pParameters,
-                         const std::string& pSeparator)
-{
-  bool firstIteration = true;
-  for (auto& param : pParameters)
+  bool atEnd() const { return _pieceIdx == _nbOfPieces && _argIdx == _arguments.size(); }
+  std::string_view piece() const { return _pieces[_pieceIdx].substr(_pos); }
+
+  void advance(std::size_t pNbOfChars)
   {
-    if (firstIteration)
-      firstIteration = false;
-    else
-      pStr += pSeparator;
-    pStr += param.toStr();
+    _pos += pNbOfChars;
+    _skipEmptyPieces();
   }
+
+private:
+  const std::vector<FactArgument>& _arguments;
+  std::size_t _argIdx = 0;
+  std::string_view _pieces[4];
+  std::size_t _nbOfPieces = 0;
+  std::size_t _pieceIdx = 0;
+  std::size_t _pos = 0;
+  std::string _fluentStr;
+
+  void _skipEmptyPieces()
+  {
+    while (true)
+    {
+      while (_pieceIdx < _nbOfPieces && _pos == _pieces[_pieceIdx].size())
+      {
+        ++_pieceIdx;
+        _pos = 0;
+      }
+      if (_pieceIdx < _nbOfPieces || _argIdx == _arguments.size())
+        return;
+      _loadNextArgument();
+    }
+  }
+
+  void _loadNextArgument()
+  {
+    _nbOfPieces = 0;
+    _pieceIdx = 0;
+    _pos = 0;
+    if (_argIdx > 0)
+      _pieces[_nbOfPieces++] = ", ";
+    const auto& argument = _arguments[_argIdx++];
+    if (argument.isEntity())
+    {
+      const auto& entity = argument.entity();
+      _pieces[_nbOfPieces++] = entity.value;
+      if (entity.type)
+      {
+        _pieces[_nbOfPieces++] = " - ";
+        _pieces[_nbOfPieces++] = entity.type->name;
+      }
+    }
+    else
+    {
+      _fluentStr = argument.toStr();
+      _pieces[_nbOfPieces++] = _fluentStr;
+    }
+  }
+};
+
+// Same result as comparing the texts of the arguments joined with ", ", without allocating them.
+bool _isEntitiesStrLess(const std::vector<FactArgument>& pArguments,
+                        const std::vector<FactArgument>& pOtherArguments)
+{
+  _EntitiesStrCursor cursor(pArguments);
+  _EntitiesStrCursor otherCursor(pOtherArguments);
+  while (!cursor.atEnd() && !otherCursor.atEnd())
+  {
+    auto piece = cursor.piece();
+    auto otherPiece = otherCursor.piece();
+    auto nbOfChars = std::min(piece.size(), otherPiece.size());
+    auto comparison = piece.substr(0, nbOfChars).compare(otherPiece.substr(0, nbOfChars));
+    if (comparison != 0)
+      return comparison < 0;
+    cursor.advance(nbOfChars);
+    otherCursor.advance(nbOfChars);
+  }
+  return cursor.atEnd() && !otherCursor.atEnd();
 }
 
 bool _isInside(const Entity& pEntity,
@@ -435,11 +496,7 @@ bool Fact::operator<(const Fact& pOther) const
     return _value < pOther._value;
   if (_isValueNegated != pOther._isValueNegated)
     return _isValueNegated < pOther._isValueNegated;
-  std::string paramStr;
-  _entitiesToStr(paramStr, _arguments);
-  std::string otherParamStr;
-  _entitiesToStr(otherParamStr, pOther._arguments);
-  return paramStr < otherParamStr;
+  return _isEntitiesStrLess(_arguments, pOther._arguments);
 }
 
 bool Fact::operator==(const Fact& pOther) const
@@ -1249,7 +1306,7 @@ std::map<Parameter, Entity> Fact::extratParameterToArguments() const
   if (_arguments.size() == predicate.parameters.size())
   {
     std::map<Parameter, Entity> res;
-    for (auto i = 0; i < _arguments.size(); ++i)
+    for (std::size_t i = 0; i < _arguments.size(); ++i)
     {
       if (!_arguments[i].isEntity())
         throw std::runtime_error("Cannot extract fluent argument \"" + _arguments[i].toStr() + "\" as an entity from fact: " + toStr());
@@ -1460,7 +1517,7 @@ void Fact::_finalizeInisilizationAndValidityChecks(bool pIsOkIfValueIsMissing)
   static const bool inEffectContext = false;
   if (predicate.parameters.size() != _arguments.size())
     throw std::runtime_error("The fact \"" + toPddl(inEffectContext) + "\" does not have the same number of parameters than the associated predicate \"" + predicate.toPddl() + "\"");
-  for (auto i = 0; i < _arguments.size(); ++i)
+  for (std::size_t i = 0; i < _arguments.size(); ++i)
   {
     if (!predicate.parameters[i].type)
       throw std::runtime_error("\"" + predicate.parameters[i].name + "\" does not have a type, in fact predicate \"" + predicate.toPddl() + "\"");

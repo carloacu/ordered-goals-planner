@@ -28,11 +28,6 @@ ogp::Fact _fact(const std::string& pStr,
   return ogp::Fact(pStr, false, pOntology, {}, pParameters);
 }
 
-ogp::Parameter _parameter(const std::string& pStr,
-                         const ogp::Ontology& pOntology) {
-  return ogp::Parameter::fromStr(pStr, pOntology.types);
-}
-
 ogp::Goal _goal(const std::string& pStr,
                const ogp::Ontology& pOntology,
                int pMaxTimeToKeepInactive = -1,
@@ -67,38 +62,6 @@ void _setGoalsForAPriority(ogp::Problem& pProblem,
                            int pPriority = ogp::GoalStack::getDefaultPriority())
 {
   pProblem.goalStack.setGoals(pGoals, pProblem.worldState, pConstants, pProblem.objects, pNow, pPriority);
-}
-
-
-ogp::ActionInvocationWithGoal _lookForAnActionToDo(ogp::Problem& pProblem,
-                                                   const ogp::Domain& pDomain,
-                                                   const ogp::SetOfCallbacks& pCallbacks = {},
-                                                   const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
-                                                   const ogp::Historical* pGlobalHistorical = nullptr)
-{
-  auto plan = ogp::planForMoreImportantGoalPossible(pProblem, pDomain, pCallbacks, true, pNow, pGlobalHistorical);
-  if (!plan.empty())
-    return plan.front();
-  return ogp::ActionInvocationWithGoal("", std::map<ogp::Parameter, ogp::Entity>(), {}, 0);
-}
-
-std::string _parallelPlanStr(ogp::Problem& pProblem,
-                             const ogp::Domain& pDomain,
-                             const ogp::SetOfCallbacks& pCallbacks = {},
-                             const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
-                             ogp::Historical* pGlobalHistorical = nullptr)
-{
-  return ogp::parallelPlanToStr(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pCallbacks, pNow, pGlobalHistorical));
-}
-
-std::string _parallelPlanPddl(ogp::Problem& pProblem,
-                              const ogp::Domain& pDomain,
-                              const ogp::SetOfCallbacks& pCallbacks = {},
-                              const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {},
-                              ogp::Historical* pGlobalHistorical = nullptr)
-{
-  return ogp::parallelPlanToPddl(ogp::parallelPlanForEveryGoals(pProblem, pDomain, pCallbacks,
-                                                                pNow, pGlobalHistorical), pDomain);
 }
 
 

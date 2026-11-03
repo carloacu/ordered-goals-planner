@@ -1,4 +1,5 @@
 #include <orderedgoalsplanner/types/setoffacts.hpp>
+#include <set>
 #include <stdexcept>
 #include <orderedgoalsplanner/types/fact.hpp>
 #include <orderedgoalsplanner/types/ontology.hpp>
@@ -465,7 +466,7 @@ void SetOfFacts::extractPotentialArgumentsOfAFactParameter(
       };
 
       bool doesItMatch = true;
-      for (auto i = 0; i < pFact.arguments().size(); ++i)
+      for (std::size_t i = 0; i < pFact.arguments().size(); ++i)
       {
         if (!pFact.arguments()[i].isEntity() || !currFact.arguments()[i].isEntity() ||
             !onEntity(pFact.arguments()[i].entity(), currFact.arguments()[i].entity()))
@@ -498,7 +499,7 @@ bool SetOfFacts::hasFact(const Fact& pFact) const
     if (currFact.arguments().size() == pFact.arguments().size())
     {
       bool doesItMatch = true;
-      for (auto i = 0; i < pFact.arguments().size(); ++i)
+      for (std::size_t i = 0; i < pFact.arguments().size(); ++i)
       {
         if (pFact.arguments()[i] == currFact.arguments()[i])
           continue;
@@ -515,24 +516,31 @@ bool SetOfFacts::hasFact(const Fact& pFact) const
 
 void SetOfFacts::updateImmutableFacts(const Ontology& pOntology)
 {
-  // Remove existing immutable facts
+  // Immutable facts expected from the current facts
+  std::set<Fact> expectedImmutableFacts;
+  for (const auto& currFact : _facts)
+  {
+    if (!currFact.first.predicate.isImmutable() &&
+        pOntology.nameToPredicatePtr(Predicate::getImmutablePrefix() + currFact.first.name()) != nullptr)
+    {
+      auto immutableFact = currFact.first;
+      immutableFact.toImmutable();
+      expectedImmutableFacts.insert(std::move(immutableFact));
+    }
+  }
+
+  // Only touch the differences: this is called before each goal check, and erasing then
+  // adding again every immutable fact cost more than half of the planning time.
   std::list<Fact> factsToRemove;
   for (const auto& currFact : _facts)
-    if (currFact.first.predicate.isImmutable())
+    if (currFact.first.predicate.isImmutable() && expectedImmutableFacts.count(currFact.first) == 0)
       factsToRemove.emplace_back(currFact.first);
   for (auto& currFact : factsToRemove)
     erase(currFact);
 
-  // Add new immutable facts
-  std::list<Fact> factsToAdd;
-  for (const auto& currFact : _facts)
-      if (pOntology.nameToPredicatePtr(Predicate::getImmutablePrefix() + currFact.first.name()) != nullptr)
-        factsToAdd.emplace_back(currFact.first);
-  for (auto& currFact : factsToAdd)
-  {
-    currFact.toImmutable();
-    add(currFact);
-  }
+  for (const auto& currFact : expectedImmutableFacts)
+    if (_facts.count(currFact) == 0)
+      add(currFact);
 }
 
 

@@ -191,12 +191,12 @@ enum class ConditionNodeType
 };
 
 
-static bool canBeSuperior(ConditionNodeType pConditionNodeType) {
+inline bool canBeSuperior(ConditionNodeType pConditionNodeType) {
   return pConditionNodeType == ConditionNodeType::SUPERIOR ||
       pConditionNodeType == ConditionNodeType::SUPERIOR_OR_EQUAL;
 }
 
-static bool canBeEqual(ConditionNodeType pConditionNodeType) {
+inline bool canBeEqual(ConditionNodeType pConditionNodeType) {
   return pConditionNodeType == ConditionNodeType::EQUALITY ||
       pConditionNodeType == ConditionNodeType::SUPERIOR_OR_EQUAL ||
       pConditionNodeType == ConditionNodeType::INFERIOR_OR_EQUAL;
@@ -445,8 +445,8 @@ struct ORDEREDGOALSPLANNER_API ConditionNot : public Condition
       const ParameterValuesWithConstraints& pConditionParametersToPossibleArguments,
       bool pIsWrappingExpressionNegated) const override;
 
-  bool untilFalse(const std::function<bool (const FactOptional&)>& pFactCallback,
-                  const SetOfFacts& pSetOfFact) const override { return true; } // TODO
+  bool untilFalse(const std::function<bool (const FactOptional&)>& /*pFactCallback*/,
+                  const SetOfFacts& /*pSetOfFact*/) const override { return true; } // TODO
   bool isTrue(const WorldState& pWorldState,
               const SetOfEntities& pConstants,
               const SetOfEntities& pObjects,

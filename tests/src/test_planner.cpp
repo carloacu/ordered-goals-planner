@@ -660,8 +660,7 @@ void _disjunctiveGoal()
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("or(fact_a, fact_b)", ontology, entities)}, ontology.constants);
 
   auto firstActionStr = _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr();
-  if (firstActionStr != action1 && firstActionStr != action2)
-    EXPECT_TRUE(false);
+  EXPECT_TRUE(firstActionStr == action1 || firstActionStr == action2) << firstActionStr;
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }
 
@@ -688,8 +687,7 @@ void _disjunctivePrecondition()
   _setGoalsForAPriority(problem, {ogp::Goal::fromStr("fact_c", ontology, entities)}, ontology.constants);
 
   auto firstActionStr = _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr();
-  if (firstActionStr != action1 && firstActionStr != action2)
-    EXPECT_TRUE(false);
+  EXPECT_TRUE(firstActionStr == action1 || firstActionStr == action2) << firstActionStr;
   EXPECT_EQ(action3, _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain, _emptyCallbacks, _now).actionInvocation.toStr());
 }

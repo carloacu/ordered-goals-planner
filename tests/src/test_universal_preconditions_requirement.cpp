@@ -59,14 +59,6 @@ void _setGoalsForAPriority(ogp::Problem& pProblem,
   pProblem.goalStack.setGoals(pGoals, pProblem.worldState, pConstants, pProblem.objects, pNow, pPriority);
 }
 
-bool _hasFact(ogp::WorldState& pWorldState,
-              const std::string& pFactStr,
-              const ogp::Ontology& pOntology,
-              const ogp::SetOfEntities& pObjects) {
-  return pWorldState.hasFact(_fact(pFactStr, pOntology, pObjects));
-}
-
-
 void _addFact(ogp::WorldState& pWorldState,
               const std::string& pFactStr,
               ogp::GoalStack& pGoalStack,
@@ -197,10 +189,8 @@ void _forallGoalWithAnd()
   auto res1 = _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr();
   auto res2 = _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr();
   EXPECT_NE(res1, res2);
-  if (res1 != "action1(?v1 -> v1a)" && res1 != "action1(?v1 -> v1b)")
-    EXPECT_FALSE(true);
-  if (res2 != "action1(?v1 -> v1a)" && res2 != "action1(?v1 -> v1b)")
-    EXPECT_FALSE(true);
+  EXPECT_TRUE(res1 == "action1(?v1 -> v1a)" || res1 == "action1(?v1 -> v1b)") << res1;
+  EXPECT_TRUE(res2 == "action1(?v1 -> v1a)" || res2 == "action1(?v1 -> v1b)") << res2;
   EXPECT_EQ("", _lookForAnActionToDoThenNotify(problem, domain).actionInvocation.toStr());
 }
 

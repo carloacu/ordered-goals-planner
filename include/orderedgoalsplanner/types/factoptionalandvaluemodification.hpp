@@ -45,7 +45,7 @@ struct ORDEREDGOALSPLANNER_API FactOptionalAndValueModification
     return factOpt.fact.doesFactEffectOfSuccessorGiveAnInterestForSuccessor(pOptFact.factOpt.fact);
   }
 
-  const FactOptional& factOpt;
+  FactOptional factOpt;
   ValueModification vm;
 };
 
