@@ -14,7 +14,7 @@ using CallbackId = std::string;
 using FullEventId = std::string;
 
 
-static const FullEventId generateFullEventId(const SetOfEventsId& pSetOfEventsId, const EventId& pEventId)
+inline const FullEventId generateFullEventId(const SetOfEventsId& pSetOfEventsId, const EventId& pEventId)
 {
   return pSetOfEventsId + "|" + pEventId;
 }

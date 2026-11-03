@@ -146,21 +146,6 @@ void _setGoals(ogp::Problem& pProblem,
 }
 
 
-void _addGoals(ogp::Problem& pProblem,
-               const std::map<int, std::vector<std::string>>& pGoalStrs,
-               const ogp::Ontology& pOntology,
-               const std::unique_ptr<std::chrono::steady_clock::time_point>& pNow = {})
-{
-  std::map<int, std::vector<ogp::Goal>> goals;
-  for (auto& currGoals : pGoalStrs)
-  {
-    auto& goalsForAPrio = goals[currGoals.first];
-    for (auto& currGoal : currGoals.second)
-      goalsForAPrio.emplace_back(ogp::Goal::fromStr(currGoal, pOntology, ogp::SetOfEntities()));
-  }
-  pProblem.goalStack.addGoals(goals, pProblem.worldState, pOntology.constants, pProblem.objects, pNow);
-}
-
 void _addGoalsForAPriority(ogp::Problem& pProblem,
                            const std::vector<std::string>& pGoalStrs,
                            const ogp::Ontology& pOntology,

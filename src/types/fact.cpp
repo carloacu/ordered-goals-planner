@@ -24,21 +24,7 @@ Fact _expressionParsedToFact(const ExpressionParsed& pExpressionParsed,
                              bool pIsOkIfValueIsMissing,
                              const std::map<std::string, Entity>* pParameterNamesToEntityPtr);
 
-void _entitiesToStr(std::string& pStr,
-                    const std::vector<FactArgument>& pParameters)
-{
-  bool firstIteration = true;
-  for (auto& param : pParameters)
-  {
-    if (firstIteration)
-      firstIteration = false;
-    else
-      pStr += ", ";
-    pStr += param.toStr();
-  }
-}
-
-// Walks the text that _entitiesToStr would build, piece by piece, without building it.
+// Walks the text of the arguments joined with ", ", piece by piece, without building it.
 class _EntitiesStrCursor
 {
 public:
@@ -107,7 +93,7 @@ private:
   }
 };
 
-// Same result as comparing the texts built by _entitiesToStr, without allocating them.
+// Same result as comparing the texts of the arguments joined with ", ", without allocating them.
 bool _isEntitiesStrLess(const std::vector<FactArgument>& pArguments,
                         const std::vector<FactArgument>& pOtherArguments)
 {
@@ -125,21 +111,6 @@ bool _isEntitiesStrLess(const std::vector<FactArgument>& pArguments,
     otherCursor.advance(nbOfChars);
   }
   return cursor.atEnd() && !otherCursor.atEnd();
-}
-
-void _entitiesToValueStr(std::string& pStr,
-                         const std::vector<FactArgument>& pParameters,
-                         const std::string& pSeparator)
-{
-  bool firstIteration = true;
-  for (auto& param : pParameters)
-  {
-    if (firstIteration)
-      firstIteration = false;
-    else
-      pStr += pSeparator;
-    pStr += param.toStr();
-  }
 }
 
 bool _isInside(const Entity& pEntity,
@@ -1335,7 +1306,7 @@ std::map<Parameter, Entity> Fact::extratParameterToArguments() const
   if (_arguments.size() == predicate.parameters.size())
   {
     std::map<Parameter, Entity> res;
-    for (auto i = 0; i < _arguments.size(); ++i)
+    for (std::size_t i = 0; i < _arguments.size(); ++i)
     {
       if (!_arguments[i].isEntity())
         throw std::runtime_error("Cannot extract fluent argument \"" + _arguments[i].toStr() + "\" as an entity from fact: " + toStr());
@@ -1546,7 +1517,7 @@ void Fact::_finalizeInisilizationAndValidityChecks(bool pIsOkIfValueIsMissing)
   static const bool inEffectContext = false;
   if (predicate.parameters.size() != _arguments.size())
     throw std::runtime_error("The fact \"" + toPddl(inEffectContext) + "\" does not have the same number of parameters than the associated predicate \"" + predicate.toPddl() + "\"");
-  for (auto i = 0; i < _arguments.size(); ++i)
+  for (std::size_t i = 0; i < _arguments.size(); ++i)
   {
     if (!predicate.parameters[i].type)
       throw std::runtime_error("\"" + predicate.parameters[i].name + "\" does not have a type, in fact predicate \"" + predicate.toPddl() + "\"");

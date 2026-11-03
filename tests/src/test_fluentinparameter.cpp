@@ -36,13 +36,6 @@ ogp::Goal _pddlGoal(const std::string& pStr,
   return *ogp::pddlToGoal(pStr, pos, pOntology, pObjects, pMaxTimeToKeepInactive, pGoalGroupId);
 }
 
-std::unique_ptr<ogp::Condition> _condition_fromPddl(const std::string& pConditionStr,
-                                                    const ogp::Ontology& pOntology,
-                                                    const std::vector<ogp::Parameter>& pParameters = {}) {
-  std::size_t pos = 0;
-  return ogp::pddlToCondition(pConditionStr, pos, pOntology, {}, pParameters);
-}
-
 std::unique_ptr<ogp::WorldStateModification> _worldStateModification_fromPddl(const std::string& pStr,
                                                                               const ogp::Ontology& pOntology,
                                                                               const std::vector<ogp::Parameter>& pParameters = {}) {

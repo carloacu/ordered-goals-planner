@@ -466,7 +466,7 @@ void SetOfFacts::extractPotentialArgumentsOfAFactParameter(
       };
 
       bool doesItMatch = true;
-      for (auto i = 0; i < pFact.arguments().size(); ++i)
+      for (std::size_t i = 0; i < pFact.arguments().size(); ++i)
       {
         if (!pFact.arguments()[i].isEntity() || !currFact.arguments()[i].isEntity() ||
             !onEntity(pFact.arguments()[i].entity(), currFact.arguments()[i].entity()))
@@ -499,7 +499,7 @@ bool SetOfFacts::hasFact(const Fact& pFact) const
     if (currFact.arguments().size() == pFact.arguments().size())
     {
       bool doesItMatch = true;
-      for (auto i = 0; i < pFact.arguments().size(); ++i)
+      for (std::size_t i = 0; i < pFact.arguments().size(); ++i)
       {
         if (pFact.arguments()[i] == currFact.arguments()[i])
           continue;
